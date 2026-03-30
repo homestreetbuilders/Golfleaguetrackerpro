@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fairway Command — The Ultimate League System</title>
+  <style>
+    :root {
+      --green-dark: #1a5632;
+      --green-mid: #2a7a47;
+      --green-light: #3a9a5c;
+      --gold: #c9a84c;
+      --gold-light: #e8d48b;
+      --cream: #faf8f0;
+      --sidebar-bg: #112b1e;
+      --sidebar-hover: #1a3f2b;
+      --sidebar-active: #245838;
+      --text-dark: #1e1e1e;
+      --text-muted: #5a5a5a;
+      --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--cream);
+      color: var(--text-dark);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top Header Bar ── */
+    .top-bar {
+      background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);
+      display: flex;
+      align-items: center;
+      padding: 10px 24px;
+      gap: 16px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      z-index: 10;
+      position: relative;
+    }
+
+    .top-bar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.015) 20px, rgba(255,255,255,0.015) 40px);
+      pointer-events: none;
+    }
+
+    .top-bar-logo {
+      height: 48px;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.3));
+      position: relative;
+      z-index: 1;
+    }
+
+    .top-bar-title {
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .top-bar-title small {
+      display: block;
+      color: var(--gold-light);
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .top-bar-spacer { flex: 1; }
+
+    .top-bar-badge {
+      background: var(--gold);
+      color: var(--green-dark);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── App Layout ── */
+    .app-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      border-right: 2px solid var(--gold);
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 16px 18px 10px;
+      color: var(--gold-light);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: background 0.15s, border-left 0.15s;
+      border-left: 3px solid transparent;
+      color: rgba(255,255,255,0.75);
+      font-size: 0.88rem;
+      user-select: none;
+    }
+
+    .sidebar-item:hover {
+      background: var(--sidebar-hover);
+      color: #fff;
+    }
+
+    .sidebar-item.active {
+      background: var(--sidebar-active);
+      border-left-color: var(--gold);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .sidebar-item .sb-icon {
+      font-size: 1.2rem;
+      width: 26px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-item .sb-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-item .sb-badge {
+      margin-left: auto;
+      font-size: 0.62rem;
+      background: var(--green-light);
+      color: #fff;
+      padding: 1px 7px;
+      border-radius: 8px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    /* ── Main Content ── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Welcome / home state */
+    .welcome-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .welcome-screen .welcome-logo {
+      width: 280px;
+      max-width: 80%;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 2px 12px rgba(0,0,0,0.12));
+    }
+
+    .welcome-screen h1 {
+      font-size: 1.6rem;
+      color: var(--green-dark);
+      margin-bottom: 8px;
+    }
+
+    .welcome-screen p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .welcome-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      max-width: 700px;
+      width: 100%;
+      margin-top: 32px;
+    }
+
+    .welcome-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: var(--card-shadow);
+      border-left: 3px solid var(--gold);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-align: left;
+    }
+
+    .welcome-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26,86,50,0.15);
+    }
+
+    .welcome-card .wc-icon { font-size: 1.4rem; margin-bottom: 6px; }
+    .welcome-card .wc-title { font-size: 0.82rem; font-weight: 600; color: var(--green-dark); }
+
+    /* Category content panel */
+    .category-view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .category-view.visible {
+      display: flex;
+    }
+
+    .cat-header {
+      background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);
+      color: #fff;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .cat-header-icon { font-size: 2rem; }
+
+    .cat-header h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .cat-header h2 small {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--gold-light);
+      margin-top: 2px;
+    }
+
+    .cat-header .cat-header-spacer { flex: 1; }
+
+    .btn-home {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: background 0.2s;
+    }
+
+    .btn-home:hover { background: rgba(255,255,255,0.25); }
+
+    .cat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 32px;
+    }
+
+    /* ── Form Styles ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--green-dark);
+      margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 9px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fafafa;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--green-mid);
+      box-shadow: 0 0 0 3px rgba(42,122,71,0.12);
+      background: #fff;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    .form-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--green-mid);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--green-dark); }
+
+    .btn-secondary {
+      background: #e8e8e8;
+      color: var(--text-dark);
+    }
+    .btn-secondary:hover { background: #d8d8d8; }
+
+    .section-title {
+      font-size: 1.02rem;
+      color: var(--green-dark);
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--gold-light);
+    }
+
+    /* Data table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+    }
+
+    .data-table th {
+      background: var(--green-dark);
+      color: #fff;
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .data-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.88rem;
+    }
+
+    .data-table tr:hover td { background: #f5faf6; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .status-active { background: #d4edda; color: #155724; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-closed { background: #e2e3e5; color: #383d41; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--green-dark);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 10px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+      font-size: 0.9rem;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Mobile sidebar toggle ── */
+    .sidebar-toggle {
+      display: none;
+      background: var(--green-dark);
+      color: var(--gold-light);
+      border: 1px solid var(--gold);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.25s;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+      }
+
+      .sidebar.open {
+        left: 0;
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 99;
+      }
+
+      .sidebar-overlay.visible {
+        display: block;
+      }
+
+      .sidebar-toggle {
+        display: inline-flex;
+      }
+
+      .cat-body { padding: 20px 16px; }
+      .cat-header { padding: 16px 18px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .welcome-cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mobile overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Top Header Bar -->
+  <div class="top-bar">
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+    <img src="fairwaycommandlogo.jpeg" alt="Fairway Command" class="top-bar-logo">
+    <div class="top-bar-title">
+      Fairway Command
+      <small>Full-Feature League Management</small>
+    </div>
+    <div class="top-bar-spacer"></div>
+    <span class="top-bar-badge">Dashboard</span>
+  </div>
+
+  <!-- App Layout: Sidebar + Main Content -->
+  <div class="app-layout">
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">Categories</div>
+
+      <div class="sidebar-item" data-cat="league-management" onclick="openCategory('league-management')">
+        <span class="sb-icon">⛳</span>
+        <span class="sb-label">League Management</span>
+        <span class="sb-badge">Core</span>
+      </div>
+      <div class="sidebar-item" data-cat="player-profiles" onclick="openCategory('player-profiles')">
+        <span class="sb-icon">👤</span>
+        <span class="sb-label">Player Profiles</span>
+      </div>
+      <div class="sidebar-item" data-cat="scheduling" onclick="openCategory('scheduling')">
+        <span class="sb-icon">📅</span>
+        <span class="sb-label">Scheduling &amp; Tee Times</span>
+        <span class="sb-badge">Core</span>
+      </div>
+      <div class="sidebar-item" data-cat="scorekeeping" onclick="openCategory('scorekeeping')">
+        <span class="sb-icon">📝</span>
+        <span class="sb-label">Scorekeeping</span>
+      </div>
+      <div class="sidebar-item" data-cat="handicap-tracking" onclick="openCategory('handicap-tracking')">
+        <span class="sb-icon">📈</span>
+        <span class="sb-label">Handicap Tracking</span>
+      </div>
+      <div class="sidebar-item" data-cat="tournament-management" onclick="openCategory('tournament-management')">
+        <span class="sb-icon">🏆</span>
+        <span class="sb-label">Tournament Management</span>
+        <span class="sb-badge">Core</span>
+      </div>
+      <div class="sidebar-item" data-cat="team-management" onclick="openCategory('team-management')">
+        <span class="sb-icon">🤝</span>
+        <span class="sb-label">Team Management</span>
+      </div>
+      <div class="sidebar-item" data-cat="statistics" onclick="openCategory('statistics')">
+        <span class="sb-icon">📊</span>
+        <span class="sb-label">Statistics &amp; Analytics</span>
+      </div>
+      <div class="sidebar-item" data-cat="leaderboards" onclick="openCategory('leaderboards')">
+        <span class="sb-icon">🥇</span>
+        <span class="sb-label">Leaderboards &amp; Rankings</span>
+      </div>
+      <div class="sidebar-item" data-cat="communication" onclick="openCategory('communication')">
+        <span class="sb-icon">📧</span>
+        <span class="sb-label">Communication</span>
+      </div>
+      <div class="sidebar-item" data-cat="course-management" onclick="openCategory('course-management')">
+        <span class="sb-icon">🏡</span>
+        <span class="sb-label">Course Management</span>
+      </div>
+      <div class="sidebar-item" data-cat="financial-management" onclick="openCategory('financial-management')">
+        <span class="sb-icon">💰</span>
+        <span class="sb-label">Financial Management</span>
+      </div>
+      <div class="sidebar-item" data-cat="reports" onclick="openCategory('reports')">
+        <span class="sb-icon">📄</span>
+        <span class="sb-label">Reports &amp; Exports</span>
+      </div>
+      <div class="sidebar-item" data-cat="settings" onclick="openCategory('settings')">
+        <span class="sb-icon">⚙</span>
+        <span class="sb-label">Settings &amp; Admin</span>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+
+      <!-- Welcome / Home screen (shown when no category selected) -->
+      <div class="welcome-screen" id="welcomeScreen">
+        <img src="fairwaycommandlogo.jpeg" alt="Fairway Command" class="welcome-logo">
+        <h1>Command Center</h1>
+        <p>Select a category from the sidebar to manage your golf league. All 14 management tools are at your fingertips.</p>
+        <div class="welcome-cards">
+          <div class="welcome-card" onclick="openCategory('league-management')"><div class="wc-icon">⛳</div><div class="wc-title">Leagues</div></div>
+          <div class="welcome-card" onclick="openCategory('player-profiles')"><div class="wc-icon">👤</div><div class="wc-title">Players</div></div>
+          <div class="welcome-card" onclick="openCategory('scheduling')"><div class="wc-icon">📅</div><div class="wc-title">Schedule</div></div>
+          <div class="welcome-card" onclick="openCategory('scorekeeping')"><div class="wc-icon">📝</div><div class="wc-title">Scores</div></div>
+          <div class="welcome-card" onclick="openCategory('leaderboards')"><div class="wc-icon">🥇</div><div class="wc-title">Standings</div></div>
+          <div class="welcome-card" onclick="openCategory('tournament-management')"><div class="wc-icon">🏆</div><div class="wc-title">Tournaments</div></div>
+          <div class="welcome-card" onclick="openCategory('statistics')"><div class="wc-icon">📊</div><div class="wc-title">Stats</div></div>
+          <div class="welcome-card" onclick="openCategory('financial-management')"><div class="wc-icon">💰</div><div class="wc-title">Finances</div></div>
+        </div>
+      </div>
+
+      <!-- Category View (shown when a category is selected) -->
+      <div class="category-view" id="categoryView">
+        <div class="cat-header">
+          <span class="cat-header-icon" id="catIcon"></span>
+          <h2 id="catTitle"><small id="catSubtitle"></small></h2>
+          <div class="cat-header-spacer"></div>
+          <button class="btn-home" onclick="goHome()">&#8962; Dashboard</button>
+        </div>
+        <div class="cat-body" id="catBody"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ── Category Definitions ──
+  var categories = {
+    'league-management': {
+      icon: '⛳',
+      title: 'League Management',
+      subtitle: 'Create and configure your league',
+      form: function() {
+        return '<h3 class="section-title">League Setup</h3>' +
+        '<div class="form-grid">' +
+          fg('League Name', 'text', 'league-name', 'e.g. Saturday Morning League') +
+          fg('Season', 'select', 'league-season', '', ['Spring 2026','Summer 2026','Fall 2026','Winter 2026-27']) +
+          fg('League Format', 'select', 'league-format', '', ['Stroke Play','Match Play','Stableford','Best Ball','Scramble','Alternate Shot']) +
+          fg('Max Players', 'number', 'league-max', '32') +
+          fg('Start Date', 'date', 'league-start', '') +
+          fg('End Date', 'date', 'league-end', '') +
+          fg('Weekly Play Day', 'select', 'league-day', '', ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']) +
+          fg('Entry Fee ($)', 'number', 'league-fee', '150') +
+          fga('League Rules & Notes', 'league-rules', 'Enter any special rules, scoring exceptions, or league bylaws...') +
+          formActions('Create League') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Active Leagues</h3>' +
+        sampleTable(['League Name','Format','Players','Status'], [
+          ['Saturday AM League','Stroke Play','28','<span class="status-badge status-active">Active</span>'],
+          ['Wednesday Twilight','Best Ball','16','<span class="status-badge status-active">Active</span>'],
+          ['Fall Classic Series','Match Play','24','<span class="status-badge status-pending">Upcoming</span>'],
+        ]);
+      }
+    },
+    'player-profiles': {
+      icon: '👤',
+      title: 'Player Profiles',
+      subtitle: 'Manage player roster and information',
+      form: function() {
+        return '<h3 class="section-title">Add / Edit Player</h3>' +
+        '<div class="form-grid">' +
+          fg('First Name', 'text', 'player-first', 'John') +
+          fg('Last Name', 'text', 'player-last', 'Smith') +
+          fg('Email', 'email', 'player-email', 'john@example.com') +
+          fg('Phone', 'tel', 'player-phone', '(555) 123-4567') +
+          fg('Handicap Index', 'number', 'player-hcp', '12.4') +
+          fg('Membership Status', 'select', 'player-status', '', ['Active','Inactive','Substitute','Guest']) +
+          fg('Home Course', 'text', 'player-course', 'Pine Valley GC') +
+          fg('GHIN Number', 'text', 'player-ghin', '') +
+          fga('Notes', 'player-notes', 'Preferred tee time, dietary restrictions, etc.') +
+          formActions('Save Player') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Current Roster</h3>' +
+        sampleTable(['Player','Handicap','Email','Status'], [
+          ['Mike Johnson','8.2','mike.j@email.com','<span class="status-badge status-active">Active</span>'],
+          ['Sarah Williams','14.6','sarah.w@email.com','<span class="status-badge status-active">Active</span>'],
+          ['Tom Davis','22.1','tom.d@email.com','<span class="status-badge status-pending">Sub</span>'],
+          ['Lisa Chen','6.8','lisa.c@email.com','<span class="status-badge status-active">Active</span>'],
+        ]);
+      }
+    },
+    'scheduling': {
+      icon: '📅',
+      title: 'Scheduling & Tee Times',
+      subtitle: 'Build schedules and manage pairings',
+      form: function() {
+        return '<h3 class="section-title">Schedule a Round</h3>' +
+        '<div class="form-grid">' +
+          fg('Date', 'date', 'sched-date', '') +
+          fg('First Tee Time', 'time', 'sched-time', '') +
+          fg('Course', 'select', 'sched-course', '', ['Pine Valley GC','Oakmont CC','Augusta National','Pebble Beach GL']) +
+          fg('Tee Time Interval', 'select', 'sched-interval', '', ['7 Minutes','8 Minutes','10 Minutes','12 Minutes']) +
+          fg('Players Per Group', 'select', 'sched-group', '', ['2 (Twosomes)','3 (Threesomes)','4 (Foursomes)']) +
+          fg('Format', 'select', 'sched-format', '', ['Stroke Play','Match Play','Best Ball','Scramble']) +
+          fga('Pairing Notes', 'sched-notes', 'Any specific pairings or special instructions...') +
+          formActions('Create Schedule') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Upcoming Schedule</h3>' +
+        sampleTable(['Date','Course','Time','Groups','Status'], [
+          ['Apr 5, 2026','Pine Valley GC','8:00 AM','7 groups','<span class="status-badge status-active">Confirmed</span>'],
+          ['Apr 12, 2026','Oakmont CC','7:30 AM','8 groups','<span class="status-badge status-pending">Pending</span>'],
+          ['Apr 19, 2026','Pine Valley GC','8:00 AM','7 groups','<span class="status-badge status-pending">Pending</span>'],
+        ]);
+      }
+    },
+    'scorekeeping': {
+      icon: '📝',
+      title: 'Scorekeeping',
+      subtitle: 'Enter and track round scores',
+      form: function() {
+        return '<h3 class="section-title">Enter Scores</h3>' +
+        '<div class="form-grid">' +
+          fg('Player', 'select', 'score-player', '', ['Mike Johnson','Sarah Williams','Tom Davis','Lisa Chen','John Smith']) +
+          fg('Round Date', 'date', 'score-date', '') +
+          fg('Course', 'select', 'score-course', '', ['Pine Valley GC','Oakmont CC','Augusta National','Pebble Beach GL']) +
+          fg('Tees Played', 'select', 'score-tees', '', ['Championship','Blue','White','Gold','Red']) +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:20px">Hole-by-Hole Entry</h3>' +
+        holeByHoleGrid() +
+        '<div class="form-grid" style="margin-top:18px">' +
+          fg('Total Gross Score', 'number', 'score-gross', '') +
+          fg('Handicap Strokes', 'number', 'score-hcp-strokes', '') +
+          fg('Net Score', 'number', 'score-net', '') +
+          fg('Points Earned', 'number', 'score-points', '') +
+          fga('Round Notes', 'score-notes', 'Any notable shots, penalties, or adjustments...') +
+          formActions('Submit Score') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Recent Scores</h3>' +
+        sampleTable(['Player','Date','Gross','Net','Points'], [
+          ['Mike Johnson','Mar 29','78','71','8'],
+          ['Lisa Chen','Mar 29','74','70','10'],
+          ['Sarah Williams','Mar 29','86','74','6'],
+          ['Tom Davis','Mar 29','94','76','5'],
+        ]);
+      }
+    },
+    'handicap-tracking': {
+      icon: '📈',
+      title: 'Handicap Tracking',
+      subtitle: 'Monitor and update handicap indexes',
+      form: function() {
+        return '<h3 class="section-title">Handicap Lookup</h3>' +
+        '<div class="form-grid">' +
+          fg('Select Player', 'select', 'hcp-player', '', ['All Players','Mike Johnson','Sarah Williams','Tom Davis','Lisa Chen','John Smith']) +
+          fg('Calculation Method', 'select', 'hcp-method', '', ['USGA World Handicap System','Best 8 of Last 20','League Custom Formula']) +
+          formActions('Recalculate') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Handicap Index Summary</h3>' +
+        sampleTable(['Player','Current Index','Trend','Last 5 Differentials','Last Updated'], [
+          ['Lisa Chen','6.8','&#9660; 0.3','5.2, 7.1, 6.5, 8.0, 6.2','Mar 29'],
+          ['Mike Johnson','8.2','&#9650; 0.5','7.8, 9.1, 8.4, 7.5, 8.8','Mar 29'],
+          ['Sarah Williams','14.6','&#9660; 0.2','13.5, 15.2, 14.8, 14.1, 15.5','Mar 29'],
+          ['Tom Davis','22.1','&#9650; 1.1','21.0, 23.5, 20.8, 24.2, 21.9','Mar 29'],
+        ]) +
+        '<div class="form-grid" style="margin-top:20px">' +
+          fg('Adjust Handicap For', 'select', 'hcp-adj-player', '', ['Mike Johnson','Sarah Williams','Tom Davis','Lisa Chen']) +
+          fg('New Index Override', 'number', 'hcp-adj-value', '') +
+          fga('Adjustment Reason', 'hcp-adj-reason', 'Explain reason for manual adjustment...') +
+          formActions('Apply Adjustment') +
+        '</div>';
+      }
+    },
+    'tournament-management': {
+      icon: '🏆',
+      title: 'Tournament Management',
+      subtitle: 'Organize tournaments and events',
+      form: function() {
+        return '<h3 class="section-title">Create Tournament</h3>' +
+        '<div class="form-grid">' +
+          fg('Tournament Name', 'text', 'tourn-name', 'e.g. Club Championship 2026') +
+          fg('Date', 'date', 'tourn-date', '') +
+          fg('Format', 'select', 'tourn-format', '', ['Stroke Play - Individual','Match Play - Bracket','Scramble - Team','Best Ball - Pairs','Stableford','Skins Game']) +
+          fg('Number of Flights', 'select', 'tourn-flights', '', ['1 (Open)','2 Flights','3 Flights','4 Flights']) +
+          fg('Entry Fee ($)', 'number', 'tourn-fee', '50') +
+          fg('Prize Pool ($)', 'number', 'tourn-prize', '500') +
+          fg('Max Entries', 'number', 'tourn-max', '32') +
+          fg('Course', 'select', 'tourn-course', '', ['Pine Valley GC','Oakmont CC','Augusta National','Pebble Beach GL']) +
+          fga('Tournament Details', 'tourn-details', 'Additional rules, tiebreakers, special prizes (closest to pin, longest drive)...') +
+          formActions('Create Tournament') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Tournaments</h3>' +
+        sampleTable(['Tournament','Date','Format','Entries','Status'], [
+          ['Spring Invitational','Apr 19, 2026','Scramble','24/32','<span class="status-badge status-active">Open</span>'],
+          ['Club Championship','May 10, 2026','Stroke Play','0/48','<span class="status-badge status-pending">Upcoming</span>'],
+          ['Winter Cup','Dec 6, 2025','Match Play','16/16','<span class="status-badge status-closed">Complete</span>'],
+        ]);
+      }
+    },
+    'team-management': {
+      icon: '🤝',
+      title: 'Team Management',
+      subtitle: 'Form teams and manage rosters',
+      form: function() {
+        return '<h3 class="section-title">Create / Edit Team</h3>' +
+        '<div class="form-grid">' +
+          fg('Team Name', 'text', 'team-name', 'e.g. The Eagles') +
+          fg('Captain', 'select', 'team-captain', '', ['Mike Johnson','Sarah Williams','Tom Davis','Lisa Chen','John Smith']) +
+          fg('Co-Captain', 'select', 'team-cocaptain', '', ['None','Mike Johnson','Sarah Williams','Tom Davis','Lisa Chen','John Smith']) +
+          fg('Division', 'select', 'team-div', '', ['A Flight','B Flight','C Flight','Open']) +
+          fga('Team Members', 'team-members', 'List team members (one per line)...') +
+          formActions('Save Team') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Teams</h3>' +
+        sampleTable(['Team','Captain','Players','Division','Record'], [
+          ['The Eagles','Mike Johnson','4','A Flight','5-2-1'],
+          ['Birdie Brigade','Lisa Chen','4','A Flight','6-1-1'],
+          ['Bogey Boys','Tom Davis','4','B Flight','3-4-1'],
+          ['Fairway Legends','Sarah Williams','4','B Flight','4-3-1'],
+        ]);
+      }
+    },
+    'statistics': {
+      icon: '📊',
+      title: 'Statistics & Analytics',
+      subtitle: 'Performance metrics and trends',
+      form: function() {
+        return '<h3 class="section-title">Performance Query</h3>' +
+        '<div class="form-grid">' +
+          fg('Player', 'select', 'stat-player', '', ['All Players','Mike Johnson','Sarah Williams','Tom Davis','Lisa Chen']) +
+          fg('Season', 'select', 'stat-season', '', ['Spring 2026','All Time','Last 10 Rounds','Last 20 Rounds']) +
+          fg('Metric', 'select', 'stat-metric', '', ['Scoring Average','Fairways Hit %','Greens in Regulation %','Putts Per Round','Birdies Per Round','Pars Per Round','Scoring by Hole']) +
+          fg('Compare With', 'select', 'stat-compare', '', ['None','League Average','Another Player','Previous Season']) +
+          formActions('Generate Report') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Season Stats Overview</h3>' +
+        sampleTable(['Player','Avg Score','FW%','GIR%','Putts/Rd','Birdies','Best Round'], [
+          ['Lisa Chen','76.4','68%','61%','30.2','12','71'],
+          ['Mike Johnson','80.1','62%','52%','31.8','6','74'],
+          ['Sarah Williams','87.3','48%','38%','34.1','2','82'],
+          ['Tom Davis','93.8','42%','28%','36.5','0','88'],
+        ]);
+      }
+    },
+    'leaderboards': {
+      icon: '🥇',
+      title: 'Leaderboards & Rankings',
+      subtitle: 'Live standings and season points',
+      form: function() {
+        return '<h3 class="section-title">Leaderboard Settings</h3>' +
+        '<div class="form-grid">' +
+          fg('League', 'select', 'lead-league', '', ['Saturday AM League','Wednesday Twilight','All Leagues']) +
+          fg('Leaderboard Type', 'select', 'lead-type', '', ['Season Points','Stroke Average','Net Scoring','Handicap Improvement','Most Improved']) +
+          fg('Time Period', 'select', 'lead-period', '', ['Full Season','Last 4 Weeks','Last 8 Weeks','Monthly']) +
+          fg('Display', 'select', 'lead-display', '', ['Top 10','Top 20','All Players']) +
+          formActions('Update Board') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Season Points Standings</h3>' +
+        sampleTable(['Rank','Player','Points','Rounds','Avg Pts/Rd','Last Rd'], [
+          ['1','Lisa Chen','82','8','10.3','10'],
+          ['2','Mike Johnson','64','8','8.0','8'],
+          ['3','Sarah Williams','48','8','6.0','6'],
+          ['4','Tom Davis','38','8','4.8','5'],
+          ['5','John Smith','36','7','5.1','7'],
+        ]);
+      }
+    },
+    'communication': {
+      icon: '📧',
+      title: 'Communication',
+      subtitle: 'Announcements and notifications',
+      form: function() {
+        return '<h3 class="section-title">Send Message</h3>' +
+        '<div class="form-grid">' +
+          fg('Message Type', 'select', 'comm-type', '', ['Announcement','Weekly Reminder','Results Summary','Rainout Notice','Custom Message']) +
+          fg('Recipients', 'select', 'comm-to', '', ['All League Members','Active Players Only','Team Captains','Specific Players']) +
+          fg('Subject', 'text', 'comm-subject', '') +
+          fg('Send Method', 'select', 'comm-method', '', ['Email','SMS','Both Email & SMS']) +
+          fga('Message Body', 'comm-body', 'Write your message here...') +
+          '<div class="form-group full-width"><label><input type="checkbox" style="margin-right:8px">Schedule for later</label></div>' +
+          formActions('Send Message') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Recent Messages</h3>' +
+        sampleTable(['Date','Subject','Type','Recipients','Status'], [
+          ['Mar 28','Week 8 Pairings Posted','Reminder','All Members','Sent'],
+          ['Mar 26','Rainout: Mar 27 Round Postponed','Notice','All Members','Sent'],
+          ['Mar 22','Week 7 Results & Standings','Results','All Members','Sent'],
+        ]);
+      }
+    },
+    'course-management': {
+      icon: '🏡',
+      title: 'Course Management',
+      subtitle: 'Course data and hole layouts',
+      form: function() {
+        return '<h3 class="section-title">Add / Edit Course</h3>' +
+        '<div class="form-grid">' +
+          fg('Course Name', 'text', 'course-name', 'e.g. Pine Valley Golf Club') +
+          fg('Location', 'text', 'course-location', 'City, State') +
+          fg('Number of Holes', 'select', 'course-holes', '', ['18','9']) +
+          fg('Par', 'number', 'course-par', '72') +
+          fg('Slope Rating', 'number', 'course-slope', '135') +
+          fg('Course Rating', 'number', 'course-rating', '72.5') +
+          fg('Yardage (Championship)', 'number', 'course-yards', '6800') +
+          fg('Tee Options', 'text', 'course-tees', 'Championship, Blue, White, Gold, Red') +
+          fga('Course Notes', 'course-notes', 'Hole layout details, local rules, pin rotation schedule...') +
+          formActions('Save Course') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Registered Courses</h3>' +
+        sampleTable(['Course','Par','Slope','Rating','Yardage','Rounds Played'], [
+          ['Pine Valley GC','72','135','72.5','6,800','42'],
+          ['Oakmont CC','71','148','75.2','7,200','18'],
+          ['Pebble Beach GL','72','142','74.8','6,900','8'],
+        ]);
+      }
+    },
+    'financial-management': {
+      icon: '💰',
+      title: 'Financial Management',
+      subtitle: 'Dues, fees, and prize funds',
+      form: function() {
+        return '<h3 class="section-title">Record Transaction</h3>' +
+        '<div class="form-grid">' +
+          fg('Transaction Type', 'select', 'fin-type', '', ['Dues Payment','Tournament Entry','Prize Payout','Expense','Refund','Other Income']) +
+          fg('Player / Payee', 'select', 'fin-player', '', ['Mike Johnson','Sarah Williams','Tom Davis','Lisa Chen','John Smith','League Expense']) +
+          fg('Amount ($)', 'number', 'fin-amount', '') +
+          fg('Date', 'date', 'fin-date', '') +
+          fg('Payment Method', 'select', 'fin-method', '', ['Cash','Check','Venmo','Zelle','Credit Card','PayPal']) +
+          fg('Category', 'select', 'fin-cat', '', ['Season Dues','Tournament Fee','Prize Money','Course Fees','Supplies','Other']) +
+          fga('Description', 'fin-desc', 'Transaction details or notes...') +
+          formActions('Record Transaction') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Financial Summary</h3>' +
+        sampleTable(['Category','Income','Expenses','Balance'], [
+          ['Season Dues','$4,200','\u2014','$4,200'],
+          ['Tournament Entries','$1,200','\u2014','$1,200'],
+          ['Prize Payouts','\u2014','$2,800','-$2,800'],
+          ['Course Fees','\u2014','$1,400','-$1,400'],
+          ['<strong>Total</strong>','<strong>$5,400</strong>','<strong>$4,200</strong>','<strong>$1,200</strong>'],
+        ]);
+      }
+    },
+    'reports': {
+      icon: '📄',
+      title: 'Reports & Exports',
+      subtitle: 'Generate reports and export data',
+      form: function() {
+        return '<h3 class="section-title">Generate Report</h3>' +
+        '<div class="form-grid">' +
+          fg('Report Type', 'select', 'rpt-type', '', ['Season Standings','Player Statistics','Scorecard','Financial Summary','Handicap History','Attendance Report','Tournament Results']) +
+          fg('League', 'select', 'rpt-league', '', ['Saturday AM League','Wednesday Twilight','All Leagues']) +
+          fg('Date Range', 'select', 'rpt-range', '', ['Full Season','Last Month','Custom Range']) +
+          fg('Export Format', 'select', 'rpt-format', '', ['View on Screen','PDF','CSV','Excel']) +
+          fg('Include', 'select', 'rpt-include', '', ['All Players','Active Only','Specific Player']) +
+          fg('Sort By', 'select', 'rpt-sort', '', ['Name','Score','Points','Handicap','Rank']) +
+          formActions('Generate Report') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Saved Reports</h3>' +
+        sampleTable(['Report','Generated','League','Format','Action'], [
+          ['Week 8 Standings','Mar 29, 2026','Sat AM League','PDF','<a href="#" style="color:var(--green-mid)">Download</a>'],
+          ['March Financials','Mar 28, 2026','All','CSV','<a href="#" style="color:var(--green-mid)">Download</a>'],
+          ['Q1 Stats Summary','Mar 15, 2026','All','PDF','<a href="#" style="color:var(--green-mid)">Download</a>'],
+        ]);
+      }
+    },
+    'settings': {
+      icon: '⚙',
+      title: 'Settings & Administration',
+      subtitle: 'System configuration and admin tools',
+      form: function() {
+        return '<h3 class="section-title">League Settings</h3>' +
+        '<div class="form-grid">' +
+          fg('League Name', 'text', 'set-name', 'Fairway Command League') +
+          fg('Admin Email', 'email', 'set-email', 'admin@fairwaycommand.com') +
+          fg('Scoring System', 'select', 'set-scoring', '', ['Points-Based','Net Stroke','Gross Stroke','Modified Stableford','Custom']) +
+          fg('Handicap Method', 'select', 'set-hcp', '', ['USGA WHS','Best 8 of 20','League Custom','No Handicap']) +
+          fg('Season Start', 'date', 'set-start', '') +
+          fg('Season End', 'date', 'set-end', '') +
+          fg('Timezone', 'select', 'set-tz', '', ['Eastern','Central','Mountain','Pacific','Arizona']) +
+          fg('Default Tees', 'select', 'set-tees', '', ['Championship','Blue','White','Gold','Red']) +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:24px">Admin Users</h3>' +
+        '<div class="form-grid">' +
+          fg('New Admin Name', 'text', 'set-admin-name', '') +
+          fg('New Admin Email', 'email', 'set-admin-email', '') +
+          fg('Role', 'select', 'set-admin-role', '', ['Super Admin','League Admin','Scorekeeper','Read Only']) +
+          formActions('Save Settings') +
+        '</div>' +
+        '<h3 class="section-title" style="margin-top:28px">Current Admins</h3>' +
+        sampleTable(['Name','Email','Role','Last Login'], [
+          ['Admin User','admin@fairwaycommand.com','Super Admin','Mar 30, 2026'],
+          ['Mike Johnson','mike.j@email.com','League Admin','Mar 29, 2026'],
+          ['Sarah Williams','sarah.w@email.com','Scorekeeper','Mar 28, 2026'],
+        ]);
+      }
+    }
+  };
+
+  // ── Helpers ──
+  function fg(label, type, id, placeholder, options) {
+    if (type === 'select') {
+      var opts = '<option value="">' + (placeholder || '— Select —') + '</option>';
+      if (options) {
+        for (var i = 0; i < options.length; i++) {
+          opts += '<option value="' + options[i] + '">' + options[i] + '</option>';
+        }
+      }
+      return '<div class="form-group"><label for="' + id + '">' + label + '</label><select id="' + id + '">' + opts + '</select></div>';
+    }
+    return '<div class="form-group"><label for="' + id + '">' + label + '</label><input type="' + type + '" id="' + id + '" placeholder="' + (placeholder || '') + '"></div>';
+  }
+
+  function fga(label, id, placeholder) {
+    return '<div class="form-group full-width"><label for="' + id + '">' + label + '</label><textarea id="' + id + '" placeholder="' + (placeholder || '') + '"></textarea></div>';
+  }
+
+  function formActions(primaryLabel) {
+    return '<div class="form-actions"><button type="button" class="btn btn-secondary" onclick="resetForm()">Clear</button><button type="button" class="btn btn-primary" onclick="submitForm(\'' + primaryLabel + '\')">' + primaryLabel + '</button></div>';
+  }
+
+  function sampleTable(headers, rows) {
+    var html = '<table class="data-table"><thead><tr>';
+    for (var i = 0; i < headers.length; i++) html += '<th>' + headers[i] + '</th>';
+    html += '</tr></thead><tbody>';
+    for (var r = 0; r < rows.length; r++) {
+      html += '<tr>';
+      for (var c = 0; c < rows[r].length; c++) html += '<td>' + rows[r][c] + '</td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function holeByHoleGrid() {
+    var pars = [4,3,5,4,4,3,4,5,4,4,5,3,4,4,3,5,4,4];
+    var html = '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Hole</th>';
+    for (var i = 1; i <= 18; i++) html += '<th>' + i + '</th>';
+    html += '<th>Total</th></tr></thead><tbody>';
+    html += '<tr><td><strong>Par</strong></td>';
+    var totalPar = 0;
+    for (var i = 0; i < 18; i++) { html += '<td>' + pars[i] + '</td>'; totalPar += pars[i]; }
+    html += '<td><strong>' + totalPar + '</strong></td></tr>';
+    html += '<tr><td><strong>Score</strong></td>';
+    for (var i = 1; i <= 18; i++) html += '<td><input type="number" style="width:42px;padding:4px;text-align:center;border:1px solid #ccc;border-radius:4px" min="1" max="15"></td>';
+    html += '<td><strong id="score-total">\u2014</strong></td></tr>';
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  // ── Navigation ──
+  var activeCat = null;
+
+  function openCategory(categoryId) {
+    var cat = categories[categoryId];
+    if (!cat) return;
+
+    activeCat = categoryId;
+
+    // Update sidebar highlight
+    var items = document.querySelectorAll('.sidebar-item');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle('active', items[i].getAttribute('data-cat') === categoryId);
+    }
+
+    // Populate content
+    document.getElementById('catIcon').textContent = cat.icon;
+    document.getElementById('catTitle').innerHTML = cat.title + '<small>' + cat.subtitle + '</small>';
+    document.getElementById('catBody').innerHTML = cat.form();
+
+    // Toggle views
+    document.getElementById('welcomeScreen').style.display = 'none';
+    var cv = document.getElementById('categoryView');
+    cv.classList.add('visible');
+
+    // Close mobile sidebar
+    closeMobileSidebar();
+  }
+
+  function goHome() {
+    activeCat = null;
+    document.getElementById('welcomeScreen').style.display = '';
+    document.getElementById('categoryView').classList.remove('visible');
+    var items = document.querySelectorAll('.sidebar-item');
+    for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
+  }
+
+  function submitForm(action) {
+    showToast('\u2713 ' + action + ' \u2014 saved successfully!');
+  }
+
+  function resetForm() {
+    var panel = document.getElementById('catBody');
+    var inputs = panel.querySelectorAll('input, select, textarea');
+    for (var i = 0; i < inputs.length; i++) {
+      if (inputs[i].type === 'checkbox') inputs[i].checked = false;
+      else inputs[i].value = '';
+    }
+    showToast('Form cleared');
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2500);
+  }
+
+  // ── Mobile sidebar ──
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('visible');
+  }
+
+  function closeMobileSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
+  }
+</script>
+
+</body>
+</html>
