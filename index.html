@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolfLeague TrackerPro — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <img src="assets/logo-shield.jpeg" alt="GLTP Logo" class="auth-logo">
+    <h1 class="auth-title">GolfLeague TrackerPro</h1>
+    <p class="auth-subtitle" id="authSubtitle">Sign in to your account</p>
+
+    <div id="authMessage" class="auth-message" style="display:none;"></div>
+
+    <form id="authForm" class="auth-form" autocomplete="on">
+      <div id="nameFieldWrapper" class="auth-field" style="display:none;">
+        <label for="authName">Full Name</label>
+        <input type="text" id="authName" placeholder="John Smith" autocomplete="name">
+      </div>
+      <div class="auth-field">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" placeholder="Min 6 characters" required minlength="6" autocomplete="current-password">
+      </div>
+      <button type="submit" id="authSubmitBtn" class="auth-btn">Sign In</button>
+    </form>
+
+    <p class="auth-toggle">
+      <span id="authToggleText">Don't have an account?</span>
+      <a href="#" id="authToggleLink">Sign Up</a>
+    </p>
+  </div>
+</div>
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="assets/logo-shield.jpeg" alt="GLTP Logo" class="brand-logo">
+    <span class="brand-name">GLTP</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-section="dashboard">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a href="#" class="nav-item" data-section="season-overview">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <span>Season Overview</span>
+    </a>
+    <a href="#" class="nav-item" data-section="leaderboard">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+      <span>Leaderboard</span>
+    </a>
+    <a href="#" class="nav-item" data-section="schedule">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Schedule</span>
+    </a>
+    <a href="#" class="nav-item" data-section="players">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>Players</span>
+    </a>
+    <a href="#" class="nav-item" data-section="scores" data-role-require="admin scorer">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Scores</span>
+    </a>
+    <a href="#" class="nav-item" data-section="my-stats" data-role-require="player">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>My Stats</span>
+    </a>
+    <a href="#" class="nav-item" data-section="teams">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>Teams</span>
+    </a>
+    <div class="nav-group-label">Manage</div>
+    <a href="#" class="nav-item" data-section="analytics">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Analytics</span>
+    </a>
+    <a href="#" class="nav-item" data-section="payments" data-role-require="admin">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span>Payments</span>
+    </a>
+    <a href="#" class="nav-item" data-section="courses">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21l6-3 6 3 6-3V3l-6 3-6-3-6 3z"/></svg>
+      <span>Courses</span>
+    </a>
+    <div class="nav-group-label">Social</div>
+    <a href="#" class="nav-item" data-section="league-chat">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span>League Chat</span>
+    </a>
+    <a href="#" class="nav-item" data-section="instructions">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      <span>Instructions</span>
+    </a>
+    <a href="#" class="nav-item" data-section="settings" data-role-require="admin">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Settings</span>
+    </a>
+    <a href="#" class="nav-item" data-section="admin" data-role-require="admin">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="7" y1="7" x2="7" y2="21"/></svg>
+      <span>Admin</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h1 class="page-title">Dashboard</h1>
+    <div class="topbar-right">
+      <span class="season-badge">2026 Spring Season</span>
+      <span id="roleBadge" class="role-badge role-player">Player</span>
+      <span id="userDisplay" class="user-display"></span>
+      <button id="logoutBtn" class="logout-btn" title="Sign Out">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Dashboard Section -->
+  <section class="section active" id="section-dashboard">
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon players-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">48</span>
+          <span class="stat-label">Active Players</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon rounds-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">12</span>
+          <span class="stat-label">Rounds Played</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon avg-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">82.4</span>
+          <span class="stat-label">Avg Score</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon events-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">6</span>
+          <span class="stat-label">Upcoming Events</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid: Leaderboard + Upcoming -->
+    <div class="dashboard-grid">
+
+      <!-- Top 10 Leaderboard -->
+      <div class="card leaderboard-card">
+        <div class="card-header">
+          <h2>Top 10 Leaderboard</h2>
+          <span class="card-badge">Season Standings</span>
+        </div>
+        <table class="leaderboard-table">
+          <thead>
+            <tr><th>#</th><th>Player</th><th>Rounds</th><th>Avg</th><th>Best</th><th>Pts</th></tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-col">
+
+        <!-- Upcoming Events -->
+        <div class="card upcoming-card">
+          <div class="card-header">
+            <h2>Upcoming Events</h2>
+          </div>
+          <ul class="event-list" id="eventList"></ul>
+        </div>
+
+        <!-- Recent Scores -->
+        <div class="card recent-card">
+          <div class="card-header">
+            <h2>Recent Scores</h2>
+          </div>
+          <ul class="score-list" id="recentScores"></ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Course Performance Chart (simple bar) -->
+    <div class="card chart-card">
+      <div class="card-header">
+        <h2>Course Performance (Avg Scores)</h2>
+      </div>
+      <div class="bar-chart" id="courseChart"></div>
+    </div>
+
+  </section>
+
+  <!-- Season Overview Section -->
+  <section class="section" id="section-season-overview">
+    <div class="card">
+      <div class="card-header"><h2>2026 Spring Season</h2><span class="card-badge">Overview</span></div>
+      <div class="season-meta-grid">
+        <div class="season-meta-item"><strong>Start:</strong> March 1, 2026</div>
+        <div class="season-meta-item"><strong>End:</strong> August 30, 2026</div>
+        <div class="season-meta-item"><strong>Weeks:</strong> 26</div>
+        <div class="season-meta-item"><strong>Format:</strong> Stroke Play</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Team Standings</h2></div>
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>Pos</th><th>Team</th><th>Rounds</th><th>Points</th><th>Avg Score</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rank-cell rank-1">1</td><td>Eagles</td><td>8</td><td><strong>48</strong></td><td>72.1</td></tr>
+          <tr><td class="rank-cell rank-2">2</td><td>Birdies</td><td>8</td><td><strong>42</strong></td><td>73.4</td></tr>
+          <tr><td class="rank-cell rank-3">3</td><td>Fairways</td><td>8</td><td><strong>38</strong></td><td>74.0</td></tr>
+          <tr><td>4</td><td>Drivers</td><td>8</td><td><strong>35</strong></td><td>74.8</td></tr>
+          <tr><td>5</td><td>Putters</td><td>8</td><td><strong>30</strong></td><td>75.5</td></tr>
+          <tr><td>6</td><td>Wedges</td><td>8</td><td><strong>27</strong></td><td>76.2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Season Rules</h2></div>
+      <ul class="rules-list">
+        <li>Weekly rounds are played on Saturday mornings</li>
+        <li>USGA handicap system is in effect</li>
+        <li>Teams earn points based on head-to-head matchups</li>
+        <li>Playoff for top 4 teams at end of season</li>
+        <li>Subs allowed with 48-hour advance notice</li>
+        <li>Rain-out rounds rescheduled to following week</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Course Rotation</h2></div>
+      <div class="course-rotation-list">
+        <div class="course-rotation-item">
+          <strong>Pine Valley Golf Club</strong>
+          <span>Par 72 &bull; 6,800 yds &bull; Rating: 72.5 / Slope: 134</span>
+        </div>
+        <div class="course-rotation-item">
+          <strong>Augusta National</strong>
+          <span>Par 72 &bull; 7,475 yds &bull; Rating: 78.1 / Slope: 148</span>
+        </div>
+        <div class="course-rotation-item">
+          <strong>Pebble Beach GL</strong>
+          <span>Par 72 &bull; 6,828 yds &bull; Rating: 74.8 / Slope: 143</span>
+        </div>
+        <div class="course-rotation-item">
+          <strong>Cypress Point</strong>
+          <span>Par 72 &bull; 6,524 yds &bull; Rating: 72.0 / Slope: 136</span>
+        </div>
+        <div class="course-rotation-item">
+          <strong>Shinnecock Hills</strong>
+          <span>Par 72 &bull; 7,067 yds &bull; Rating: 76.4 / Slope: 144</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Leaderboard Section -->
+  <section class="section" id="section-leaderboard">
+    <div class="card">
+      <div class="card-header"><h2>Full Leaderboard</h2></div>
+      <table class="leaderboard-table full-table">
+        <thead>
+          <tr><th>#</th><th>Player</th><th>Handicap</th><th>Rounds</th><th>Avg</th><th>Best</th><th>Worst</th><th>Points</th></tr>
+        </thead>
+        <tbody id="fullLeaderboard"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Schedule Section -->
+  <section class="section" id="section-schedule">
+    <div class="card">
+      <div class="card-header"><h2>Season Schedule</h2></div>
+      <div class="schedule-grid" id="scheduleGrid"></div>
+    </div>
+  </section>
+
+  <!-- Players Section -->
+  <section class="section" id="section-players">
+    <div class="card">
+      <div class="card-header">
+        <h2>Players</h2>
+        <button class="btn btn-primary" id="addPlayerBtn" data-role-require="admin">+ Add Player</button>
+      </div>
+      <div class="players-grid" id="playersGrid"></div>
+    </div>
+  </section>
+
+  <!-- Scores Section (Admin & Scorer) -->
+  <section class="section" id="section-scores" data-role-require="admin scorer">
+    <div class="card">
+      <div class="card-header">
+        <h2>Score Entry</h2>
+        <span class="card-badge">Scorer / Admin</span>
+      </div>
+      <form class="score-form" id="scoreForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="scorePlayer">Player</label>
+            <select id="scorePlayer"></select>
+          </div>
+          <div class="form-group">
+            <label for="scoreCourse">Course</label>
+            <select id="scoreCourse">
+              <option>Pine Valley GC</option>
+              <option>Augusta National</option>
+              <option>Pebble Beach GL</option>
+              <option>Cypress Point</option>
+              <option>Shinnecock Hills</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="scoreDate">Date</label>
+            <input type="date" id="scoreDate">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="scoreValue">Score</label>
+            <input type="number" id="scoreValue" min="50" max="150" placeholder="72">
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn btn-primary">Submit Score</button>
+          </div>
+        </div>
+      </form>
+      <div class="card-header" style="margin-top:1.5rem"><h2>Score History</h2></div>
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>Date</th><th>Player</th><th>Course</th><th>Score</th><th>+/-</th></tr>
+        </thead>
+        <tbody id="scoreHistory"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- My Stats Section (Player only) -->
+  <section class="section" id="section-my-stats">
+    <div class="card">
+      <div class="card-header">
+        <h2>My Statistics</h2>
+        <span class="card-badge">Player View</span>
+      </div>
+      <div id="myStatsContent">
+        <p style="padding:1rem;color:var(--gray-600);">Your personal stats, team info, and recent scores will appear here after login.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="card-header"><h2>My Score History</h2></div>
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>Date</th><th>Course</th><th>Score</th><th>+/-</th></tr>
+        </thead>
+        <tbody id="myScoreHistory"></tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="card-header"><h2>My Team</h2></div>
+      <div id="myTeamInfo">
+        <p style="padding:1rem;color:var(--gray-600);">Team information will display here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teams Section -->
+  <section class="section" id="section-teams">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon players-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">20</span>
+          <span class="stat-label">Total Teams</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon rounds-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">40</span>
+          <span class="stat-label">Total Players</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon avg-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">9.0</span>
+          <span class="stat-label">Avg Team Handicap</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon events-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">10</span>
+          <span class="stat-label">Weeks Scheduled</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Team Rosters</h2>
+        <span class="card-badge">20 Teams</span>
+      </div>
+      <div class="teams-grid" id="teamsGrid"></div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">
+        <h2>Weekly Matchups</h2>
+      </div>
+      <div class="form-row" style="margin-bottom:1rem;padding:0 .5rem">
+        <div class="form-group">
+          <label for="teamWeekSelect">Select Week</label>
+          <select id="teamWeekSelect"></select>
+        </div>
+      </div>
+      <div id="matchupsPreview"></div>
+    </div>
+  </section>
+
+  <!-- Analytics Section -->
+  <section class="section" id="section-analytics">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon avg-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">73.2</span>
+          <span class="stat-label">League Avg Score</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon players-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">68</span>
+          <span class="stat-label">Best Round</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon rounds-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">31.4</span>
+          <span class="stat-label">Avg Putts/Round</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon events-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">62%</span>
+          <span class="stat-label">Fairways Hit</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Scoring Trends by Course</h2></div>
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>Course</th><th>Avg Score</th><th>Best Score</th><th>Rounds Played</th><th>Difficulty</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Pine Valley GC</td><td>78.2</td><td>68</td><td>24</td><td>Medium</td></tr>
+          <tr><td>Augusta National</td><td>81.5</td><td>67</td><td>18</td><td>Hard</td></tr>
+          <tr><td>Pebble Beach GL</td><td>80.1</td><td>69</td><td>20</td><td>Medium</td></tr>
+          <tr><td>Cypress Point</td><td>83.7</td><td>71</td><td>16</td><td>Hard</td></tr>
+          <tr><td>Shinnecock Hills</td><td>82.4</td><td>70</td><td>18</td><td>Hard</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Top Improvers</h2></div>
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>Player</th><th>Starting Avg</th><th>Current Avg</th><th>Improvement</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>David O'Brien</td><td>76.0</td><td>73.5</td><td style="color:var(--green-600);font-weight:700">-2.5</td></tr>
+          <tr><td>Sarah Johnson</td><td>78.0</td><td>75.9</td><td style="color:var(--green-600);font-weight:700">-2.1</td></tr>
+          <tr><td>Emily Watson</td><td>80.0</td><td>78.3</td><td style="color:var(--green-600);font-weight:700">-1.7</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Payments Section -->
+  <section class="section" id="section-payments">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon players-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">$5,400</span>
+          <span class="stat-label">Total Collected</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon events-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">$1,800</span>
+          <span class="stat-label">Outstanding</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon rounds-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">$150</span>
+          <span class="stat-label">Season Fee</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon avg-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">36/48</span>
+          <span class="stat-label">Members Paid</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Payment Status</h2></div>
+      <table class="leaderboard-table" id="paymentTable">
+        <thead>
+          <tr><th>Player</th><th>Team</th><th>Season Fee</th><th>Status</th></tr>
+        </thead>
+        <tbody id="paymentBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Courses Section -->
+  <section class="section" id="section-courses">
+    <div class="card">
+      <div class="card-header"><h2>Pine Valley Golf Club</h2></div>
+      <div class="course-detail">
+        <div class="course-meta-grid">
+          <div class="season-meta-item"><strong>Par:</strong> 72</div>
+          <div class="season-meta-item"><strong>Yardage:</strong> 6,800 yds</div>
+          <div class="season-meta-item"><strong>Rating:</strong> 72.5</div>
+          <div class="season-meta-item"><strong>Slope:</strong> 134</div>
+        </div>
+        <p class="course-desc">Championship-level course known for its challenging greens and tight fairways. Located in the heart of the valley with scenic views throughout.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Augusta National</h2></div>
+      <div class="course-detail">
+        <div class="course-meta-grid">
+          <div class="season-meta-item"><strong>Par:</strong> 72</div>
+          <div class="season-meta-item"><strong>Yardage:</strong> 7,475 yds</div>
+          <div class="season-meta-item"><strong>Rating:</strong> 78.1</div>
+          <div class="season-meta-item"><strong>Slope:</strong> 148</div>
+        </div>
+        <p class="course-desc">Home of the Masters, featuring Amen Corner and the iconic azalea-lined fairways. Consistently one of the most prestigious courses in the world.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Pebble Beach Golf Links</h2></div>
+      <div class="course-detail">
+        <div class="course-meta-grid">
+          <div class="season-meta-item"><strong>Par:</strong> 72</div>
+          <div class="season-meta-item"><strong>Yardage:</strong> 6,828 yds</div>
+          <div class="season-meta-item"><strong>Rating:</strong> 74.8</div>
+          <div class="season-meta-item"><strong>Slope:</strong> 143</div>
+        </div>
+        <p class="course-desc">Stunning coastal links course on the Monterey Peninsula. Wind and ocean views make every round memorable and challenging.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Cypress Point Club</h2></div>
+      <div class="course-detail">
+        <div class="course-meta-grid">
+          <div class="season-meta-item"><strong>Par:</strong> 72</div>
+          <div class="season-meta-item"><strong>Yardage:</strong> 6,524 yds</div>
+          <div class="season-meta-item"><strong>Rating:</strong> 72.0</div>
+          <div class="season-meta-item"><strong>Slope:</strong> 136</div>
+        </div>
+        <p class="course-desc">Exclusive Monterey Peninsula course with dramatic oceanside holes. The par-3 16th over the Pacific is one of golf's most iconic holes.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Shinnecock Hills Golf Club</h2></div>
+      <div class="course-detail">
+        <div class="course-meta-grid">
+          <div class="season-meta-item"><strong>Par:</strong> 72</div>
+          <div class="season-meta-item"><strong>Yardage:</strong> 7,067 yds</div>
+          <div class="season-meta-item"><strong>Rating:</strong> 76.4</div>
+          <div class="season-meta-item"><strong>Slope:</strong> 144</div>
+        </div>
+        <p class="course-desc">One of the founding members of the USGA. Links-style layout on Long Island with windswept fairways and firm, fast greens.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- League Chat Section -->
+  <section class="section" id="section-league-chat">
+    <div class="card chat-card">
+      <div class="card-header"><h2>League Discussion</h2></div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-message">
+          <span class="player-avatar-sm chat-avatar">JM</span>
+          <div class="chat-bubble">
+            <div class="chat-author">James Mitchell</div>
+            <div class="chat-text">Great round at Pine Valley today! Course was in perfect shape.</div>
+            <div class="chat-time">Mar 29, 2:15 PM</div>
+          </div>
+        </div>
+        <div class="chat-message">
+          <span class="player-avatar-sm chat-avatar">RC</span>
+          <div class="chat-bubble">
+            <div class="chat-author">Robert Chen</div>
+            <div class="chat-text">Anyone up for a practice round this Wednesday at Augusta?</div>
+            <div class="chat-time">Mar 29, 1:30 PM</div>
+          </div>
+        </div>
+        <div class="chat-message">
+          <span class="player-avatar-sm chat-avatar">DO</span>
+          <div class="chat-bubble">
+            <div class="chat-author">David O'Brien</div>
+            <div class="chat-text">Reminder: Week 1 matches start April 5. Let's get some practice in!</div>
+            <div class="chat-time">Mar 28, 5:45 PM</div>
+          </div>
+        </div>
+        <div class="chat-message">
+          <span class="player-avatar-sm chat-avatar">SJ</span>
+          <div class="chat-bubble">
+            <div class="chat-author">Sarah Johnson</div>
+            <div class="chat-text">Just paid my season fee. Looking forward to a great spring season!</div>
+            <div class="chat-time">Mar 28, 10:00 AM</div>
+          </div>
+        </div>
+        <div class="chat-message">
+          <span class="player-avatar-sm chat-avatar">KP</span>
+          <div class="chat-bubble">
+            <div class="chat-author">Kevin Park</div>
+            <div class="chat-text">Can someone check if there's a rain delay for next Saturday?</div>
+            <div class="chat-time">Mar 27, 4:20 PM</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" placeholder="Type a message..." id="chatInput">
+        <button class="btn btn-primary" id="chatSendBtn">Send</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Instructions Section -->
+  <section class="section" id="section-instructions">
+    <div class="card">
+      <div class="card-header"><h2>Getting Started</h2></div>
+      <p style="padding:0 1rem 1rem;color:var(--gray-600);line-height:1.6">Welcome to GolfLeague TrackerPro! Here's how to use the app to manage your golf league.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>How to Enter Scores</h2></div>
+      <ol class="instructions-list">
+        <li>Go to the <strong>Scores</strong> section from the sidebar</li>
+        <li>Select the player from the dropdown</li>
+        <li>Choose the course and date of the round</li>
+        <li>Enter the total score</li>
+        <li>Click <strong>Submit Score</strong> to record the round</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>League Rules &amp; Scoring</h2></div>
+      <ol class="instructions-list">
+        <li>Weekly rounds are played every Saturday morning</li>
+        <li>USGA handicap system is used for all players</li>
+        <li>Teams earn points based on head-to-head matchups each week</li>
+        <li>The top 4 teams qualify for the end-of-season playoff</li>
+        <li>Substitutes are allowed with 48 hours advance notice to the admin</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Payments</h2></div>
+      <ol class="instructions-list">
+        <li>Season fee is <strong>$150 per player</strong></li>
+        <li>Fees must be paid before the 3rd round of the season</li>
+        <li>Payment status can be checked in the <strong>Payments</strong> section</li>
+        <li>Contact the league admin for payment arrangements</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Using the Chat</h2></div>
+      <ol class="instructions-list">
+        <li>Navigate to <strong>League Chat</strong> under the Social section</li>
+        <li>View messages from other league members</li>
+        <li>Type your message and click <strong>Send</strong> to post</li>
+        <li>Use the chat for scheduling, announcements, and general discussion</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Admin &amp; Scorecards</h2></div>
+      <ol class="instructions-list">
+        <li>Navigate to the <strong>Admin</strong> section from the sidebar</li>
+        <li>Select the match week from the dropdown</li>
+        <li>Click <strong>Preview Scorecards</strong> to view all scorecards on screen</li>
+        <li>Click <strong>Print All Scorecards</strong> to open a print-ready window</li>
+        <li>Stroke dots show which player receives strokes on which holes</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Settings Section -->
+  <section class="section" id="section-settings">
+    <div class="card">
+      <div class="card-header"><h2>League Settings</h2></div>
+      <form class="settings-form">
+        <div class="form-group">
+          <label>League Name</label>
+          <input type="text" value="GolfLeague TrackerPro — Spring 2026">
+        </div>
+        <div class="form-group">
+          <label>Season Start</label>
+          <input type="date" value="2026-03-01">
+        </div>
+        <div class="form-group">
+          <label>Season End</label>
+          <input type="date" value="2026-09-30">
+        </div>
+        <div class="form-group">
+          <label>Scoring Format</label>
+          <select>
+            <option>Stroke Play</option>
+            <option>Stableford</option>
+            <option>Match Play</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Handicap System</label>
+          <select>
+            <option>USGA / WHS</option>
+            <option>Callaway</option>
+            <option>Peoria</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-primary">Save Settings</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Admin Section -->
+  <section class="section" id="section-admin">
+    <!-- Admin Tabs -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-admin-tab="scorecards">Score Cards</button>
+      <button class="admin-tab" data-admin-tab="user-management">User Management</button>
+      <button class="admin-tab" data-admin-tab="team-management">Team Management</button>
+      <button class="admin-tab" data-admin-tab="handicap-management">Handicap Manager</button>
+    </div>
+
+    <!-- Scorecards Tab -->
+    <div class="admin-tab-content active" id="admin-tab-scorecards">
+      <div class="card">
+        <div class="card-header">
+          <h2>Print Score Cards</h2>
+        </div>
+        <div class="admin-controls">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="adminWeekSelect">Select Week</label>
+              <select id="adminWeekSelect"></select>
+            </div>
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <div style="display:flex;gap:.5rem;">
+                <button type="button" class="btn btn-primary" id="previewScorecardsBtn">Preview Scorecards</button>
+                <button type="button" class="btn btn-print" id="printScorecardsBtn">Print All Scorecards</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="scorecardsPreview" class="scorecards-preview"></div>
+      </div>
+    </div>
+
+    <!-- User Management Tab -->
+    <div class="admin-tab-content" id="admin-tab-user-management">
+      <div class="card">
+        <div class="card-header">
+          <h2>User &amp; Role Management</h2>
+          <span class="card-badge">Admin Only</span>
+        </div>
+        <p style="padding:0 1rem .75rem;color:var(--gray-600);font-size:.85rem;">
+          Assign roles to control access. <strong>Admin</strong> has full access. <strong>Scorer Admin</strong> can enter scores and print scorecards. <strong>Player</strong> can view standings, teams, and their own stats.
+        </p>
+        <table class="leaderboard-table" id="userMgmtTable">
+          <thead>
+            <tr>
+              <th>Player Name</th>
+              <th>Team</th>
+              <th>Handicap</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userMgmtBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Team Management Tab -->
+    <div class="admin-tab-content" id="admin-tab-team-management">
+      <div class="card">
+        <div class="card-header">
+          <h2>Team Roster Management</h2>
+          <span class="card-badge">20 Teams</span>
+        </div>
+        <p style="padding:0 1rem .75rem;color:var(--gray-600);font-size:.85rem;">
+          View and manage the 20 two-man teams. Each team has a low-handicap and high-handicap player for balanced matchups.
+        </p>
+        <div class="teams-grid" id="adminTeamsGrid"></div>
+      </div>
+    </div>
+
+    <!-- Handicap Management Tab -->
+    <div class="admin-tab-content" id="admin-tab-handicap-management">
+      <div class="card">
+        <div class="card-header">
+          <h2>Handicap Overview — 20 Two-Man Teams</h2>
+          <span class="card-badge">USGA / WHS</span>
+        </div>
+        <p style="padding:0 1rem .75rem;color:var(--gray-600);font-size:.85rem;">
+          Handicaps are calculated per USGA guidelines. Each 18-hole handicap is halved for 9-hole matches.
+          Stroke dots on scorecards indicate holes where a player receives strokes based on the handicap differential between opponents.
+        </p>
+        <div class="stats-row" style="margin-bottom:1rem;">
+          <div class="stat-card">
+            <div class="stat-info">
+              <span class="stat-value" id="hcpAvgAll">—</span>
+              <span class="stat-label">League Avg HCP</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-info">
+              <span class="stat-value" id="hcpLow">—</span>
+              <span class="stat-label">Lowest HCP</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-info">
+              <span class="stat-value" id="hcpHigh">—</span>
+              <span class="stat-label">Highest HCP</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-info">
+              <span class="stat-value" id="hcpTeamAvg">—</span>
+              <span class="stat-label">Avg Combined Team HCP</span>
+            </div>
+          </div>
+        </div>
+        <table class="leaderboard-table" id="handicapTable">
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Player 1</th>
+              <th>HCP (18)</th>
+              <th>HCP (9)</th>
+              <th>Player 2</th>
+              <th>HCP (18)</th>
+              <th>HCP (9)</th>
+              <th>Combined</th>
+            </tr>
+          </thead>
+          <tbody id="handicapBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem;">
+        <div class="card-header">
+          <h2>Handicap Stroke Allocation Rules</h2>
+        </div>
+        <ul class="rules-list">
+          <li><strong>9-Hole Handicap:</strong> Each player's 18-hole handicap is divided by 2 and rounded for 9-hole play</li>
+          <li><strong>Stroke Differential:</strong> The difference between opponents' 9-hole handicaps determines strokes given</li>
+          <li><strong>Stroke Allocation:</strong> Strokes are assigned to the hardest holes first (lowest hole handicap number = hardest)</li>
+          <li><strong>Stroke Dots:</strong> Red dots on scorecards mark holes where the higher-handicap player receives a stroke</li>
+          <li><strong>Low vs Low / High vs High:</strong> Within each team matchup, low-handicap players play each other and high-handicap players play each other</li>
+          <li><strong>Front 9 / Back 9:</strong> Teams are assigned to either front or back 9 each week per the schedule rotation</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
