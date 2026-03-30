@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fairway Command - Golf League Tracker Pro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #0d5c2e 0%, #1a7a40 30%, #2e8b57 60%, #3cb371 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #fff;
+    }
+
+    header {
+      text-align: center;
+      padding: 3rem 1rem 1rem;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    header p {
+      font-size: 1.1rem;
+      margin-top: 0.5rem;
+      opacity: 0.9;
+    }
+
+    .logos-section {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3rem;
+      padding: 2rem 1rem 4rem;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    .logo-card {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 1.2rem;
+      padding: 2rem;
+      text-align: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      flex: 1 1 340px;
+      max-width: 480px;
+    }
+
+    .logo-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .logo-card img {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+      border-radius: 0.8rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .logo-card h2 {
+      margin-top: 1.2rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .logo-card p {
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+
+    footer {
+      padding: 2rem 1rem;
+      text-align: center;
+      font-size: 0.85rem;
+      opacity: 0.7;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Fairway Command</h1>
+    <p>Golf League Tracker Pro — Logo Preview</p>
+  </header>
+
+  <section class="logos-section">
+    <div class="logo-card">
+      <img src="fairwaycommandlogo.png" alt="Fairway Command Logo">
+      <h2>Primary Logo</h2>
+      <p>Full-size brand logo for headers and main branding</p>
+    </div>
+    <div class="logo-card">
+      <img src="fairwaycommandshortcut.png" alt="Fairway Command Shortcut Icon">
+      <h2>Shortcut Icon</h2>
+      <p>Compact icon for favicons, app shortcuts, and thumbnails</p>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 Fairway Command &mdash; Golf League Tracker Pro
+  </footer>
+</body>
+</html>
