@@ -3,17 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GolfLeague TrackerPro</title>
+<title>Fairway Command — The Ultimate League System</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23D4AF37'/><text x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-weight='bold' font-size='16' fill='%231A4A2E'>FC</text></svg>">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
-    --green-deep: #0f2318;
-    --green-dark: #1a3a28;
-    --green-mid: #1e5631;
-    --green-accent: #2d7a47;
-    --gold: #c9a227;
-    --gold-light: #e8c55a;
+    --gold: #D4AF37;
+    --gold-light: #e2c55e;
+    --gold-dark: #b8951f;
+    --green-deep: #1A4A2E;
+    --green-dark: #1A4A2E;
+    --green-mid: #257a42;
+    --green-accent: #2d8a4f;
     --cream: #f5f0e8;
     --cream-dark: #ede6d6;
     --white: #ffffff;
@@ -24,11 +26,11 @@
     --text-mid: #3d3428;
     --red: #c0392b;
     --blue: #2471a3;
-    --sidebar-w: 220px;
+    --sidebar-w: 230px;
     --header-h: 60px;
     --radius: 10px;
-    --shadow: 0 2px 16px rgba(15,35,24,0.10);
-    --shadow-card: 0 1px 8px rgba(15,35,24,0.08);
+    --shadow: 0 2px 16px rgba(26,74,46,0.10);
+    --shadow-card: 0 1px 8px rgba(26,74,46,0.08);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,7 +44,7 @@
     flex-direction: column;
   }
 
-  /* ── HEADER ── */
+  /* HEADER */
   .header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     height: var(--header-h);
@@ -53,41 +55,51 @@
   }
   .header-brand { display: flex; align-items: center; gap: 0.6rem; }
   .logo-icon {
-    width: 36px; height: 36px; border-radius: 50%;
+    width: 38px; height: 38px; border-radius: 50%;
     background: var(--gold);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; flex-shrink: 0;
-    box-shadow: 0 0 0 3px rgba(201,162,39,0.25);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem; font-weight: 900; color: var(--green-deep);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.3);
+    letter-spacing: -0.02em;
+    object-fit: cover;
   }
   .header-brand h1 {
     font-family: 'Playfair Display', serif;
     color: var(--white); font-size: 1.15rem; font-weight: 700;
     letter-spacing: 0.01em;
   }
-  .header-brand h1 span { color: var(--gold-light); }
+  .header-brand h1 span { color: var(--gold); }
+  .header-right { display: flex; align-items: center; gap: 0.75rem; }
+  .role-selector {
+    background: rgba(255,255,255,0.1); color: var(--gold);
+    border: 1px solid rgba(212,175,55,0.35); border-radius: 6px;
+    padding: 0.3rem 0.6rem; font-size: 0.8rem;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+  }
+  .role-selector option { background: var(--green-deep); color: var(--gold); }
   .menu-toggle {
     display: none; background: none; border: none;
     color: var(--white); font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
   }
 
-  /* ── LAYOUT ── */
-  .app-layout {
-    display: flex; margin-top: var(--header-h); flex: 1;
-  }
+  /* LAYOUT */
+  .app-layout { display: flex; margin-top: var(--header-h); flex: 1; }
 
-  /* ── SIDEBAR ── */
+  /* SIDEBAR */
   .sidebar {
     width: var(--sidebar-w); min-height: calc(100vh - var(--header-h));
-    background: var(--green-dark);
+    background: var(--green-deep);
     position: fixed; top: var(--header-h); left: 0; bottom: 0;
     overflow-y: auto; z-index: 50;
-    border-right: 1px solid rgba(201,162,39,0.15);
+    border-right: 1px solid rgba(212,175,55,0.15);
     transition: transform 0.3s ease;
   }
   .sidebar-nav { padding: 0.75rem 0.5rem 2rem; }
   .sidebar-group-label {
     font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
-    text-transform: uppercase; color: rgba(201,162,39,0.55);
+    text-transform: uppercase; color: rgba(212,175,55,0.55);
     padding: 0.9rem 0.75rem 0.3rem;
   }
   .sidebar-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.5rem 0.5rem; }
@@ -95,26 +107,27 @@
     width: 100%; background: none; border: none; cursor: pointer;
     display: flex; align-items: center; gap: 0.6rem;
     padding: 0.55rem 0.75rem; border-radius: 7px;
-    color: rgba(255,255,255,0.72); font-size: 0.875rem;
+    color: rgba(255,255,255,0.72); font-size: 0.85rem;
     font-family: 'DM Sans', sans-serif; font-weight: 400;
     transition: background 0.15s, color 0.15s;
     text-align: left;
   }
   .sidebar-btn:hover { background: rgba(255,255,255,0.07); color: var(--white); }
   .sidebar-btn.active {
-    background: rgba(201,162,39,0.18); color: var(--gold-light);
+    background: rgba(212,175,55,0.18); color: var(--gold);
     font-weight: 600;
   }
   .sidebar-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+  .sidebar-btn.hidden { display: none; }
 
-  /* ── MAIN ── */
+  /* MAIN */
   .main {
     margin-left: var(--sidebar-w);
     flex: 1; padding: 1.75rem 1.5rem 2rem;
-    min-width: 0;
+    min-width: 0; max-width: 1200px;
   }
 
-  /* ── VIEWS ── */
+  /* VIEWS */
   .view { display: none; animation: fadeIn 0.2s ease; }
   .view.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -127,7 +140,7 @@
     display: inline-block;
   }
 
-  /* ── STATS GRID ── */
+  /* STATS GRID */
   .stats-grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem;
     margin-bottom: 1.25rem;
@@ -147,12 +160,10 @@
   }
   .stat-label { font-size: 0.75rem; color: var(--gray-text); margin-top: 0.25rem; font-weight: 500; }
 
-  /* ── DASHBOARD GRID ── */
-  .dashboard-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-  }
+  /* DASHBOARD GRID */
+  .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
-  /* ── CARDS ── */
+  /* CARDS */
   .card {
     background: var(--white); border-radius: var(--radius);
     padding: 1.1rem 1.25rem; box-shadow: var(--shadow-card);
@@ -165,10 +176,10 @@
     border-bottom: 1px solid var(--gray-mid);
   }
 
-  /* ── TABLES ── */
+  /* TABLES */
   .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
   .data-table th {
-    background: var(--green-deep); color: var(--gold-light);
+    background: var(--green-deep); color: var(--gold);
     padding: 0.55rem 0.75rem; text-align: left;
     font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
   }
@@ -181,7 +192,7 @@
   .data-table tr:last-child td { border-bottom: none; }
   .data-table tr:hover td { background: var(--gray-light); }
 
-  /* ── STATUS BADGES ── */
+  /* STATUS BADGES */
   .status {
     display: inline-block; padding: 0.2rem 0.55rem; border-radius: 20px;
     font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
@@ -189,8 +200,10 @@
   .status.upcoming { background: #e8f5e9; color: #2e7d32; }
   .status.completed { background: #e3f2fd; color: #1565c0; }
   .status.pending { background: #fff8e1; color: #f57f17; }
+  .status.rainout { background: #fce4ec; color: #c62828; }
+  .status.cancelled { background: #f3e5f5; color: #7b1fa2; }
 
-  /* ── EVENT LIST ── */
+  /* EVENT LIST */
   .event-list { list-style: none; }
   .event-item {
     display: flex; align-items: flex-start; gap: 0.75rem;
@@ -198,7 +211,7 @@
   }
   .event-item:last-child { border-bottom: none; }
   .event-date {
-    background: var(--green-deep); color: var(--gold-light);
+    background: var(--green-deep); color: var(--gold);
     border-radius: 6px; padding: 0.3rem 0.5rem;
     font-size: 0.75rem; font-weight: 700; min-width: 44px; text-align: center;
     flex-shrink: 0;
@@ -207,7 +220,7 @@
   .event-details strong { display: block; color: var(--text-dark); }
   .event-details span { color: var(--gray-text); font-size: 0.8rem; }
 
-  /* ── ANNOUNCEMENTS ── */
+  /* ANNOUNCEMENTS */
   .announcement {
     padding: 0.65rem 0.75rem; margin-bottom: 0.6rem;
     background: var(--gray-light); border-left: 3px solid var(--gold);
@@ -216,7 +229,7 @@
   .announcement strong { display: block; color: var(--green-dark); margin-bottom: 0.2rem; }
   .announcement p { color: var(--text-mid); font-size: 0.825rem; }
 
-  /* ── PERFORMERS ── */
+  /* PERFORMERS */
   .performer-list { display: flex; flex-direction: column; gap: 0.5rem; }
   .performer {
     display: flex; align-items: center; gap: 0.75rem;
@@ -225,7 +238,7 @@
   }
   .rank {
     width: 26px; height: 26px; border-radius: 50%;
-    background: var(--green-deep); color: var(--gold-light);
+    background: var(--green-deep); color: var(--gold);
     display: flex; align-items: center; justify-content: center;
     font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
   }
@@ -233,7 +246,7 @@
   .performer-info strong { display: block; font-size: 0.875rem; color: var(--text-dark); }
   .performer-info span { font-size: 0.775rem; color: var(--gray-text); }
 
-  /* ── SEASON INFO ── */
+  /* SEASON INFO */
   .season-header { margin-bottom: 1rem; }
   .season-info-card {
     background: var(--green-deep); color: var(--white);
@@ -242,18 +255,18 @@
   }
   .season-info-card h3 {
     font-family: 'Playfair Display', serif;
-    font-size: 1.15rem; color: var(--gold-light); margin-bottom: 0.6rem;
+    font-size: 1.15rem; color: var(--gold); margin-bottom: 0.6rem;
   }
   .season-meta { display: flex; gap: 2rem; flex-wrap: wrap; font-size: 0.875rem; }
   .season-meta div { color: rgba(255,255,255,0.8); }
-  .season-meta strong { color: var(--gold-light); margin-right: 0.25rem; }
+  .season-meta strong { color: var(--gold); margin-right: 0.25rem; }
 
-  /* ── RULES LIST ── */
+  /* RULES */
   .rules-list { padding-left: 1.25rem; }
   .rules-list li { padding: 0.35rem 0; font-size: 0.875rem; color: var(--text-mid); border-bottom: 1px solid var(--gray-mid); }
   .rules-list li:last-child { border-bottom: none; }
 
-  /* ── COURSE LIST ── */
+  /* COURSE LIST */
   .course-list { display: flex; flex-direction: column; gap: 0.6rem; }
   .course-item {
     padding: 0.65rem 0.85rem; background: var(--gray-light);
@@ -262,14 +275,16 @@
   .course-item strong { display: block; font-size: 0.9rem; color: var(--green-dark); margin-bottom: 0.15rem; }
   .course-item span { font-size: 0.8rem; color: var(--gray-text); }
 
-  /* ── COURSE DETAIL ── */
-  .course-detail { }
+  /* COURSE DETAIL */
   .course-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
   .course-meta span { font-size: 0.875rem; color: var(--text-mid); }
   .course-desc { font-size: 0.875rem; color: var(--gray-text); line-height: 1.5; }
+  .tee-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.82rem; }
+  .tee-table th { background: var(--green-deep); color: var(--gold); padding: 0.4rem 0.6rem; text-align: left; font-size: 0.72rem; text-transform: uppercase; }
+  .tee-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--gray-mid); }
+  .tee-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; }
 
-  /* ── FORMS ── */
-  .score-form { }
+  /* FORMS */
   .form-group { margin-bottom: 0.85rem; }
   .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-mid); margin-bottom: 0.3rem; }
   .form-control {
@@ -282,9 +297,9 @@
   .form-control:focus { outline: none; border-color: var(--green-accent); }
   .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
 
-  /* ── BUTTONS ── */
+  /* BUTTONS */
   .btn-primary {
-    background: var(--green-deep); color: var(--gold-light);
+    background: var(--green-deep); color: var(--gold);
     border: none; border-radius: 7px; padding: 0.6rem 1.4rem;
     font-size: 0.875rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
     cursor: pointer; transition: background 0.15s, transform 0.1s;
@@ -297,8 +312,16 @@
     cursor: pointer; transition: background 0.15s, transform 0.1s;
   }
   .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-danger {
+    background: var(--red); color: var(--white);
+    border: none; border-radius: 7px; padding: 0.5rem 1rem;
+    font-size: 0.82rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+  .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.78rem; }
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
 
-  /* ── CHAT ── */
+  /* CHAT */
   .chat-container { display: flex; flex-direction: column; }
   .chat-messages { max-height: 340px; overflow-y: auto; margin-bottom: 0.85rem; }
   .chat-message { padding: 0.6rem 0; border-bottom: 1px solid var(--gray-mid); }
@@ -314,40 +337,66 @@
   }
   .chat-input:focus { outline: none; border-color: var(--green-accent); }
 
-  /* ── INSTRUCTIONS ── */
+  /* INSTRUCTIONS */
   .instructions-content p { font-size: 0.875rem; color: var(--text-mid); }
   .instructions-list { padding-left: 1.25rem; }
   .instructions-list li { padding: 0.3rem 0; font-size: 0.875rem; color: var(--text-mid); }
 
-  /* ── ADMIN SETTINGS ── */
+  /* ADMIN SETTINGS */
   .admin-settings { display: flex; flex-direction: column; gap: 0.5rem; }
   .setting-item { font-size: 0.875rem; padding: 0.5rem 0.75rem; background: var(--gray-light); border-radius: 6px; }
   .setting-item strong { color: var(--green-dark); margin-right: 0.5rem; }
 
-  /* ── SCORECARD PRINT SECTION ── */
-  #print-scorecards-section .form-row { grid-template-columns: 1fr 1fr; }
-  #sc-matches-container { }
+  /* SCORECARD */
   .match-chip {
     font-size: 0.8rem; padding: 0.3rem 0.6rem; margin: 0.2rem 0;
     background: var(--gray-light); border-radius: 5px; border-left: 3px solid var(--green-accent);
   }
   .override-card { background: var(--gray-light); border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 1rem; }
   .override-card h4 { font-size: 0.875rem; color: var(--green-dark); margin-bottom: 0.5rem; }
-  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
 
-  /* ── SCORECARD PRINT PREVIEW ── */
-  #sc-preview-area { margin-top: 1rem; }
-  .scorecard-print {
-    background: var(--white); border: 1px solid var(--gray-mid);
-    border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;
-    font-size: 0.82rem;
+  /* SCORECARD PRINT */
+  .scorecard-pair { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px dashed #ccc; }
+  .scorecard-pair:last-child { border-bottom: none; }
+  .scorecard-pair-label { font-size: 0.95rem; font-weight: 700; color: var(--green-deep); margin: 1rem 0 0.4rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
+  .scorecard { border: 2px solid var(--green-deep); border-radius: 8px; overflow: hidden; margin-bottom: 1rem; background: white; }
+  .scorecard-header { background: var(--green-deep); color: white; padding: 0.6rem 1rem; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: center; }
+  .scorecard-header > div { font-size: 0.85rem; }
+  .scorecard-date { font-weight: 700; }
+  .scorecard-side { background: var(--gold); color: var(--green-deep); padding: 0.15rem 0.6rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem !important; }
+  .scorecard-course { font-style: italic; }
+  .scorecard-teams { font-weight: 600; }
+  .scorecard-table { width: 100%; border-collapse: collapse; }
+  .scorecard-table th, .scorecard-table td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: center; font-size: 0.8rem; }
+  .scorecard-table .sc-label { text-align: left; font-weight: 600; width: 150px; min-width: 120px; font-size: 0.78rem; }
+  .sc-player-name { color: var(--green-deep); }
+  .sc-hole-row th { background: var(--green-deep); color: white; font-size: 0.8rem; font-weight: 600; }
+  .sc-yards-row td { background: #f5f5f5; font-size: 0.75rem; color: #777; }
+  .sc-par-row td { background: #e8f5e9; font-weight: 600; }
+  .sc-hdcp-row td { background: #fff8e1; font-size: 0.75rem; }
+  .sc-player-row td { height: 36px; position: relative; }
+  .sc-score-cell { position: relative; }
+  .stroke-dot { position: absolute; top: 1px; right: 3px; color: var(--gold); font-size: 0.85rem; line-height: 1; }
+  .sc-score-blank { display: inline-block; width: 22px; border-bottom: 1px solid #ccc; }
+
+  /* SCRAMBLE */
+  .scramble-team { background: var(--gray-light); border-radius: 7px; padding: 0.75rem; margin-bottom: 0.5rem; border-left: 3px solid var(--gold); }
+  .scramble-team strong { color: var(--green-deep); }
+
+  /* HANDICAP FORMULA */
+  .formula-display { background: var(--green-deep); color: var(--gold); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; margin-bottom: 1rem; }
+
+  /* PRINTABLE ANALYTICS */
+  @media print {
+    .header, .sidebar, .footer, .menu-toggle, .btn-primary, .btn-gold, .btn-danger, .role-selector, .no-print { display: none !important; }
+    .main { margin-left: 0; padding: 0.5rem; max-width: 100%; }
+    .view { display: none !important; }
+    .view.print-target { display: block !important; }
+    .card { box-shadow: none; border: 1px solid #ddd; }
+    body { background: white; }
   }
-  .scorecard-print h4 { color: var(--green-deep); font-size: 0.95rem; margin-bottom: 0.5rem; }
-  .sc-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-  .sc-table th { background: var(--green-deep); color: var(--gold-light); padding: 0.3rem 0.4rem; font-size: 0.7rem; }
-  .sc-table td { padding: 0.3rem 0.4rem; border: 1px solid var(--gray-mid); text-align: center; }
 
-  /* ── FOOTER ── */
+  /* FOOTER */
   .footer {
     margin-left: var(--sidebar-w);
     background: var(--green-deep); color: rgba(255,255,255,0.45);
@@ -355,10 +404,10 @@
     font-size: 0.78rem; letter-spacing: 0.03em;
   }
 
-  /* ── TOAST ── */
+  /* TOAST */
   .toast {
     position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
-    background: var(--green-deep); color: var(--gold-light);
+    background: var(--green-deep); color: var(--gold);
     padding: 0.75rem 1.25rem; border-radius: 8px;
     font-size: 0.875rem; font-weight: 600;
     box-shadow: 0 4px 20px rgba(0,0,0,0.25);
@@ -367,7 +416,7 @@
   }
   .toast.show { transform: translateY(0); opacity: 1; }
 
-  /* ── RESPONSIVE ── */
+  /* RESPONSIVE */
   @media (max-width: 900px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
     .dashboard-grid { grid-template-columns: 1fr; }
@@ -384,67 +433,75 @@
   @media (max-width: 480px) {
     .stats-grid { grid-template-columns: 1fr 1fr; }
   }
-
-  @media print {
-    .header, .sidebar, .footer, #sc-preview-btn, #sc-print-btn, .btn-primary, .btn-gold { display: none !important; }
-    .main { margin-left: 0; padding: 0; }
-    #sc-preview-area { display: block !important; }
-    .view:not(#admin) { display: none !important; }
-    #admin { display: block !important; }
-  }
 </style>
 </head>
 <body>
 
 <header class="header">
   <div class="header-brand">
-    <div class="logo-icon">⛳</div>
-    <h1>GolfLeague <span>TrackerPro</span></h1>
+    <img class="logo-icon" src="fairwaycommandlogo.png" alt="FC" onerror="this.style.display='flex';this.outerHTML='<div class=\'logo-icon\'>FC</div>'">
+    <h1>Fairway <span>Command</span></h1>
   </div>
-  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+  <div class="header-right">
+    <select class="role-selector" id="role-selector" onchange="switchRole(this.value)">
+      <option value="admin">Admin</option>
+      <option value="scorer">Scorer</option>
+      <option value="player">Player</option>
+    </select>
+    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+  </div>
 </header>
 
 <div class="app-layout">
   <aside class="sidebar" id="sidebar">
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" id="sidebar-nav">
       <button class="sidebar-btn active" data-view="dashboard">
-        <span class="sidebar-icon">🏠</span><span class="sidebar-label">Dashboard</span>
+        <span class="sidebar-icon">&#127968;</span><span class="sidebar-label">Dashboard</span>
       </button>
       <button class="sidebar-btn" data-view="season-overview">
-        <span class="sidebar-icon">⛳</span><span class="sidebar-label">Season Overview</span>
+        <span class="sidebar-icon">&#9971;</span><span class="sidebar-label">Season Overview</span>
       </button>
       <button class="sidebar-btn" data-view="leaderboard">
-        <span class="sidebar-icon">🏆</span><span class="sidebar-label">Leaderboard</span>
+        <span class="sidebar-icon">&#127942;</span><span class="sidebar-label">Leaderboard</span>
       </button>
       <button class="sidebar-btn" data-view="schedule">
-        <span class="sidebar-icon">📅</span><span class="sidebar-label">Schedule</span>
+        <span class="sidebar-icon">&#128197;</span><span class="sidebar-label">Schedule</span>
       </button>
-      <button class="sidebar-btn" data-view="enter-scores">
-        <span class="sidebar-icon">✏️</span><span class="sidebar-label">Enter Scores</span>
+      <button class="sidebar-btn" data-view="enter-scores" data-roles="admin scorer">
+        <span class="sidebar-icon">&#9998;</span><span class="sidebar-label">Enter Scores</span>
       </button>
       <div class="sidebar-group-label">Manage</div>
       <button class="sidebar-btn" data-view="players">
-        <span class="sidebar-icon">👥</span><span class="sidebar-label">Players</span>
+        <span class="sidebar-icon">&#128101;</span><span class="sidebar-label">Players</span>
       </button>
       <button class="sidebar-btn" data-view="analytics">
-        <span class="sidebar-icon">📊</span><span class="sidebar-label">Analytics</span>
+        <span class="sidebar-icon">&#128200;</span><span class="sidebar-label">Analytics</span>
       </button>
-      <button class="sidebar-btn" data-view="payments">
-        <span class="sidebar-icon">💰</span><span class="sidebar-label">Payments</span>
+      <button class="sidebar-btn" data-view="payments" data-roles="admin">
+        <span class="sidebar-icon">&#128176;</span><span class="sidebar-label">Payments</span>
       </button>
       <button class="sidebar-btn" data-view="courses">
-        <span class="sidebar-icon">🏔️</span><span class="sidebar-label">Courses</span>
+        <span class="sidebar-icon">&#127969;</span><span class="sidebar-label">Courses</span>
+      </button>
+      <button class="sidebar-btn" data-view="scramble-events" data-roles="admin scorer">
+        <span class="sidebar-icon">&#127948;</span><span class="sidebar-label">Scramble Events</span>
+      </button>
+      <button class="sidebar-btn" data-view="rainout" data-roles="admin">
+        <span class="sidebar-icon">&#127783;</span><span class="sidebar-label">Rainout Manager</span>
       </button>
       <div class="sidebar-group-label">Social</div>
       <button class="sidebar-btn" data-view="league-chat">
-        <span class="sidebar-icon">💬</span><span class="sidebar-label">League Chat</span>
+        <span class="sidebar-icon">&#128172;</span><span class="sidebar-label">League Chat</span>
       </button>
       <button class="sidebar-btn" data-view="instructions">
-        <span class="sidebar-icon">📖</span><span class="sidebar-label">Instructions</span>
+        <span class="sidebar-icon">&#128214;</span><span class="sidebar-label">Instructions</span>
       </button>
       <hr class="sidebar-divider">
-      <button class="sidebar-btn" data-view="admin">
-        <span class="sidebar-icon">⚙️</span><span class="sidebar-label">Admin</span>
+      <button class="sidebar-btn" data-view="handicap-formula" data-roles="admin">
+        <span class="sidebar-icon">&#128290;</span><span class="sidebar-label">Handicap Formula</span>
+      </button>
+      <button class="sidebar-btn" data-view="admin" data-roles="admin">
+        <span class="sidebar-icon">&#9881;</span><span class="sidebar-label">Admin</span>
       </button>
     </nav>
   </aside>
@@ -455,10 +512,10 @@
     <section id="dashboard" class="view active">
       <h2 class="view-title">Dashboard</h2>
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">⛳</div><div class="stat-value">24</div><div class="stat-label">Active Players</div></div>
-        <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-value">8</div><div class="stat-label">Rounds Played</div></div>
-        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">12</div><div class="stat-label">Upcoming Matches</div></div>
-        <div class="stat-card"><div class="stat-icon">🎽</div><div class="stat-value">6</div><div class="stat-label">Teams</div></div>
+        <div class="stat-card"><div class="stat-icon">&#9971;</div><div class="stat-value">40</div><div class="stat-label">Active Players</div></div>
+        <div class="stat-card"><div class="stat-icon">&#127942;</div><div class="stat-value">8</div><div class="stat-label">Rounds Played</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128197;</div><div class="stat-value">12</div><div class="stat-label">Upcoming Matches</div></div>
+        <div class="stat-card"><div class="stat-icon">&#127941;</div><div class="stat-value">20</div><div class="stat-label">Teams</div></div>
       </div>
       <div class="dashboard-grid">
         <div class="card">
@@ -466,37 +523,37 @@
           <table class="data-table">
             <thead><tr><th>Date</th><th>Player</th><th>Score</th><th>Course</th></tr></thead>
             <tbody>
-              <tr><td>Mar 29</td><td>Tom Davis</td><td>71</td><td>Pine Valley</td></tr>
-              <tr><td>Mar 22</td><td>Mike Johnson</td><td>72</td><td>Pine Valley</td></tr>
-              <tr><td>Mar 22</td><td>Steve Williams</td><td>74</td><td>Pine Valley</td></tr>
-              <tr><td>Mar 15</td><td>Tom Davis</td><td>71</td><td>Oak Ridge</td></tr>
-              <tr><td>Mar 8</td><td>Dave Wilson</td><td>73</td><td>Lakeside</td></tr>
+              <tr><td>Mar 29</td><td>Tom Davis</td><td>35</td><td>Pine Valley (Front)</td></tr>
+              <tr><td>Mar 29</td><td>Mike Johnson</td><td>36</td><td>Pine Valley (Front)</td></tr>
+              <tr><td>Mar 22</td><td>Ken Nelson</td><td>34</td><td>Oak Ridge (Back)</td></tr>
+              <tr><td>Mar 22</td><td>Bill Harris</td><td>35</td><td>Oak Ridge (Front)</td></tr>
+              <tr><td>Mar 15</td><td>Dave Wilson</td><td>37</td><td>Lakeside (Back)</td></tr>
             </tbody>
           </table>
         </div>
         <div class="card">
           <h3>Upcoming Events</h3>
           <ul class="event-list">
-            <li class="event-item"><div class="event-date">Apr 5</div><div class="event-details"><strong>Weekly Round – Pine Valley</strong><span>Tee time: 8:00 AM</span></div></li>
-            <li class="event-item"><div class="event-date">Apr 12</div><div class="event-details"><strong>Weekly Round – Oak Ridge</strong><span>Tee time: 8:30 AM</span></div></li>
-            <li class="event-item"><div class="event-date">Apr 19</div><div class="event-details"><strong>Tournament – Lakeside GC</strong><span>Tee time: 7:00 AM</span></div></li>
-            <li class="event-item"><div class="event-date">Apr 26</div><div class="event-details"><strong>Weekly Round – Pine Valley</strong><span>Tee time: 8:00 AM</span></div></li>
+            <li class="event-item"><div class="event-date">Apr 5</div><div class="event-details"><strong>Weekly Round – Pine Valley</strong><span>Tee time: 8:00 AM · 9 Holes</span></div></li>
+            <li class="event-item"><div class="event-date">Apr 12</div><div class="event-details"><strong>Weekly Round – Oak Ridge</strong><span>Tee time: 8:30 AM · 9 Holes</span></div></li>
+            <li class="event-item"><div class="event-date">Apr 19</div><div class="event-details"><strong>Scramble – Lakeside GC</strong><span>Tee time: 7:00 AM · 18 Holes</span></div></li>
+            <li class="event-item"><div class="event-date">Apr 26</div><div class="event-details"><strong>Weekly Round – Pine Valley</strong><span>Tee time: 8:00 AM · 9 Holes</span></div></li>
           </ul>
         </div>
         <div class="card">
           <h3>Announcements</h3>
-          <div class="announcement"><strong>Spring Season Underway!</strong><p>The 2026 Spring Season has officially kicked off. Check the schedule for your next tee time.</p></div>
-          <div class="announcement"><strong>New Handicap System</strong><p>Updated handicap calculations will be applied starting next week.</p></div>
-          <div class="announcement"><strong>Course Rotation</strong><p>Pine Valley, Oak Ridge, and Lakeside GC are in this season's rotation.</p></div>
+          <div class="announcement"><strong>Welcome to Fairway Command!</strong><p>The 2026 Spring Season has officially kicked off. Check the schedule for your next tee time.</p></div>
+          <div class="announcement"><strong>Custom Handicap System Active</strong><p>The league uses a custom handicap formula. Admins can adjust parameters in the Handicap Formula section.</p></div>
+          <div class="announcement"><strong>Scramble Event April 19</strong><p>Sign up for the 18-hole scramble at Lakeside GC. Four-person teams, best ball format.</p></div>
         </div>
         <div class="card">
           <h3>Top Performers</h3>
           <div class="performer-list">
-            <div class="performer"><span class="rank">1</span><div class="performer-info"><strong>Tom Davis</strong><span>Avg: 71.5</span></div></div>
-            <div class="performer"><span class="rank">2</span><div class="performer-info"><strong>Mike Johnson</strong><span>Avg: 72.3</span></div></div>
-            <div class="performer"><span class="rank">3</span><div class="performer-info"><strong>Dave Wilson</strong><span>Avg: 73.1</span></div></div>
-            <div class="performer"><span class="rank">4</span><div class="performer-info"><strong>Steve Williams</strong><span>Avg: 74.0</span></div></div>
-            <div class="performer"><span class="rank">5</span><div class="performer-info"><strong>Chris Brown</strong><span>Avg: 75.2</span></div></div>
+            <div class="performer"><span class="rank">1</span><div class="performer-info"><strong>Tom Davis</strong><span>Avg: 35.5 (9-hole)</span></div></div>
+            <div class="performer"><span class="rank">2</span><div class="performer-info"><strong>Ken Nelson</strong><span>Avg: 35.8 (9-hole)</span></div></div>
+            <div class="performer"><span class="rank">3</span><div class="performer-info"><strong>Bill Harris</strong><span>Avg: 36.1 (9-hole)</span></div></div>
+            <div class="performer"><span class="rank">4</span><div class="performer-info"><strong>Mike Johnson</strong><span>Avg: 36.3 (9-hole)</span></div></div>
+            <div class="performer"><span class="rank">5</span><div class="performer-info"><strong>Walt Phillips</strong><span>Avg: 36.5 (9-hole)</span></div></div>
           </div>
         </div>
       </div>
@@ -507,46 +564,47 @@
       <h2 class="view-title">Season Overview</h2>
       <div class="season-header">
         <div class="season-info-card">
-          <h3>2026 Spring Season</h3>
+          <h3>2026 Spring Season — Fairway Command League</h3>
           <div class="season-meta">
-            <div><strong>Start:</strong> March 1, 2026</div>
-            <div><strong>End:</strong> August 30, 2026</div>
-            <div><strong>Weeks:</strong> 26</div>
-            <div><strong>Format:</strong> Stroke Play</div>
+            <div><strong>Start:</strong> April 5, 2026</div>
+            <div><strong>End:</strong> June 7, 2026</div>
+            <div><strong>Weeks:</strong> 10</div>
+            <div><strong>Format:</strong> 9-Hole Match Play</div>
+            <div><strong>Teams:</strong> 20 (2-man teams)</div>
           </div>
         </div>
       </div>
       <div class="card">
         <h3>Team Standings</h3>
-        <table class="data-table">
-          <thead><tr><th>Pos</th><th>Team</th><th>Rounds</th><th>Points</th><th>Avg Score</th></tr></thead>
+        <table class="data-table" id="standings-table">
+          <thead><tr><th>Pos</th><th>Team</th><th>Matches</th><th>Points</th><th>Avg Score</th></tr></thead>
           <tbody>
-            <tr><td>1</td><td>Eagles</td><td>8</td><td>48</td><td>72.1</td></tr>
-            <tr><td>2</td><td>Birdies</td><td>8</td><td>42</td><td>73.4</td></tr>
-            <tr><td>3</td><td>Fairways</td><td>8</td><td>38</td><td>74.0</td></tr>
-            <tr><td>4</td><td>Drivers</td><td>8</td><td>35</td><td>74.8</td></tr>
-            <tr><td>5</td><td>Putters</td><td>8</td><td>30</td><td>75.5</td></tr>
-            <tr><td>6</td><td>Wedges</td><td>8</td><td>27</td><td>76.2</td></tr>
+            <tr><td>1</td><td>Team 1 (Davis / Johnson)</td><td>8</td><td>48</td><td>35.8</td></tr>
+            <tr><td>2</td><td>Team 13 (Nelson / Carter)</td><td>8</td><td>45</td><td>35.9</td></tr>
+            <tr><td>3</td><td>Team 6 (Harris / Lewis)</td><td>8</td><td>42</td><td>36.2</td></tr>
+            <tr><td>4</td><td>Team 8 (Allen / Young)</td><td>8</td><td>40</td><td>36.5</td></tr>
+            <tr><td>5</td><td>Team 16 (Phillips / Campbell)</td><td>8</td><td>38</td><td>36.7</td></tr>
           </tbody>
         </table>
       </div>
       <div class="card">
         <h3>Season Rules</h3>
         <ul class="rules-list">
-          <li>Weekly rounds are played on Saturday mornings</li>
-          <li>USGA handicap system is in effect</li>
-          <li>Teams earn points based on head-to-head matchups</li>
+          <li>Weekly 9-hole matches played on Saturday mornings</li>
+          <li>Custom league handicap formula (adjustable by admin)</li>
+          <li>Teams earn points based on head-to-head matchups (low HCP vs low HCP, high vs high)</li>
           <li>Playoff for top 4 teams at end of season</li>
           <li>Subs allowed with 48-hour advance notice</li>
-          <li>Rain-out rounds rescheduled to following week</li>
+          <li>Rainout rounds managed via Rainout Manager</li>
+          <li>18-hole scramble events scheduled throughout season</li>
         </ul>
       </div>
       <div class="card">
         <h3>Course Rotation</h3>
         <div class="course-list">
-          <div class="course-item"><strong>Pine Valley Golf Club</strong><span>Par 72 · 6,800 yds · Rating: 72.5 / Slope: 134</span></div>
-          <div class="course-item"><strong>Oak Ridge Country Club</strong><span>Par 71 · 6,600 yds · Rating: 71.2 / Slope: 128</span></div>
-          <div class="course-item"><strong>Lakeside Golf Course</strong><span>Par 72 · 6,900 yds · Rating: 73.1 / Slope: 138</span></div>
+          <div class="course-item"><strong>Pine Valley Golf Club</strong><span>Par 36 (Front) / 36 (Back) · 4 tee boxes · Rating: 72.5 / Slope: 134</span></div>
+          <div class="course-item"><strong>Oak Ridge Country Club</strong><span>Par 36 (Front) / 35 (Back) · 4 tee boxes · Rating: 71.2 / Slope: 128</span></div>
+          <div class="course-item"><strong>Lakeside Golf Course</strong><span>Par 36 (Front) / 36 (Back) · 4 tee boxes · Rating: 73.1 / Slope: 138</span></div>
         </div>
       </div>
     </section>
@@ -555,20 +613,20 @@
     <section id="leaderboard" class="view">
       <h2 class="view-title">Leaderboard</h2>
       <div class="card">
-        <h3>Individual Standings</h3>
+        <h3>Individual Standings (9-Hole)</h3>
         <table class="data-table">
           <thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Rounds</th><th>Best</th><th>Avg</th><th>Handicap</th></tr></thead>
           <tbody>
-            <tr><td>1</td><td>Tom Davis</td><td>Eagles</td><td>8</td><td>68</td><td>71.5</td><td>4.2</td></tr>
-            <tr><td>2</td><td>Mike Johnson</td><td>Eagles</td><td>8</td><td>70</td><td>72.3</td><td>5.1</td></tr>
-            <tr><td>3</td><td>Dave Wilson</td><td>Birdies</td><td>8</td><td>69</td><td>73.1</td><td>5.8</td></tr>
-            <tr><td>4</td><td>Steve Williams</td><td>Fairways</td><td>7</td><td>71</td><td>74.0</td><td>6.5</td></tr>
-            <tr><td>5</td><td>Chris Brown</td><td>Birdies</td><td>8</td><td>72</td><td>75.2</td><td>7.9</td></tr>
-            <tr><td>6</td><td>John Martinez</td><td>Drivers</td><td>7</td><td>73</td><td>75.8</td><td>8.4</td></tr>
-            <tr><td>7</td><td>Rob Taylor</td><td>Fairways</td><td>8</td><td>72</td><td>76.1</td><td>8.8</td></tr>
-            <tr><td>8</td><td>Dan Anderson</td><td>Putters</td><td>8</td><td>74</td><td>76.5</td><td>9.2</td></tr>
-            <tr><td>9</td><td>Mark Thomas</td><td>Wedges</td><td>7</td><td>73</td><td>77.0</td><td>9.7</td></tr>
-            <tr><td>10</td><td>Jeff Clark</td><td>Drivers</td><td>8</td><td>75</td><td>77.4</td><td>10.1</td></tr>
+            <tr><td>1</td><td>Tom Davis</td><td>Team 1</td><td>8</td><td>33</td><td>35.5</td><td>4.2</td></tr>
+            <tr><td>2</td><td>Ken Nelson</td><td>Team 13</td><td>8</td><td>33</td><td>35.8</td><td>3.8</td></tr>
+            <tr><td>3</td><td>Bill Harris</td><td>Team 6</td><td>8</td><td>34</td><td>36.1</td><td>3.5</td></tr>
+            <tr><td>4</td><td>Mike Johnson</td><td>Team 1</td><td>8</td><td>34</td><td>36.3</td><td>5.1</td></tr>
+            <tr><td>5</td><td>Walt Phillips</td><td>Team 16</td><td>8</td><td>34</td><td>36.5</td><td>4.0</td></tr>
+            <tr><td>6</td><td>Jim Allen</td><td>Team 8</td><td>8</td><td>35</td><td>36.8</td><td>4.8</td></tr>
+            <tr><td>7</td><td>Max Edwards</td><td>Team 18</td><td>7</td><td>35</td><td>37.0</td><td>5.0</td></tr>
+            <tr><td>8</td><td>Sam Lopez</td><td>Team 10</td><td>8</td><td>35</td><td>37.2</td><td>5.3</td></tr>
+            <tr><td>9</td><td>Lee Carter</td><td>Team 13</td><td>8</td><td>36</td><td>37.5</td><td>5.5</td></tr>
+            <tr><td>10</td><td>Dave Wilson</td><td>Team 2</td><td>8</td><td>36</td><td>37.8</td><td>5.8</td></tr>
           </tbody>
         </table>
       </div>
@@ -578,30 +636,10 @@
     <section id="schedule" class="view">
       <h2 class="view-title">Schedule</h2>
       <div class="card">
-        <h3>Upcoming Rounds</h3>
-        <table class="data-table">
-          <thead><tr><th>Date</th><th>Course</th><th>Format</th><th>Tee Time</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Apr 5</td><td>Pine Valley GC</td><td>Stroke Play</td><td>8:00 AM</td><td><span class="status upcoming">Upcoming</span></td></tr>
-            <tr><td>Apr 12</td><td>Oak Ridge CC</td><td>Stroke Play</td><td>8:30 AM</td><td><span class="status upcoming">Upcoming</span></td></tr>
-            <tr><td>Apr 19</td><td>Lakeside GC</td><td>Tournament</td><td>7:00 AM</td><td><span class="status upcoming">Upcoming</span></td></tr>
-            <tr><td>Apr 26</td><td>Pine Valley GC</td><td>Stroke Play</td><td>8:00 AM</td><td><span class="status upcoming">Upcoming</span></td></tr>
-            <tr><td>May 3</td><td>Oak Ridge CC</td><td>Best Ball</td><td>8:30 AM</td><td><span class="status upcoming">Upcoming</span></td></tr>
-            <tr><td>May 10</td><td>Lakeside GC</td><td>Stroke Play</td><td>8:00 AM</td><td><span class="status upcoming">Upcoming</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>Completed Rounds</h3>
-        <table class="data-table">
-          <thead><tr><th>Date</th><th>Course</th><th>Format</th><th>Winner</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Mar 29</td><td>Pine Valley GC</td><td>Stroke Play</td><td>Tom Davis (71)</td><td><span class="status completed">Completed</span></td></tr>
-            <tr><td>Mar 22</td><td>Pine Valley GC</td><td>Stroke Play</td><td>Mike Johnson (72)</td><td><span class="status completed">Completed</span></td></tr>
-            <tr><td>Mar 15</td><td>Oak Ridge CC</td><td>Stroke Play</td><td>Tom Davis (71)</td><td><span class="status completed">Completed</span></td></tr>
-            <tr><td>Mar 8</td><td>Lakeside GC</td><td>Best Ball</td><td>Dave Wilson (73)</td><td><span class="status completed">Completed</span></td></tr>
-            <tr><td>Mar 1</td><td>Pine Valley GC</td><td>Stroke Play</td><td>Tom Davis (70)</td><td><span class="status completed">Completed</span></td></tr>
-          </tbody>
+        <h3>Season Schedule (10 Weeks)</h3>
+        <table class="data-table" id="schedule-table">
+          <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Format</th><th>Status</th></tr></thead>
+          <tbody id="schedule-body"></tbody>
         </table>
       </div>
     </section>
@@ -609,26 +647,32 @@
     <!-- ENTER SCORES -->
     <section id="enter-scores" class="view">
       <h2 class="view-title">Enter Scores</h2>
-      <div class="card" style="max-width:560px;">
-        <h3>Submit Round Score</h3>
+      <div class="card" style="max-width:600px;">
+        <h3>Submit 9-Hole Round Score</h3>
         <div class="score-form">
           <div class="form-group">
             <label for="score-player">Player</label>
             <select id="score-player" class="form-control">
               <option value="">Select Player</option>
-              <option>Tom Davis</option><option>Mike Johnson</option><option>Dave Wilson</option>
-              <option>Steve Williams</option><option>Chris Brown</option><option>John Martinez</option>
-              <option>Rob Taylor</option><option>Dan Anderson</option><option>Mark Thomas</option><option>Jeff Clark</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="score-course">Course</label>
-            <select id="score-course" class="form-control">
-              <option value="">Select Course</option>
-              <option>Pine Valley Golf Club</option>
-              <option>Oak Ridge Country Club</option>
-              <option>Lakeside Golf Course</option>
-            </select>
+          <div class="form-row" style="grid-template-columns:1fr 1fr;">
+            <div class="form-group">
+              <label for="score-course">Course</label>
+              <select id="score-course" class="form-control">
+                <option value="">Select Course</option>
+                <option>Pine Valley Golf Club</option>
+                <option>Oak Ridge Country Club</option>
+                <option>Lakeside Golf Course</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="score-side">Side</label>
+              <select id="score-side" class="form-control">
+                <option value="front">Front 9</option>
+                <option value="back">Back 9</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
             <label for="score-date">Date</label>
@@ -636,17 +680,20 @@
           </div>
           <div class="form-row" style="grid-template-columns:1fr 1fr 1fr;">
             <div class="form-group">
-              <label for="score-total">Total Score</label>
-              <input type="number" id="score-total" class="form-control" placeholder="e.g. 72">
+              <label for="score-total">Total Score (9 holes)</label>
+              <input type="number" id="score-total" class="form-control" placeholder="e.g. 36">
             </div>
             <div class="form-group">
               <label for="score-putts">Putts</label>
-              <input type="number" id="score-putts" class="form-control" placeholder="e.g. 30">
+              <input type="number" id="score-putts" class="form-control" placeholder="e.g. 15">
             </div>
             <div class="form-group">
               <label for="score-fairways">Fairways Hit</label>
-              <input type="number" id="score-fairways" class="form-control" placeholder="e.g. 9">
+              <input type="number" id="score-fairways" class="form-control" placeholder="e.g. 5">
             </div>
+          </div>
+          <h4 style="font-size:0.9rem; color:var(--green-deep); margin:0.5rem 0;">Hole-by-Hole Scores</h4>
+          <div id="hole-by-hole-inputs" style="display:grid; grid-template-columns:repeat(9,1fr); gap:0.3rem; margin-bottom:1rem;">
           </div>
           <button class="btn-primary" onclick="submitScore()">Submit Score</button>
         </div>
@@ -657,21 +704,10 @@
     <section id="players" class="view">
       <h2 class="view-title">Players</h2>
       <div class="card">
-        <h3>League Roster</h3>
-        <table class="data-table">
-          <thead><tr><th>Player</th><th>Team</th><th>Handicap</th><th>Rounds</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Tom Davis</td><td>Eagles</td><td>4.2</td><td>8</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Mike Johnson</td><td>Eagles</td><td>5.1</td><td>8</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Dave Wilson</td><td>Birdies</td><td>5.8</td><td>8</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Steve Williams</td><td>Fairways</td><td>6.5</td><td>7</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Chris Brown</td><td>Birdies</td><td>7.9</td><td>8</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>John Martinez</td><td>Drivers</td><td>8.4</td><td>7</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Rob Taylor</td><td>Fairways</td><td>8.8</td><td>8</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Dan Anderson</td><td>Putters</td><td>9.2</td><td>8</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Mark Thomas</td><td>Wedges</td><td>9.7</td><td>7</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Jeff Clark</td><td>Drivers</td><td>10.1</td><td>8</td><td><span class="status upcoming">Active</span></td></tr>
-          </tbody>
+        <h3>League Roster — 20 Two-Man Teams</h3>
+        <table class="data-table" id="players-table">
+          <thead><tr><th>Team</th><th>Player 1</th><th>HCP</th><th>Player 2</th><th>HCP</th><th>Status</th></tr></thead>
+          <tbody id="players-body"></tbody>
         </table>
       </div>
     </section>
@@ -679,20 +715,23 @@
     <!-- ANALYTICS -->
     <section id="analytics" class="view">
       <h2 class="view-title">Analytics</h2>
+      <div class="btn-row no-print" style="margin-bottom:1rem;">
+        <button class="btn-primary" onclick="printAnalytics()">Print Analytics Report</button>
+      </div>
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-value">73.2</div><div class="stat-label">League Avg Score</div></div>
-        <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-value">68</div><div class="stat-label">Best Round</div></div>
-        <div class="stat-card"><div class="stat-icon">⛳</div><div class="stat-value">31.4</div><div class="stat-label">Avg Putts/Round</div></div>
-        <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-value">62%</div><div class="stat-label">Fairways Hit</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128200;</div><div class="stat-value">37.2</div><div class="stat-label">League Avg (9-Hole)</div></div>
+        <div class="stat-card"><div class="stat-icon">&#127942;</div><div class="stat-value">33</div><div class="stat-label">Best Round</div></div>
+        <div class="stat-card"><div class="stat-icon">&#9971;</div><div class="stat-value">15.4</div><div class="stat-label">Avg Putts / 9</div></div>
+        <div class="stat-card"><div class="stat-icon">&#127919;</div><div class="stat-value">58%</div><div class="stat-label">Fairways Hit</div></div>
       </div>
       <div class="card">
         <h3>Scoring Trends by Course</h3>
         <table class="data-table">
-          <thead><tr><th>Course</th><th>Avg Score</th><th>Best Score</th><th>Rounds Played</th><th>Difficulty</th></tr></thead>
+          <thead><tr><th>Course</th><th>Avg Score (9)</th><th>Best Score</th><th>Rounds Played</th><th>Difficulty</th></tr></thead>
           <tbody>
-            <tr><td>Pine Valley GC</td><td>73.1</td><td>70</td><td>24</td><td>Medium</td></tr>
-            <tr><td>Oak Ridge CC</td><td>72.4</td><td>68</td><td>18</td><td>Easy</td></tr>
-            <tr><td>Lakeside GC</td><td>75.8</td><td>71</td><td>16</td><td>Hard</td></tr>
+            <tr><td>Pine Valley GC</td><td>37.1</td><td>33</td><td>40</td><td>Medium</td></tr>
+            <tr><td>Oak Ridge CC</td><td>36.4</td><td>33</td><td>32</td><td>Easy</td></tr>
+            <tr><td>Lakeside GC</td><td>38.2</td><td>34</td><td>28</td><td>Hard</td></tr>
           </tbody>
         </table>
       </div>
@@ -701,9 +740,21 @@
         <table class="data-table">
           <thead><tr><th>Player</th><th>Starting Avg</th><th>Current Avg</th><th>Improvement</th></tr></thead>
           <tbody>
-            <tr><td>Dave Wilson</td><td>76.0</td><td>73.1</td><td style="color:#2e7d32;font-weight:600;">-2.9</td></tr>
-            <tr><td>Chris Brown</td><td>77.5</td><td>75.2</td><td style="color:#2e7d32;font-weight:600;">-2.3</td></tr>
-            <tr><td>Rob Taylor</td><td>78.0</td><td>76.1</td><td style="color:#2e7d32;font-weight:600;">-1.9</td></tr>
+            <tr><td>Dave Wilson</td><td>39.0</td><td>37.8</td><td style="color:#2e7d32;font-weight:600;">-1.2</td></tr>
+            <tr><td>Chris Brown</td><td>39.5</td><td>38.2</td><td style="color:#2e7d32;font-weight:600;">-1.3</td></tr>
+            <tr><td>Rob Taylor</td><td>40.0</td><td>38.8</td><td style="color:#2e7d32;font-weight:600;">-1.2</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Handicap Distribution</h3>
+        <table class="data-table">
+          <thead><tr><th>Range</th><th>Players</th><th>% of League</th></tr></thead>
+          <tbody>
+            <tr><td>0 – 5.0</td><td>8</td><td>20%</td></tr>
+            <tr><td>5.1 – 8.0</td><td>12</td><td>30%</td></tr>
+            <tr><td>8.1 – 11.0</td><td>12</td><td>30%</td></tr>
+            <tr><td>11.1 – 15.0+</td><td>8</td><td>20%</td></tr>
           </tbody>
         </table>
       </div>
@@ -713,27 +764,16 @@
     <section id="payments" class="view">
       <h2 class="view-title">Payments</h2>
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">💵</div><div class="stat-value">$2,400</div><div class="stat-label">Total Collected</div></div>
-        <div class="stat-card"><div class="stat-icon">💸</div><div class="stat-value">$600</div><div class="stat-label">Outstanding</div></div>
-        <div class="stat-card"><div class="stat-icon">💳</div><div class="stat-value">$150</div><div class="stat-label">Season Fee</div></div>
-        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">20/24</div><div class="stat-label">Members Paid</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128181;</div><div class="stat-value">$4,800</div><div class="stat-label">Total Collected</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128184;</div><div class="stat-value">$1,200</div><div class="stat-label">Outstanding</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128179;</div><div class="stat-value">$150</div><div class="stat-label">Season Fee</div></div>
+        <div class="stat-card"><div class="stat-icon">&#10004;</div><div class="stat-value">32/40</div><div class="stat-label">Members Paid</div></div>
       </div>
       <div class="card">
         <h3>Payment Status</h3>
-        <table class="data-table">
-          <thead><tr><th>Player</th><th>Team</th><th>Season Fee</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Tom Davis</td><td>Eagles</td><td>$150</td><td><span class="status completed">Paid</span></td></tr>
-            <tr><td>Mike Johnson</td><td>Eagles</td><td>$150</td><td><span class="status completed">Paid</span></td></tr>
-            <tr><td>Dave Wilson</td><td>Birdies</td><td>$150</td><td><span class="status completed">Paid</span></td></tr>
-            <tr><td>Steve Williams</td><td>Fairways</td><td>$150</td><td><span class="status pending">Pending</span></td></tr>
-            <tr><td>Chris Brown</td><td>Birdies</td><td>$150</td><td><span class="status completed">Paid</span></td></tr>
-            <tr><td>John Martinez</td><td>Drivers</td><td>$150</td><td><span class="status pending">Pending</span></td></tr>
-            <tr><td>Rob Taylor</td><td>Fairways</td><td>$150</td><td><span class="status completed">Paid</span></td></tr>
-            <tr><td>Dan Anderson</td><td>Putters</td><td>$150</td><td><span class="status pending">Pending</span></td></tr>
-            <tr><td>Mark Thomas</td><td>Wedges</td><td>$150</td><td><span class="status completed">Paid</span></td></tr>
-            <tr><td>Jeff Clark</td><td>Drivers</td><td>$150</td><td><span class="status pending">Pending</span></td></tr>
-          </tbody>
+        <table class="data-table" id="payments-table">
+          <thead><tr><th>Team</th><th>Player</th><th>Season Fee</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="payments-body"></tbody>
         </table>
       </div>
     </section>
@@ -741,41 +781,181 @@
     <!-- COURSES -->
     <section id="courses" class="view">
       <h2 class="view-title">Courses</h2>
+
       <div class="card">
         <h3>Pine Valley Golf Club</h3>
         <div class="course-detail">
           <div class="course-meta">
-            <span><strong>Par:</strong> 72</span>
-            <span><strong>Yardage:</strong> 6,800 yds</span>
+            <span><strong>Par:</strong> 36/36 = 72</span>
             <span><strong>Rating:</strong> 72.5</span>
             <span><strong>Slope:</strong> 134</span>
           </div>
-          <p class="course-desc">Championship-level course known for its challenging greens and tight fairways. Located in the heart of the valley with scenic views throughout.</p>
+          <p class="course-desc">Championship-level course known for challenging greens and tight fairways.</p>
+          <table class="tee-table">
+            <thead><tr><th>Tee</th><th>Color</th><th>Front 9</th><th>Back 9</th><th>Total Yards</th><th>Rating/Slope</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tee-dot" style="background:#333;"></span>Black</td><td>Championship</td><td>3,505</td><td>3,425</td><td>6,930</td><td>73.5/138</td></tr>
+              <tr><td><span class="tee-dot" style="background:#2196F3;"></span>Blue</td><td>Men's</td><td>3,300</td><td>3,225</td><td>6,525</td><td>71.8/132</td></tr>
+              <tr><td><span class="tee-dot" style="background:#fff;border:1px solid #ccc;"></span>White</td><td>Senior</td><td>3,050</td><td>2,980</td><td>6,030</td><td>69.5/126</td></tr>
+              <tr><td><span class="tee-dot" style="background:#f44336;"></span>Red</td><td>Forward</td><td>2,700</td><td>2,650</td><td>5,350</td><td>66.8/118</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
+
       <div class="card">
         <h3>Oak Ridge Country Club</h3>
         <div class="course-detail">
           <div class="course-meta">
-            <span><strong>Par:</strong> 71</span>
-            <span><strong>Yardage:</strong> 6,600 yds</span>
+            <span><strong>Par:</strong> 36/35 = 71</span>
             <span><strong>Rating:</strong> 71.2</span>
             <span><strong>Slope:</strong> 128</span>
           </div>
-          <p class="course-desc">A member-friendly course with wide fairways and well-maintained greens. Favored for weekly league play due to its accessible layout.</p>
+          <p class="course-desc">Member-friendly course with wide fairways and well-maintained greens.</p>
+          <table class="tee-table">
+            <thead><tr><th>Tee</th><th>Color</th><th>Front 9</th><th>Back 9</th><th>Total Yards</th><th>Rating/Slope</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tee-dot" style="background:#333;"></span>Black</td><td>Championship</td><td>3,380</td><td>3,305</td><td>6,685</td><td>72.0/132</td></tr>
+              <tr><td><span class="tee-dot" style="background:#2196F3;"></span>Blue</td><td>Men's</td><td>3,160</td><td>3,080</td><td>6,240</td><td>70.5/128</td></tr>
+              <tr><td><span class="tee-dot" style="background:#fff;border:1px solid #ccc;"></span>White</td><td>Senior</td><td>2,920</td><td>2,850</td><td>5,770</td><td>68.2/122</td></tr>
+              <tr><td><span class="tee-dot" style="background:#f44336;"></span>Red</td><td>Forward</td><td>2,580</td><td>2,520</td><td>5,100</td><td>65.5/114</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
+
       <div class="card">
         <h3>Lakeside Golf Course</h3>
         <div class="course-detail">
           <div class="course-meta">
-            <span><strong>Par:</strong> 72</span>
-            <span><strong>Yardage:</strong> 6,900 yds</span>
+            <span><strong>Par:</strong> 36/36 = 72</span>
             <span><strong>Rating:</strong> 73.1</span>
             <span><strong>Slope:</strong> 138</span>
           </div>
-          <p class="course-desc">The most challenging course in rotation. Water hazards on 8 holes and elevated greens make this a true test of skill. Tournament host course.</p>
+          <p class="course-desc">The most challenging course in rotation. Water hazards on 8 holes. Tournament host.</p>
+          <table class="tee-table">
+            <thead><tr><th>Tee</th><th>Color</th><th>Front 9</th><th>Back 9</th><th>Total Yards</th><th>Rating/Slope</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tee-dot" style="background:#333;"></span>Black</td><td>Championship</td><td>3,620</td><td>3,525</td><td>7,145</td><td>74.2/142</td></tr>
+              <tr><td><span class="tee-dot" style="background:#2196F3;"></span>Blue</td><td>Men's</td><td>3,420</td><td>3,325</td><td>6,745</td><td>72.8/138</td></tr>
+              <tr><td><span class="tee-dot" style="background:#fff;border:1px solid #ccc;"></span>White</td><td>Senior</td><td>3,150</td><td>3,060</td><td>6,210</td><td>70.1/130</td></tr>
+              <tr><td><span class="tee-dot" style="background:#f44336;"></span>Red</td><td>Forward</td><td>2,780</td><td>2,710</td><td>5,490</td><td>67.5/120</td></tr>
+            </tbody>
+          </table>
         </div>
+      </div>
+    </section>
+
+    <!-- SCRAMBLE EVENTS -->
+    <section id="scramble-events" class="view">
+      <h2 class="view-title">Scramble Events (18-Hole)</h2>
+      <div class="card">
+        <h3>Upcoming Scramble Events</h3>
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Course</th><th>Format</th><th>Teams</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Apr 19, 2026</td><td>Lakeside Golf Course</td><td>4-Person Scramble (18 holes)</td><td>10</td><td><span class="status upcoming">Open</span></td></tr>
+            <tr><td>May 17, 2026</td><td>Pine Valley Golf Club</td><td>4-Person Scramble (18 holes)</td><td>10</td><td><span class="status pending">Registration</span></td></tr>
+            <tr><td>Jun 7, 2026</td><td>Oak Ridge Country Club</td><td>Season Finale Scramble (18 holes)</td><td>10</td><td><span class="status pending">Registration</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Create Scramble Event</h3>
+        <div class="score-form">
+          <div class="form-row" style="grid-template-columns:1fr 1fr;">
+            <div class="form-group">
+              <label for="scramble-date">Event Date</label>
+              <input type="date" id="scramble-date" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="scramble-course">Course</label>
+              <select id="scramble-course" class="form-control">
+                <option>Pine Valley Golf Club</option>
+                <option>Oak Ridge Country Club</option>
+                <option>Lakeside Golf Course</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="grid-template-columns:1fr 1fr;">
+            <div class="form-group">
+              <label for="scramble-teams">Team Size</label>
+              <select id="scramble-teams" class="form-control">
+                <option>2-Person</option>
+                <option selected>4-Person</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="scramble-tee">Tee Time</label>
+              <input type="time" id="scramble-tee" class="form-control" value="07:00">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="scramble-notes">Notes</label>
+            <input type="text" id="scramble-notes" class="form-control" placeholder="e.g. Prizes for longest drive, closest to pin">
+          </div>
+          <button class="btn-gold" onclick="createScramble()">Create Scramble Event</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Scramble Teams — Apr 19 Lakeside GC</h3>
+        <div id="scramble-teams-list">
+          <div class="scramble-team"><strong>Team A:</strong> Tom Davis (4.2), Dave Wilson (5.8), John Martinez (8.4), Al Adams (11.0)</div>
+          <div class="scramble-team"><strong>Team B:</strong> Ken Nelson (3.8), Mike Johnson (5.1), Rob Taylor (8.8), Pete Baker (14.2)</div>
+          <div class="scramble-team"><strong>Team C:</strong> Bill Harris (3.5), Sam Lopez (5.3), Dan Anderson (9.2), Len Stewart (12.0)</div>
+          <div class="scramble-team"><strong>Team D:</strong> Walt Phillips (4.0), Max Edwards (5.0), Mark Thomas (9.7), Gus Evans (11.5)</div>
+          <div class="scramble-team"><strong>Team E:</strong> Jim Allen (4.8), Lee Carter (5.5), Chris Brown (7.9), Ray King (10.5)</div>
+          <div class="scramble-team"><strong>Team F:</strong> Paul Lewis (6.3), Gary Walker (7.0), Steve Williams (6.5), Ned Parker (9.0)</div>
+          <div class="scramble-team"><strong>Team G:</strong> Fred Campbell (6.7), Roy Collins (7.2), Jeff Clark (10.1), Cal Rogers (8.5)</div>
+          <div class="scramble-team"><strong>Team H:</strong> Joe Hill (7.6), Carl Scott (6.1), Rick Hall (11.2), Ed Wright (13.4)</div>
+          <div class="scramble-team"><strong>Team I:</strong> Ron Green (9.9), Bob Young (8.0), Hank Turner (10.8), Art Sanchez (15.1)</div>
+          <div class="scramble-team"><strong>Team J:</strong> Don Mitchell (8.7), Tim Perez (12.3), Vic Roberts (7.4), Bud Morris (6.9)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RAINOUT MANAGER -->
+    <section id="rainout" class="view">
+      <h2 class="view-title">Rainout Manager</h2>
+      <div class="card">
+        <h3>Mark Rainout</h3>
+        <div class="score-form">
+          <div class="form-row" style="grid-template-columns:1fr 1fr;">
+            <div class="form-group">
+              <label for="rainout-week">Select Week</label>
+              <select id="rainout-week" class="form-control">
+                <option value="">Select week...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="rainout-reschedule">Reschedule To</label>
+              <input type="date" id="rainout-reschedule" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="rainout-reason">Reason</label>
+            <select id="rainout-reason" class="form-control">
+              <option>Rain</option>
+              <option>Thunderstorms</option>
+              <option>Course Conditions</option>
+              <option>Extreme Heat</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="btn-row">
+            <button class="btn-danger" onclick="markRainout()">Mark as Rainout</button>
+            <button class="btn-primary" onclick="rescheduleWeek()">Reschedule Week</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Rainout History</h3>
+        <table class="data-table" id="rainout-table">
+          <thead><tr><th>Week</th><th>Original Date</th><th>Reason</th><th>Rescheduled</th><th>Status</th></tr></thead>
+          <tbody id="rainout-body">
+            <tr><td colspan="5" style="text-align:center;color:var(--gray-text);">No rainouts this season</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -787,8 +967,8 @@
         <div class="chat-messages" id="chat-messages">
           <div class="chat-message"><div class="chat-author">Tom Davis</div><div class="chat-text">Great round at Pine Valley today! Course was in perfect shape.</div><div class="chat-time">Mar 29, 2:15 PM</div></div>
           <div class="chat-message"><div class="chat-author">Mike Johnson</div><div class="chat-text">Anyone up for a practice round this Wednesday at Oak Ridge?</div><div class="chat-time">Mar 29, 1:30 PM</div></div>
-          <div class="chat-message"><div class="chat-author">Dave Wilson</div><div class="chat-text">Reminder: The tournament at Lakeside is in 3 weeks. Let's get some practice in!</div><div class="chat-time">Mar 28, 5:45 PM</div></div>
-          <div class="chat-message"><div class="chat-author">Steve Williams</div><div class="chat-text">Just paid my season fee. Looking forward to a great spring season!</div><div class="chat-time">Mar 28, 10:00 AM</div></div>
+          <div class="chat-message"><div class="chat-author">Dave Wilson</div><div class="chat-text">The scramble at Lakeside is going to be great. Who's on my team?</div><div class="chat-time">Mar 28, 5:45 PM</div></div>
+          <div class="chat-message"><div class="chat-author">Steve Williams</div><div class="chat-text">Just paid my season fee. Fairway Command is a huge upgrade!</div><div class="chat-time">Mar 28, 10:00 AM</div></div>
           <div class="chat-message"><div class="chat-author">Chris Brown</div><div class="chat-text">Can someone check if there's a rain delay for next Saturday?</div><div class="chat-time">Mar 27, 4:20 PM</div></div>
         </div>
         <div class="chat-input-area">
@@ -801,44 +981,103 @@
     <!-- INSTRUCTIONS -->
     <section id="instructions" class="view">
       <h2 class="view-title">Instructions</h2>
-      <div class="card"><h3>Getting Started</h3><div class="instructions-content"><p>Welcome to GolfLeague TrackerPro! Here's how to use the app to manage your golf league. Use the sidebar to navigate between sections.</p></div></div>
+      <div class="card"><h3>Getting Started</h3><div class="instructions-content"><p>Welcome to <strong>Fairway Command</strong> — The Ultimate League System. Use the sidebar to navigate between sections. Select your role (Player, Scorer, Admin) in the header to see relevant sections.</p></div></div>
+      <div class="card">
+        <h3>Roles</h3>
+        <ol class="instructions-list">
+          <li><strong>Player:</strong> View dashboard, leaderboard, schedule, analytics, courses, chat, and instructions</li>
+          <li><strong>Scorer:</strong> All Player access plus Enter Scores and Scramble Events</li>
+          <li><strong>Admin:</strong> Full access including Payments, Rainout Manager, Handicap Formula, Score Card Printing, and League Settings</li>
+        </ol>
+      </div>
       <div class="card">
         <h3>How to Enter Scores</h3>
         <ol class="instructions-list">
-          <li>Go to the <strong>Enter Scores</strong> section from the sidebar</li>
-          <li>Select the player from the dropdown</li>
-          <li>Choose the course and date of the round</li>
-          <li>Enter the total score, putts, and fairways hit</li>
-          <li>Click <strong>Submit Score</strong> to record the round</li>
+          <li>Switch to <strong>Scorer</strong> or <strong>Admin</strong> role</li>
+          <li>Go to <strong>Enter Scores</strong> from the sidebar</li>
+          <li>Select the player, course, side, and date</li>
+          <li>Enter hole-by-hole scores or just the total</li>
+          <li>Click <strong>Submit Score</strong></li>
         </ol>
       </div>
       <div class="card">
-        <h3>League Rules &amp; Scoring</h3>
+        <h3>9-Hole Scorecards</h3>
         <ol class="instructions-list">
-          <li>Weekly rounds are played every Saturday morning</li>
-          <li>USGA handicap system is used for all players</li>
-          <li>Teams earn points based on head-to-head matchups each week</li>
-          <li>The top 4 teams qualify for the end-of-season playoff</li>
-          <li>Substitutes are allowed with 48 hours advance notice to the admin</li>
+          <li>Go to <strong>Admin</strong> section and find <strong>Print Score Cards</strong></li>
+          <li>Select the match week to see all pairings</li>
+          <li>Preview scorecards with handicap stroke dots</li>
+          <li>Print on 7x5 card stock for on-course use</li>
         </ol>
       </div>
       <div class="card">
-        <h3>Payments</h3>
+        <h3>Scramble Events</h3>
         <ol class="instructions-list">
-          <li>Season fee is <strong>$150 per player</strong></li>
-          <li>Fees must be paid before the 3rd round of the season</li>
-          <li>Payment status can be checked in the <strong>Payments</strong> section</li>
-          <li>Contact the league admin for payment arrangements</li>
+          <li>Go to <strong>Scramble Events</strong> to view upcoming 18-hole scrambles</li>
+          <li>Admins can create new events and assign teams</li>
+          <li>Teams are balanced by combined handicap</li>
         </ol>
       </div>
+    </section>
+
+    <!-- HANDICAP FORMULA -->
+    <section id="handicap-formula" class="view">
+      <h2 class="view-title">Custom Handicap Formula</h2>
       <div class="card">
-        <h3>Using the Chat</h3>
-        <ol class="instructions-list">
-          <li>Navigate to <strong>League Chat</strong> under the Social section</li>
-          <li>View messages from other league members</li>
-          <li>Type your message and click <strong>Send</strong> to post</li>
-          <li>Use the chat for scheduling, announcements, and general discussion</li>
-        </ol>
+        <h3>Current Formula</h3>
+        <div class="formula-display">
+          HCP = (Avg of Best <span id="formula-best-n">8</span> of Last <span id="formula-last-n">20</span> Scores - Course Rating) &times; <span id="formula-multiplier">0.96</span> &times; (113 / Slope Rating)
+        </div>
+        <p style="font-size:0.85rem;color:var(--gray-text);margin-bottom:1rem;">This formula calculates the 9-hole league handicap index. Adjust the parameters below to customize for your league.</p>
+      </div>
+      <div class="card">
+        <h3>Adjust Formula Parameters</h3>
+        <div class="score-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="hcp-best-n">Best N Scores to Use</label>
+              <input type="number" id="hcp-best-n" class="form-control" value="8" min="1" max="20">
+            </div>
+            <div class="form-group">
+              <label for="hcp-last-n">Out of Last N Rounds</label>
+              <input type="number" id="hcp-last-n" class="form-control" value="20" min="5" max="40">
+            </div>
+            <div class="form-group">
+              <label for="hcp-multiplier">Multiplier</label>
+              <input type="number" id="hcp-multiplier" class="form-control" value="0.96" step="0.01" min="0.5" max="1.0">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="hcp-max">Maximum Handicap</label>
+              <input type="number" id="hcp-max" class="form-control" value="18" min="10" max="36">
+            </div>
+            <div class="form-group">
+              <label for="hcp-min-rounds">Minimum Rounds Required</label>
+              <input type="number" id="hcp-min-rounds" class="form-control" value="3" min="1" max="10">
+            </div>
+            <div class="form-group">
+              <label for="hcp-bonus">Low Round Bonus</label>
+              <select id="hcp-bonus" class="form-control">
+                <option value="none">None</option>
+                <option value="1">-1 stroke for sub-par round</option>
+                <option value="2">-2 strokes for eagle or better</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-gold" onclick="saveHandicapFormula()">Save Formula</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Example Calculations</h3>
+        <table class="data-table">
+          <thead><tr><th>Player</th><th>Avg Best 8</th><th>Course Rtg</th><th>Slope</th><th>Calculated HCP</th></tr></thead>
+          <tbody>
+            <tr><td>Tom Davis</td><td>35.2</td><td>36.0</td><td>134</td><td>4.2</td></tr>
+            <tr><td>Ken Nelson</td><td>35.5</td><td>36.0</td><td>134</td><td>3.8</td></tr>
+            <tr><td>Al Adams</td><td>40.5</td><td>36.0</td><td>134</td><td>11.0</td></tr>
+            <tr><td>Art Sanchez</td><td>42.8</td><td>36.0</td><td>134</td><td>15.1</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -846,52 +1085,40 @@
     <section id="admin" class="view">
       <h2 class="view-title">Admin</h2>
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">24</div><div class="stat-label">Total Members</div></div>
-        <div class="stat-card"><div class="stat-icon">🎽</div><div class="stat-value">6</div><div class="stat-label">Teams</div></div>
-        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">26</div><div class="stat-label">Season Weeks</div></div>
-        <div class="stat-card"><div class="stat-icon">⛳</div><div class="stat-value">3</div><div class="stat-label">Courses</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128101;</div><div class="stat-value">40</div><div class="stat-label">Total Players</div></div>
+        <div class="stat-card"><div class="stat-icon">&#127941;</div><div class="stat-value">20</div><div class="stat-label">Teams</div></div>
+        <div class="stat-card"><div class="stat-icon">&#128197;</div><div class="stat-value">10</div><div class="stat-label">Season Weeks</div></div>
+        <div class="stat-card"><div class="stat-icon">&#9971;</div><div class="stat-value">3</div><div class="stat-label">Courses</div></div>
       </div>
       <div class="card">
         <h3>League Settings</h3>
         <div class="admin-settings">
-          <div class="setting-item"><strong>League Name:</strong> GolfLeague TrackerPro Spring 2026</div>
-          <div class="setting-item"><strong>Season Dates:</strong> March 1 – August 30, 2026</div>
-          <div class="setting-item"><strong>Format:</strong> Stroke Play (weekly), Best Ball (monthly)</div>
-          <div class="setting-item"><strong>Handicap System:</strong> USGA</div>
+          <div class="setting-item"><strong>League Name:</strong> Fairway Command Spring 2026</div>
+          <div class="setting-item"><strong>Season Dates:</strong> April 5 – June 7, 2026</div>
+          <div class="setting-item"><strong>Format:</strong> 9-Hole Match Play (weekly), 18-Hole Scramble (monthly)</div>
+          <div class="setting-item"><strong>Handicap System:</strong> Custom League Formula</div>
           <div class="setting-item"><strong>Season Fee:</strong> $150 per player</div>
+          <div class="setting-item"><strong>Tee Boxes:</strong> 4 per course (Black, Blue, White, Red)</div>
+          <div class="setting-item"><strong>Roles:</strong> Player, Scorer, Admin</div>
         </div>
       </div>
       <div class="card">
         <h3>Team Management</h3>
-        <table class="data-table">
-          <thead><tr><th>Team</th><th>Members</th><th>Captain</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Eagles</td><td>4</td><td>Tom Davis</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Birdies</td><td>4</td><td>Dave Wilson</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Fairways</td><td>4</td><td>Steve Williams</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Drivers</td><td>4</td><td>John Martinez</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Putters</td><td>4</td><td>Dan Anderson</td><td><span class="status upcoming">Active</span></td></tr>
-            <tr><td>Wedges</td><td>4</td><td>Mark Thomas</td><td><span class="status upcoming">Active</span></td></tr>
-          </tbody>
+        <table class="data-table" id="admin-teams-table">
+          <thead><tr><th>Team</th><th>Player 1</th><th>Player 2</th><th>Combined HCP</th><th>Status</th></tr></thead>
+          <tbody id="admin-teams-body"></tbody>
         </table>
       </div>
 
       <!-- PRINT SCORE CARDS -->
       <div class="card" id="print-scorecards-section">
         <h3>Print Score Cards</h3>
-        <p style="font-size:0.85rem;color:#555;margin-bottom:1rem;">Generate and print scorecards for weekly 9-hole league matches. Each match pairs the lowest handicap players and higher handicap players from two 2-man teams. Strokes given are shown as dots on the receiving player's card.</p>
+        <p style="font-size:0.85rem;color:#555;margin-bottom:1rem;">Generate and print 9-hole scorecards with handicap stroke dots for weekly league matches.</p>
         <div class="score-form">
           <div class="form-row" style="grid-template-columns:1fr 1fr;">
             <div class="form-group">
               <label for="sc-week">Match Week</label>
-              <select id="sc-week" class="form-control" onchange="loadMatches()">
-                <option value="">Select Week</option>
-                <option value="1">Week 1 – Apr 5 (Pine Valley GC)</option>
-                <option value="2">Week 2 – Apr 12 (Oak Ridge CC)</option>
-                <option value="3">Week 3 – Apr 19 (Lakeside GC – Tournament)</option>
-                <option value="4">Week 4 – Apr 26 (Pine Valley GC)</option>
-                <option value="5">Week 5 – May 3 (Oak Ridge CC – Best Ball)</option>
-              </select>
+              <select id="sc-week" class="form-control"></select>
             </div>
             <div class="form-group">
               <label for="sc-date-override">Date Override</label>
@@ -900,14 +1127,14 @@
           </div>
 
           <div id="sc-matches-container" style="display:none;">
-            <h4 style="color:#1a3a28;margin:1rem 0 0.5rem;font-size:0.95rem;">Weekly Matches</h4>
+            <h4 style="color:var(--green-deep);margin:1rem 0 0.5rem;font-size:0.95rem;">Weekly Matches</h4>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
               <div>
-                <strong style="font-size:0.8rem;color:#1e5631;display:block;margin-bottom:0.35rem;">Front 9 Matches</strong>
+                <strong style="font-size:0.8rem;color:var(--green-mid);display:block;margin-bottom:0.35rem;">Front 9 Matches</strong>
                 <div id="sc-front-matches"></div>
               </div>
               <div>
-                <strong style="font-size:0.8rem;color:#1e5631;display:block;margin-bottom:0.35rem;">Back 9 Matches</strong>
+                <strong style="font-size:0.8rem;color:var(--green-mid);display:block;margin-bottom:0.35rem;">Back 9 Matches</strong>
                 <div id="sc-back-matches"></div>
               </div>
             </div>
@@ -916,7 +1143,7 @@
               <h4>Admin Overrides</h4>
               <div class="form-group">
                 <label for="sc-override-match">Select Match to Override</label>
-                <select id="sc-override-match" class="form-control" onchange="showOverrideFields()">
+                <select id="sc-override-match" class="form-control">
                   <option value="">Select a match...</option>
                 </select>
               </div>
@@ -951,23 +1178,22 @@
                     </select>
                   </div>
                   <div class="form-group">
-                    <label for="sc-override-strokes">Extra Strokes Given</label>
+                    <label for="sc-override-strokes">Extra Strokes</label>
                     <input type="number" id="sc-override-strokes" class="form-control" placeholder="0">
                   </div>
                 </div>
-                <button class="btn-primary" id="sc-apply-override" onclick="applyOverride()">Apply Override</button>
+                <button class="btn-primary" onclick="applyOverride()">Apply Override</button>
               </div>
             </div>
 
             <div class="btn-row">
-              <button class="btn-primary" id="sc-preview-btn" onclick="previewScorecards()">Preview All Score Cards</button>
-              <button class="btn-gold" id="sc-print-btn" onclick="printScorecards()">🖨️ Print All Score Cards</button>
+              <button class="btn-primary" onclick="previewScorecards()">Preview All Score Cards</button>
+              <button class="btn-gold" onclick="printScorecards()">Print All Score Cards</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Scorecard Preview Area -->
       <div id="sc-preview-area" style="display:none;"></div>
     </section>
 
@@ -975,219 +1201,11 @@
 </div>
 
 <footer class="footer">
-  <p>© 2026 GolfLeague TrackerPro · Full-Feature League Management</p>
+  <p>&copy; 2026 Fairway Command — The Ultimate League System</p>
 </footer>
 
 <div class="toast" id="toast"></div>
 
-<script>
-// ── Navigation ──
-document.querySelectorAll('.sidebar-btn[data-view]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const view = btn.dataset.view;
-    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(view).classList.add('active');
-    if (window.innerWidth <= 700) document.getElementById('sidebar').classList.remove('open');
-  });
-});
-
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-}
-
-// ── Toast ──
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-// ── Submit Score ──
-function submitScore() {
-  const player = document.getElementById('score-player').value;
-  const course = document.getElementById('score-course').value;
-  const date = document.getElementById('score-date').value;
-  const score = document.getElementById('score-total').value;
-  if (!player || !course || !date || !score) { showToast('⚠️ Please fill in all required fields.'); return; }
-  showToast('✅ Score submitted for ' + player + ' — ' + score + ' at ' + course.split(' ').slice(0,2).join(' '));
-  document.getElementById('score-player').value = '';
-  document.getElementById('score-course').value = '';
-  document.getElementById('score-date').value = '';
-  document.getElementById('score-total').value = '';
-  document.getElementById('score-putts').value = '';
-  document.getElementById('score-fairways').value = '';
-}
-
-// ── Chat ──
-function sendChat() {
-  const input = document.getElementById('chat-input');
-  const msg = input.value.trim();
-  if (!msg) return;
-  const now = new Date();
-  const time = now.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ', ' + now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-  const div = document.createElement('div');
-  div.className = 'chat-message';
-  div.innerHTML = `<div class="chat-author">You</div><div class="chat-text">${msg}</div><div class="chat-time">${time}</div>`;
-  const msgs = document.getElementById('chat-messages');
-  msgs.insertBefore(div, msgs.firstChild);
-  input.value = '';
-}
-
-// ── Scorecard Data ──
-const players = [
-  {name:'Tom Davis',team:'Eagles',hcp:4.2},
-  {name:'Mike Johnson',team:'Eagles',hcp:5.1},
-  {name:'Dave Wilson',team:'Birdies',hcp:5.8},
-  {name:'Steve Williams',team:'Fairways',hcp:6.5},
-  {name:'Chris Brown',team:'Birdies',hcp:7.9},
-  {name:'John Martinez',team:'Drivers',hcp:8.4},
-  {name:'Rob Taylor',team:'Fairways',hcp:8.8},
-  {name:'Dan Anderson',team:'Putters',hcp:9.2},
-  {name:'Mark Thomas',team:'Wedges',hcp:9.7},
-  {name:'Jeff Clark',team:'Drivers',hcp:10.1},
-];
-
-const weekCourses = {
-  '1':'Pine Valley GC','2':'Oak Ridge CC','3':'Lakeside GC','4':'Pine Valley GC','5':'Oak Ridge CC'
-};
-
-// Simple match generation: sort by hcp, pair 1v2, 3v4, etc across 2 sides
-let currentMatches = [];
-
-function generateMatches() {
-  const sorted = [...players].sort((a,b)=>a.hcp-b.hcp);
-  const matches = [];
-  for (let i = 0; i < sorted.length - 1; i += 2) {
-    matches.push({
-      p1: sorted[i], p2: sorted[i+1],
-      strokeDiff: Math.round(sorted[i+1].hcp - sorted[i].hcp),
-      side: i < sorted.length / 2 ? 'front' : 'back'
-    });
-  }
-  return matches;
-}
-
-function loadMatches() {
-  const week = document.getElementById('sc-week').value;
-  if (!week) return;
-  currentMatches = generateMatches();
-  renderMatches();
-  document.getElementById('sc-matches-container').style.display = 'block';
-  document.getElementById('sc-preview-area').style.display = 'none';
-  // Populate override dropdown
-  const sel = document.getElementById('sc-override-match');
-  sel.innerHTML = '<option value="">Select a match...</option>';
-  currentMatches.forEach((m,i) => {
-    sel.innerHTML += `<option value="${i}">${m.p1.name} vs ${m.p2.name} (${m.side === 'front' ? 'Front' : 'Back'} 9)</option>`;
-  });
-  // Populate player selects
-  ['sc-override-player1','sc-override-player2'].forEach(id => {
-    const s = document.getElementById(id);
-    s.innerHTML = '<option value="">--</option>';
-    players.forEach(p => s.innerHTML += `<option value="${p.name}">${p.name} (${p.hcp})</option>`);
-  });
-}
-
-function renderMatches() {
-  const front = currentMatches.filter(m=>m.side==='front');
-  const back = currentMatches.filter(m=>m.side==='back');
-  document.getElementById('sc-front-matches').innerHTML = front.map(m =>
-    `<div class="match-chip">${m.p1.name} vs ${m.p2.name} <span style="color:#c9a227;font-weight:600;">(+${m.strokeDiff})</span></div>`
-  ).join('');
-  document.getElementById('sc-back-matches').innerHTML = back.map(m =>
-    `<div class="match-chip">${m.p1.name} vs ${m.p2.name} <span style="color:#c9a227;font-weight:600;">(+${m.strokeDiff})</span></div>`
-  ).join('');
-}
-
-function showOverrideFields() {
-  const val = document.getElementById('sc-override-match').value;
-  document.getElementById('sc-override-fields').style.display = val !== '' ? 'block' : 'none';
-}
-
-function applyOverride() {
-  const idx = parseInt(document.getElementById('sc-override-match').value);
-  if (isNaN(idx)) return;
-  const p1v = document.getElementById('sc-override-player1').value;
-  const p2v = document.getElementById('sc-override-player2').value;
-  const h1 = document.getElementById('sc-override-hcp1').value;
-  const h2 = document.getElementById('sc-override-hcp2').value;
-  const side = document.getElementById('sc-override-side').value;
-  const extra = parseInt(document.getElementById('sc-override-strokes').value) || 0;
-  const m = currentMatches[idx];
-  if (p1v) m.p1 = players.find(p=>p.name===p1v) || m.p1;
-  if (p2v) m.p2 = players.find(p=>p.name===p2v) || m.p2;
-  if (h1) m.p1 = {...m.p1, hcp: parseFloat(h1)};
-  if (h2) m.p2 = {...m.p2, hcp: parseFloat(h2)};
-  if (side) m.side = side;
-  m.strokeDiff = Math.round(m.p2.hcp - m.p1.hcp) + extra;
-  renderMatches();
-  showToast('✅ Override applied to match ' + (idx+1));
-  document.getElementById('sc-override-fields').style.display = 'none';
-  document.getElementById('sc-override-match').value = '';
-}
-
-function previewScorecards() {
-  const week = document.getElementById('sc-week').value;
-  const course = weekCourses[week] || 'Course TBD';
-  const dateEl = document.getElementById('sc-date-override').value;
-  const dateStr = dateEl ? new Date(dateEl+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'TBD';
-  const holes9 = Array.from({length:9},(_,i)=>i+1);
-  let html = '';
-  currentMatches.forEach((m, i) => {
-    const side = m.side === 'front' ? 'Front 9 (Holes 1–9)' : 'Back 9 (Holes 10–18)';
-    const strokes = Math.max(0, m.strokeDiff);
-    const dotStr = strokes > 0 ? '●'.repeat(Math.min(strokes,9)) : 'Even';
-    html += `
-    <div class="scorecard-print">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
-        <div>
-          <h4>Match ${i+1}: ${m.p1.name} vs ${m.p2.name}</h4>
-          <div style="font-size:0.78rem;color:#555;">${course} · ${side} · ${dateStr}</div>
-        </div>
-        <div style="text-align:right;font-size:0.78rem;color:#1a3a28;">
-          <div><strong>HCP:</strong> ${m.p1.name.split(' ')[0]} ${m.p1.hcp} / ${m.p2.name.split(' ')[0]} ${m.p2.hcp}</div>
-          <div><strong>Strokes Given:</strong> ${strokes > 0 ? m.p1.name.split(' ')[0]+' gives '+m.p2.name.split(' ')[0]+' '+strokes+' stroke(s)' : 'Even match'}</div>
-        </div>
-      </div>
-      <table class="sc-table">
-        <thead>
-          <tr>
-            <th style="text-align:left;">Player</th>
-            ${holes9.map(h=>`<th>${m.side==='back'?h+9:h}</th>`).join('')}
-            <th>Total</th><th>HCP</th><th>Net</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="text-align:left;font-weight:600;">${m.p1.name}</td>
-            ${holes9.map(()=>'<td>&nbsp;&nbsp;&nbsp;</td>').join('')}
-            <td></td><td>${m.p1.hcp}</td><td></td>
-          </tr>
-          <tr>
-            <td style="text-align:left;font-weight:600;">${m.p2.name} ${strokes>0?'<span style="color:#c9a227;font-size:0.7rem;">'+dotStr+'</span>':''}</td>
-            ${holes9.map(()=>'<td>&nbsp;&nbsp;&nbsp;</td>').join('')}
-            <td></td><td>${m.p2.hcp}</td><td></td>
-          </tr>
-        </tbody>
-      </table>
-      <div style="font-size:0.72rem;color:#888;margin-top:0.4rem;">● = stroke received on this hole (assigned by handicap stroke index)</div>
-    </div>`;
-  });
-  const area = document.getElementById('sc-preview-area');
-  area.style.display = 'block';
-  area.innerHTML = `<h3 style="font-family:'Playfair Display',serif;color:#0f2318;margin-bottom:0.75rem;">Score Card Preview — Week ${week}</h3>` + html;
-  area.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-function printScorecards() {
-  if (document.getElementById('sc-preview-area').style.display === 'none') {
-    previewScorecards();
-  }
-  setTimeout(() => window.print(), 400);
-}
-</script>
+<script src="app.js"></script>
 </body>
 </html>
