@@ -703,6 +703,42 @@
     <!-- PLAYERS -->
     <section id="players" class="view">
       <h2 class="view-title">Players</h2>
+
+      <!-- Add Player Form (Admin Only) -->
+      <div class="card" id="add-player-form-card" style="display:none;">
+        <h3>Add Player</h3>
+        <form id="add-player-form" onsubmit="return addPlayer(event)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div>
+              <label class="form-label">Player Name</label>
+              <input type="text" class="form-control" id="add-player-name" placeholder="Full Name" required>
+            </div>
+            <div>
+              <label class="form-label">Team</label>
+              <select class="form-control" id="add-player-team" required>
+                <option value="">Select Team…</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Handicap</label>
+              <input type="number" class="form-control" id="add-player-hcp" step="0.1" min="0" max="54" placeholder="e.g. 8.5" required>
+            </div>
+            <div>
+              <label class="form-label">Role</label>
+              <select class="form-control" id="add-player-role" required>
+                <option value="">Select Role…</option>
+                <option value="admin">Admin</option>
+                <option value="scorer">Scorer</option>
+                <option value="player">Player</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:1rem;">
+            <button type="submit" class="btn-primary">Add Player</button>
+          </div>
+        </form>
+      </div>
+
       <div class="card">
         <h3>League Roster — 20 Two-Man Teams</h3>
         <table class="data-table" id="players-table">

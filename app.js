@@ -170,6 +170,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (activeBtn && activeBtn.classList.contains('hidden')) {
       showView('dashboard');
     }
+    // Show/hide admin-only Add Player form
+    var addPlayerCard = document.getElementById('add-player-form-card');
+    if (addPlayerCard) {
+      addPlayerCard.style.display = (role === 'admin') ? '' : 'none';
+    }
     showToast('Role: ' + role.charAt(0).toUpperCase() + role.slice(1));
   };
 
@@ -191,6 +196,66 @@ document.addEventListener('DOMContentLoaded', function () {
       playersBody.appendChild(row);
     });
   }
+
+  // ── POPULATE ADD-PLAYER TEAM SELECT ──
+  var addPlayerTeam = document.getElementById('add-player-team');
+  if (addPlayerTeam) {
+    leagueTeams.forEach(function (team) {
+      var opt = document.createElement('option');
+      opt.value = team.id;
+      opt.textContent = team.name;
+      addPlayerTeam.appendChild(opt);
+    });
+  }
+
+  // ── ADD PLAYER HANDLER (Admin Only) ──
+  window.addPlayer = function (e) {
+    e.preventDefault();
+    var name = document.getElementById('add-player-name').value.trim();
+    var teamId = parseInt(document.getElementById('add-player-team').value, 10);
+    var hcp = parseFloat(document.getElementById('add-player-hcp').value);
+    var role = document.getElementById('add-player-role').value;
+
+    if (!name || !teamId || isNaN(hcp) || !role) {
+      showToast('Please fill in all fields');
+      return false;
+    }
+
+    // Find the team and add to roster table
+    var team = null;
+    for (var i = 0; i < leagueTeams.length; i++) {
+      if (leagueTeams[i].id === teamId) { team = leagueTeams[i]; break; }
+    }
+    if (!team) { showToast('Team not found'); return false; }
+
+    // Add player to team data
+    team.players.push({ name: name, hcp: hcp, role: role });
+
+    // Add a new row to the players table showing the addition
+    var playersBody2 = document.getElementById('players-body');
+    if (playersBody2) {
+      var newRow = document.createElement('tr');
+      newRow.innerHTML =
+        '<td>' + team.name + '</td>' +
+        '<td colspan="2">' + name + ' (HCP: ' + hcp + ')</td>' +
+        '<td colspan="2">Role: ' + role.charAt(0).toUpperCase() + role.slice(1) + '</td>' +
+        '<td><span class="status upcoming">Active</span></td>';
+      playersBody2.appendChild(newRow);
+    }
+
+    // Also add to score entry dropdown
+    var scorePlayer2 = document.getElementById('score-player');
+    if (scorePlayer2) {
+      var opt2 = document.createElement('option');
+      opt2.value = name;
+      opt2.textContent = name + ' (' + team.name + ', HCP: ' + hcp + ')';
+      scorePlayer2.appendChild(opt2);
+    }
+
+    showToast('Player "' + name + '" added as ' + role.charAt(0).toUpperCase() + role.slice(1) + ' to ' + team.name);
+    document.getElementById('add-player-form').reset();
+    return false;
+  };
 
   // ── POPULATE SCORE PLAYER SELECT ──
   var scorePlayer = document.getElementById('score-player');
