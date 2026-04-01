@@ -3,8 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fairway Command \u2014 The Ultimate League System</title>
+<title>Fairway Command — The Ultimate League System</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Font fallbacks if Google Fonts blocked */
+  @font-face { font-family: 'Bebas Neue'; src: local('Impact'), local('Arial Narrow'); }
+</style>
 <style>
   :root {
     --gold: #D4AF37;
@@ -32,9 +36,9 @@
     overflow-x: hidden;
   }
 
-  /* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+  /* ═══════════════════════════════
      LOGIN SCREEN
-  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+  ═══════════════════════════════ */
   #login-screen {
     min-height: 100vh;
     display: flex;
@@ -256,9 +260,9 @@
     border-color: var(--gold);
   }
 
-  /* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+  /* ═══════════════════════════════
      MAIN APP LAYOUT
-  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+  ═══════════════════════════════ */
   #app {
     display: none;
     min-height: 100vh;
@@ -879,7 +883,7 @@
 </head>
 <body>
 
-<!-- \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 LOGIN SCREEN \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 -->
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
 <div id="login-screen">
   <div class="login-grid-bg"></div>
   <div class="login-box">
@@ -902,7 +906,7 @@
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="login-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" />
+        <input type="password" id="login-password" placeholder="••••••••" />
       </div>
       <button class="btn-primary" onclick="doLogin()">Sign In</button>
       <div class="error-msg" id="login-error">Invalid email or password.</div>
@@ -930,15 +934,15 @@
     <div class="demo-logins">
       <p>Quick Demo Login</p>
       <div class="demo-pills">
-        <div class="demo-pill" onclick="demoLogin('admin')">\u2b50 Admin</div>
-        <div class="demo-pill" onclick="demoLogin('scorer')">\u270f\ufe0f Scorer</div>
-        <div class="demo-pill" onclick="demoLogin('player')">\ud83c\udfcc\ufe0f Player</div>
+        <div class="demo-pill" onclick="demoLogin('admin')">Admin</div>
+        <div class="demo-pill" onclick="demoLogin('scorer')">Scorer</div>
+        <div class="demo-pill" onclick="demoLogin('player')">Player</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 MAIN APP \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 -->
+<!-- ═══════════════ MAIN APP ═══════════════ -->
 <div id="app">
 
   <!-- TOP BAR -->
@@ -968,22 +972,22 @@
       <div class="sidebar-section" id="nav-player">
         <div class="sidebar-label">Player</div>
         <div class="nav-item active" onclick="showPage('dashboard')">
-          <span class="nav-icon">\ud83d\udcca</span> Dashboard
+          <span class="nav-icon">📊</span> Dashboard
         </div>
         <div class="nav-item" onclick="showPage('leaderboard')">
-          <span class="nav-icon">\ud83c\udfc6</span> Leaderboard
+          <span class="nav-icon">🏆</span> Leaderboard
         </div>
         <div class="nav-item" onclick="showPage('schedule')">
-          <span class="nav-icon">\ud83d\udcc5</span> Schedule
+          <span class="nav-icon">📅</span> Schedule
         </div>
         <div class="nav-item" onclick="showPage('analytics')">
-          <span class="nav-icon">\ud83d\udcc8</span> My Analytics
+          <span class="nav-icon">📈</span> My Analytics
         </div>
         <div class="nav-item" onclick="showPage('payments')">
-          <span class="nav-icon">\ud83d\udcb3</span> Payments
+          <span class="nav-icon">💳</span> Payments
         </div>
         <div class="nav-item" onclick="showPage('chat')">
-          <span class="nav-icon">\ud83d\udcac</span> League Chat
+          <span class="nav-icon">💬</span> League Chat
         </div>
       </div>
 
@@ -991,16 +995,16 @@
       <div class="sidebar-section hidden" id="nav-scorer">
         <div class="sidebar-label">Scorer</div>
         <div class="nav-item" onclick="showPage('enter-scores')">
-          <span class="nav-icon">\u270f\ufe0f</span> Enter Scores
+          <span class="nav-icon">✏️</span> Enter Scores
         </div>
         <div class="nav-item" onclick="showPage('scorecards')">
-          <span class="nav-icon">\ud83d\udda8\ufe0f</span> Print Scorecards
+          <span class="nav-icon">🖨️</span> Print Scorecards
         </div>
         <div class="nav-item" onclick="showPage('manage-players')">
-          <span class="nav-icon">\ud83d\udc65</span> Manage Players
+          <span class="nav-icon">👥</span> Manage Players
         </div>
         <div class="nav-item" onclick="showPage('manage-payments')">
-          <span class="nav-icon">\ud83d\udcb0</span> Manage Payments
+          <span class="nav-icon">💰</span> Manage Payments
         </div>
       </div>
 
@@ -1008,19 +1012,19 @@
       <div class="sidebar-section hidden" id="nav-admin">
         <div class="sidebar-label">Admin</div>
         <div class="nav-item" onclick="showPage('user-roles')">
-          <span class="nav-icon">\ud83d\udd10</span> User Roles
+          <span class="nav-icon">🔐</span> User Roles
         </div>
         <div class="nav-item" onclick="showPage('courses')">
-          <span class="nav-icon">\u26f3</span> Courses
+          <span class="nav-icon">⛳</span> Courses
         </div>
         <div class="nav-item" onclick="showPage('league-settings')">
-          <span class="nav-icon">\u2699\ufe0f</span> League Settings
+          <span class="nav-icon">⚙️</span> League Settings
         </div>
         <div class="nav-item" onclick="showPage('scramble')">
-          <span class="nav-icon">\ud83d\udd00</span> Scramble Events
+          <span class="nav-icon">🔀</span> Scramble Events
         </div>
         <div class="nav-item" onclick="showPage('rainouts')">
-          <span class="nav-icon">\ud83c\udf27\ufe0f</span> Rainout Mgmt
+          <span class="nav-icon">🌧️</span> Rainout Mgmt
         </div>
       </div>
     </div>
@@ -1030,27 +1034,27 @@
     <!-- MAIN CONTENT -->
     <div class="main-content">
 
-      <!-- \u2500\u2500 DASHBOARD \u2500\u2500 -->
+      <!-- ── DASHBOARD ── -->
       <div class="page active" id="page-dashboard">
         <div class="page-header">
           <h2>Dashboard</h2>
-          <p id="dash-welcome">Welcome back \u2014 Season 2026</p>
+          <p id="dash-welcome">Welcome back — Season 2026</p>
         </div>
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-label">Scoring Avg</div>
             <div class="stat-value">42.3</div>
-            <div class="stat-sub">9 holes \u00b7 par 36</div>
+            <div class="stat-sub">9 holes · par 36</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Best Round</div>
             <div class="stat-value">38</div>
-            <div class="stat-sub">Week 4 \u00b7 Mud Run</div>
+            <div class="stat-sub">Week 4 · Mud Run</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Handicap</div>
             <div class="stat-value">12.4</div>
-            <div class="stat-sub">\u2193 0.6 this month</div>
+            <div class="stat-sub">↓ 0.6 this month</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">League Rank</div>
@@ -1093,8 +1097,8 @@
               </div>
               <div class="match-divider"></div>
               <div class="match-info">
-                <div class="match-title">Week 8 \u2014 Regular Match</div>
-                <div class="match-course">Mud Run Golf Club \u00b7 5:30 PM tee time</div>
+                <div class="match-title">Week 8 — Regular Match</div>
+                <div class="match-course">Mud Run Golf Club · 5:30 PM tee time</div>
               </div>
               <span class="match-type type-match">Match</span>
             </div>
@@ -1102,7 +1106,7 @@
         </div>
       </div>
 
-      <!-- \u2500\u2500 LEADERBOARD \u2500\u2500 -->
+      <!-- ── LEADERBOARD ── -->
       <div class="page" id="page-leaderboard">
         <div class="page-header">
           <h2>Leaderboard</h2>
@@ -1126,11 +1130,11 @@
         </div>
       </div>
 
-      <!-- \u2500\u2500 SCHEDULE \u2500\u2500 -->
+      <!-- ── SCHEDULE ── -->
       <div class="page" id="page-schedule">
         <div class="page-header">
           <h2>Schedule</h2>
-          <p>Season 2026 \u2014 weekly matches & scramble events</p>
+          <p>Season 2026 — weekly matches & scramble events</p>
         </div>
         <div class="card">
           <div class="card-header"><div class="card-title">Full Schedule</div></div>
@@ -1138,7 +1142,7 @@
         </div>
       </div>
 
-      <!-- \u2500\u2500 MY ANALYTICS \u2500\u2500 -->
+      <!-- ── MY ANALYTICS ── -->
       <div class="page" id="page-analytics">
         <div class="page-header">
           <h2>My Analytics</h2>
@@ -1153,7 +1157,7 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Hole-by-Hole Averages</div>
-            <button class="btn-sm" onclick="window.print()">\ud83d\udda8\ufe0f Print</button>
+            <button class="btn-sm" onclick="window.print()">🖨️ Print</button>
           </div>
           <div class="card-body">
             <table class="data-table">
@@ -1174,7 +1178,7 @@
         </div>
       </div>
 
-      <!-- \u2500\u2500 PAYMENTS \u2500\u2500 -->
+      <!-- ── PAYMENTS ── -->
       <div class="page" id="page-payments">
         <div class="page-header">
           <h2>Payments</h2>
@@ -1191,16 +1195,16 @@
             <table class="data-table">
               <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
               <tbody>
-                <tr><td>Apr 1</td><td>$40</td><td>Cash</td><td style="color:#4CAF50">\u2713 Paid</td></tr>
-                <tr><td>May 1</td><td>$40</td><td>Venmo</td><td style="color:#4CAF50">\u2713 Paid</td></tr>
-                <tr><td>Jun 1</td><td>$40</td><td>\u2014</td><td style="color:#f66">\u26a0 Due</td></tr>
+                <tr><td>Apr 1</td><td>$40</td><td>Cash</td><td style="color:#4CAF50">✓ Paid</td></tr>
+                <tr><td>May 1</td><td>$40</td><td>Venmo</td><td style="color:#4CAF50">✓ Paid</td></tr>
+                <tr><td>Jun 1</td><td>$40</td><td>—</td><td style="color:#f66">⚠ Due</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- \u2500\u2500 LEAGUE CHAT \u2500\u2500 -->
+      <!-- ── LEAGUE CHAT ── -->
       <div class="page" id="page-chat">
         <div class="page-header"><h2>League Chat</h2><p>Real-time league messaging</p></div>
         <div class="card">
@@ -1214,11 +1218,11 @@
         </div>
       </div>
 
-      <!-- \u2500\u2500 ENTER SCORES (Scorer+) \u2500\u2500 -->
+      <!-- ── ENTER SCORES (Scorer+) ── -->
       <div class="page" id="page-enter-scores">
         <div class="page-header"><h2>Enter Scores</h2><p>Hole-by-hole score entry</p></div>
         <div class="card">
-          <div class="card-header"><div class="card-title">Score Entry \u2014 Week 8</div></div>
+          <div class="card-header"><div class="card-title">Score Entry — Week 8</div></div>
           <div class="card-body">
             <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
               <div class="form-field" style="flex:1;min-width:140px">
@@ -1230,10 +1234,10 @@
                 <select><option>White</option><option>Blue</option><option>Red</option></select>
               </div>
             </div>
-            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:10px;font-weight:700">Hole Scores \u2014 Par 36</p>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:10px;font-weight:700">Hole Scores — Par 36</p>
             <div class="score-grid" id="score-grid"></div>
             <div style="display:flex;align-items:center;gap:16px;margin-top:16px">
-              <div style="font-family:'Bebas Neue';font-size:28px;color:var(--gold)">Total: <span id="score-total">\u2014</span></div>
+              <div style="font-family:'Bebas Neue';font-size:28px;color:var(--gold)">Total: <span id="score-total">—</span></div>
               <div style="font-size:13px;color:var(--gray)" id="score-diff"></div>
               <button class="btn-sm btn-green" style="margin-left:auto" onclick="saveScore()">Save Score</button>
             </div>
@@ -1241,22 +1245,22 @@
         </div>
       </div>
 
-      <!-- \u2500\u2500 SCORECARDS (Scorer+) \u2500\u2500 -->
+      <!-- ── SCORECARDS (Scorer+) ── -->
       <div class="page" id="page-scorecards">
         <div class="page-header"><h2>Print Scorecards</h2><p>Generate print-ready 9-hole scorecards</p></div>
         <div class="card">
           <div class="card-header"><div class="card-title">Generate Scorecard</div></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom:16px">
-              <div class="form-field"><label>Week</label><select><option>Week 8 \u2014 Jun 24</option><option>Week 7 \u2014 Jun 17</option></select></div>
+              <div class="form-field"><label>Week</label><select><option>Week 8 — Jun 24</option><option>Week 7 — Jun 17</option></select></div>
               <div class="form-field"><label>Course</label><select><option>Mud Run Golf Club</option></select></div>
             </div>
-            <button class="btn-primary" style="width:auto;padding:12px 32px;font-size:16px" onclick="showToast('Scorecard ready to print!')">\ud83d\udda8\ufe0f Generate &amp; Print</button>
+            <button class="btn-primary" style="width:auto;padding:12px 32px;font-size:16px" onclick="showToast('Scorecard ready to print!')">🖨️ Generate &amp; Print</button>
           </div>
         </div>
       </div>
 
-      <!-- \u2500\u2500 MANAGE PLAYERS (Scorer+) \u2500\u2500 -->
+      <!-- ── MANAGE PLAYERS (Scorer+) ── -->
       <div class="page" id="page-manage-players">
         <div class="page-header"><h2>Manage Players</h2><p>Add, edit, and manage league members</p></div>
         <div class="card">
@@ -1284,11 +1288,432 @@
         </div>
       </div>
 
-      <!-- \u2500\u2500 MANAGE PAYMENTS (Scorer+) \u2500\u2500 -->
+      <!-- ── MANAGE PAYMENTS (Scorer+) ── -->
       <div class="page" id="page-manage-payments">
         <div class="page-header"><h2>Manage Payments</h2><p>Track and update payment status</p></div>
         <div class="card">
           <div class="card-header"><div class="card-title">Payment Status</div></div>
           <div class="card-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>Player</th><th>Due
+              <thead><tr><th>Player</th><th>Due</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="payment-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── USER ROLES (Admin) ── -->
+      <div class="page" id="page-user-roles">
+        <div class="page-header"><h2>User Roles</h2><p>Assign and manage user permissions</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Role Management</div></div>
+          <div class="card-body" id="role-list"></div>
+        </div>
+      </div>
+
+      <!-- ── COURSES (Admin) ── -->
+      <div class="page" id="page-courses">
+        <div class="page-header"><h2>Course Management</h2><p>Configure courses, tees, and hole details</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Mud Run Golf Club</div><button class="btn-sm">+ Add Course</button></div>
+          <div class="card-body">
+            <div style="margin-bottom:16px">
+              <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:10px">Hole Configuration</p>
+              <table class="data-table">
+                <thead><tr><th>Hole</th><th>Par</th><th>Handicap Index</th><th>White Yds</th><th>Blue Yds</th><th>Red Yds</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><input type="number" value="4" style="width:48px;background:rgba(255,255,255,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:4px;color:var(--white);text-align:center"></td><td>5</td><td>380</td><td>355</td><td>310</td></tr>
+                  <tr><td>2</td><td><input type="number" value="3" style="width:48px;background:rgba(255,255,255,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:4px;color:var(--white);text-align:center"></td><td>9</td><td>165</td><td>148</td><td>120</td></tr>
+                  <tr><td>3</td><td><input type="number" value="5" style="width:48px;background:rgba(255,255,255,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:4px;color:var(--white);text-align:center"></td><td>1</td><td>520</td><td>500</td><td>460</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="btn-sm btn-green" onclick="showToast('Course saved!')">Save Course</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LEAGUE SETTINGS (Admin) ── -->
+      <div class="page" id="page-league-settings">
+        <div class="page-header"><h2>League Settings</h2><p>Configure league name, season, and handicap formula</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">General Settings</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:20px">
+              <div class="form-field"><label>League Name</label><input value="Fairway Command League 2026" /></div>
+              <div class="form-field"><label>Season Start</label><input type="date" value="2026-04-07" /></div>
+              <div class="form-field"><label>Season End</label><input type="date" value="2026-09-22" /></div>
+              <div class="form-field"><label>Tee Placements (count)</label><input type="number" value="3" /></div>
+            </div>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Handicap Formula</p>
+            <div class="form-grid" style="margin-bottom:20px">
+              <div class="form-field"><label>Best N Rounds</label><input type="number" value="8" /></div>
+              <div class="form-field"><label>Last N Rounds</label><input type="number" value="20" /></div>
+              <div class="form-field"><label>Multiplier</label><input type="number" value="0.96" step="0.01" /></div>
+              <div class="form-field"><label>Max Handicap</label><input type="number" value="36" /></div>
+              <div class="form-field"><label>Min Handicap</label><input type="number" value="0" /></div>
+              <div class="form-field"><label>Bonus Strokes</label><input type="number" value="0" /></div>
+            </div>
+            <button class="btn-sm btn-green" onclick="showToast('Settings saved!')">Save Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCRAMBLE (Admin) ── -->
+      <div class="page" id="page-scramble">
+        <div class="page-header"><h2>Scramble Events</h2><p>Create and manage team scramble events</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Create Scramble Event</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Event Name</label><input placeholder="Summer Scramble 2026" /></div>
+              <div class="form-field"><label>Date</label><input type="date" /></div>
+              <div class="form-field"><label>Team Size</label><select><option>2 Players</option><option>3 Players</option><option value="4" selected>4 Players</option></select></div>
+              <div class="form-field"><label>Format</label><select><option>Scramble</option><option>Best Ball</option><option>Chapman</option></select></div>
+              <div class="form-field"><label>Live Leaderboard</label><select><option>Yes</option><option>No</option></select></div>
+            </div>
+            <button class="btn-sm btn-green" onclick="showToast('Scramble event created!')">Create Event</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RAINOUTS (Admin) ── -->
+      <div class="page" id="page-rainouts">
+        <div class="page-header"><h2>Rainout Management</h2><p>Mark rainouts and reschedule matches</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Mark Rainout</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Affected Match</label><select><option>Week 8 — Jun 24</option><option>Week 9 — Jul 1</option></select></div>
+              <div class="form-field"><label>Reschedule Date</label><input type="date" /></div>
+            </div>
+            <button class="btn-sm" onclick="showToast('Rainout marked — pending approval')">Mark Rainout</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-content -->
+  </div><!-- /app-body -->
+</div><!-- /app -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════
+const USERS = {
+  admin: { name: 'Ronald McCoy', email: 'admin@fc.com', password: 'admin123', role: 'admin' },
+  scorer: { name: 'Mike Johnson', email: 'scorer@fc.com', password: 'scorer123', role: 'scorer' },
+  player: { name: 'Dave Wilson', email: 'player@fc.com', password: 'player123', role: 'player' }
+};
+
+const PLAYERS_DATA = [
+  { name: 'Ronald McCoy', email: 'admin@fc.com', phone: '330-555-0101', hdcp: 8.2, rounds: 7, avg: 38.6, best: 35, points: 42 },
+  { name: 'Mike Johnson', email: 'scorer@fc.com', phone: '330-555-0102', hdcp: 12.1, rounds: 7, avg: 41.4, best: 38, points: 38 },
+  { name: 'Dave Wilson', email: 'player@fc.com', phone: '330-555-0103', hdcp: 12.4, rounds: 7, avg: 42.3, best: 38, points: 35 },
+  { name: 'Tom Harris', email: 'tom@fc.com', phone: '330-555-0104', hdcp: 15.8, rounds: 6, avg: 43.8, best: 40, points: 30 },
+  { name: 'Chris Lee', email: 'chris@fc.com', phone: '330-555-0105', hdcp: 18.2, rounds: 7, avg: 45.1, best: 41, points: 28 },
+];
+
+const SCHEDULE_DATA = [
+  { day: '14', month: 'Apr', title: 'Week 1 — Regular Match', course: 'Mud Run GC · 5:30 PM', type: 'match' },
+  { day: '21', month: 'Apr', title: 'Week 2 — Regular Match', course: 'Mud Run GC · 5:30 PM', type: 'match' },
+  { day: '28', month: 'Apr', title: 'Week 3 — Regular Match', course: 'Mud Run GC · 5:30 PM', type: 'match' },
+  { day: '12', month: 'May', title: 'Spring Scramble', course: 'Mud Run GC · 10:00 AM', type: 'scramble' },
+  { day: '3', month: 'Jun', title: 'Week 5 — Regular Match', course: 'Mud Run GC · 5:30 PM', type: 'match' },
+  { day: '17', month: 'Jun', title: 'Week 6 — Regular Match', course: 'Mud Run GC · 5:30 PM', type: 'match' },
+  { day: '24', month: 'Jun', title: 'Week 7 — Regular Match', course: 'Mud Run GC · 5:30 PM', type: 'match' },
+  { day: '15', month: 'Jul', title: 'Summer Scramble', course: 'Mud Run GC · 8:00 AM', type: 'scramble' },
+];
+
+const PARS = [4, 3, 5, 4, 3, 4, 4, 3, 4];
+const PAR_TOTAL = PARS.reduce((a,b) => a+b, 0);
+
+const PAYMENT_DATA = [
+  { name: 'Ronald McCoy', due: 120, paid: 120, status: 'Paid' },
+  { name: 'Mike Johnson', due: 120, paid: 80, status: 'Partial' },
+  { name: 'Dave Wilson', due: 120, paid: 80, status: 'Partial' },
+  { name: 'Tom Harris', due: 120, paid: 40, status: 'Partial' },
+  { name: 'Chris Lee', due: 120, paid: 0, status: 'Unpaid' },
+];
+
+// ═══════════════════════════════
+// STATE
+// ═══════════════════════════════
+let currentUser = null;
+let scores = new Array(9).fill('');
+
+// ═══════════════════════════════
+// AUTH
+// ═══════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('signup-form').classList.toggle('hidden', tab !== 'signup');
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+  // Check demo users
+  let user = Object.values(USERS).find(u => u.email === email && u.password === pass);
+  // Check localStorage users
+  if (!user) {
+    const stored = localStorage.getItem('fc_user_' + email);
+    if (stored) {
+      const u = JSON.parse(stored);
+      if (u.password === pass) user = u;
+    }
+  }
+  if (!user) { document.getElementById('login-error').style.display = 'block'; return; }
+  document.getElementById('login-error').style.display = 'none';
+  loginSuccess(user);
+}
+
+function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-password').value;
+  const errEl = document.getElementById('signup-error');
+  if (!name || !email || pass.length < 6) {
+    errEl.textContent = 'Please fill all fields (password min 6 chars).';
+    errEl.style.display = 'block';
+    return;
+  }
+  // Check if email already exists
+  if (localStorage.getItem('fc_user_' + email) || Object.values(USERS).find(u => u.email === email)) {
+    errEl.textContent = 'That email is already registered. Please sign in.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  // First signup gets admin, rest get player
+  const existingUsers = Object.keys(localStorage).filter(k => k.startsWith('fc_user_')).length;
+  const role = existingUsers === 0 ? 'admin' : 'player';
+  const newUser = { name, email, password: pass, role };
+  localStorage.setItem('fc_user_' + email, JSON.stringify(newUser));
+  loginSuccess(newUser);
+}
+
+function demoLogin(key) {
+  loginSuccess(USERS[key]);
+}
+
+function loginSuccess(user) {
+  currentUser = user;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('topbar-name').textContent = user.name;
+  const rb = document.getElementById('topbar-role');
+  rb.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+  rb.className = 'role-badge role-' + user.role;
+  document.getElementById('dash-welcome').textContent = 'Welcome back, ' + user.name.split(' ')[0] + ' — Season 2026';
+
+  // Show/hide nav sections
+  document.getElementById('nav-scorer').classList.toggle('hidden', user.role === 'player');
+  document.getElementById('nav-admin').classList.toggle('hidden', user.role !== 'admin');
+
+  initData();
+  showPage('dashboard');
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+// ═══════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  const navItem = document.querySelector(`.nav-item[onclick="showPage('${id}')"]`);
+  if (navItem) navItem.classList.add('active');
+  // close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+// ═══════════════════════════════
+// DATA INIT
+// ═══════════════════════════════
+function initData() {
+  buildLeaderboard();
+  buildSchedule();
+  buildScoreGrid();
+  buildPlayerRoster();
+  buildPaymentTable();
+  buildRoleList();
+}
+
+function buildLeaderboard() {
+  const sorted = [...PLAYERS_DATA].sort((a,b) => a.avg - b.avg);
+  const tbody = document.getElementById('leaderboard-body');
+  tbody.innerHTML = sorted.map((p,i) => {
+    const rankClass = i < 3 ? `rank-${i+1}` : '';
+    return `<tr>
+      <td class="rank-num ${rankClass}">${i+1}</td>
+      <td style="font-weight:600;color:var(--white)">${p.name}</td>
+      <td>${p.rounds}</td>
+      <td style="color:var(--gold);font-weight:700">${p.avg}</td>
+      <td>${p.best}</td>
+      <td>${p.hdcp}</td>
+      <td style="color:var(--green-light);font-weight:700">${p.points}</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildSchedule() {
+  const list = document.getElementById('schedule-list');
+  list.innerHTML = SCHEDULE_DATA.map(m => `
+    <div class="match-row">
+      <div class="match-date">
+        <div class="match-day">${m.day}</div>
+        <div class="match-month">${m.month}</div>
+      </div>
+      <div class="match-divider"></div>
+      <div class="match-info">
+        <div class="match-title">${m.title}</div>
+        <div class="match-course">${m.course}</div>
+      </div>
+      <span class="match-type type-${m.type}">${m.type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
+    </div>
+  `).join('');
+}
+
+function buildScoreGrid() {
+  const grid = document.getElementById('score-grid');
+  grid.innerHTML = PARS.map((par, i) => `
+    <div class="hole-input-wrap">
+      <div class="hole-num">H${i+1}</div>
+      <div class="hole-par">Par ${par}</div>
+      <input type="number" class="hole-score" min="1" max="15" placeholder="—"
+        oninput="updateScore(${i}, this.value)" />
+    </div>
+  `).join('');
+}
+
+function updateScore(idx, val) {
+  scores[idx] = val ? parseInt(val) : '';
+  const filled = scores.filter(s => s !== '');
+  const total = filled.reduce((a,b) => a+b, 0);
+  const partPar = PARS.slice(0, filled.length).reduce((a,b) => a+b, 0);
+  document.getElementById('score-total').textContent = filled.length === 9 ? total : total + ' (' + filled.length + '/9)';
+  if (filled.length === 9) {
+    const diff = total - PAR_TOTAL;
+    document.getElementById('score-diff').textContent = (diff > 0 ? '+' : '') + diff + ' vs par ' + PAR_TOTAL;
+  }
+}
+
+function saveScore() { showToast('Score saved successfully!'); scores = new Array(9).fill(''); buildScoreGrid(); }
+
+function buildPlayerRoster() {
+  const tbody = document.getElementById('player-roster');
+  tbody.innerHTML = PLAYERS_DATA.map(p => `
+    <tr>
+      <td style="font-weight:600;color:var(--white)">${p.name}</td>
+      <td>${p.email}</td>
+      <td>${p.phone}</td>
+      <td>${p.hdcp}</td>
+      <td><button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="showToast('Edit player')">Edit</button></td>
+    </tr>
+  `).join('');
+}
+
+function buildPaymentTable() {
+  const tbody = document.getElementById('payment-table');
+  tbody.innerHTML = PAYMENT_DATA.map(p => {
+    const bal = p.due - p.paid;
+    const color = p.status === 'Paid' ? '#4CAF50' : p.status === 'Partial' ? 'var(--gold)' : '#f66';
+    return `<tr>
+      <td style="font-weight:600;color:var(--white)">${p.name}</td>
+      <td>$${p.due}</td>
+      <td style="color:#4CAF50">$${p.paid}</td>
+      <td style="color:${bal > 0 ? '#f66' : '#4CAF50'}">$${bal}</td>
+      <td style="color:${color};font-weight:700">${p.status}</td>
+      <td><button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="showToast('Payment reminder sent!')">Remind</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function buildRoleList() {
+  const list = document.getElementById('role-list');
+  list.innerHTML = PLAYERS_DATA.map((p,i) => {
+    const roles = ['admin','scorer','player'];
+    const cur = i === 0 ? 'admin' : i === 1 ? 'scorer' : 'player';
+    return `<div class="role-row">
+      <div class="role-avatar">${p.name.split(' ').map(n=>n[0]).join('')}</div>
+      <div class="role-user-info">
+        <div class="role-user-name">${p.name}</div>
+        <div class="role-user-email">${p.email}</div>
+      </div>
+      <select class="role-select" onchange="showToast('Role updated!')">
+        ${roles.map(r => `<option ${r===cur?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════
+// CHAT
+// ═══════════════════════════════
+const chatMsgs = [
+  { user: 'Ronald McCoy', msg: 'Tee times confirmed for Jun 24 — 5:30 PM sharp', time: '2:14 PM' },
+  { user: 'Mike Johnson', msg: 'Got it. Will have scorecards ready.', time: '2:22 PM' },
+  { user: 'Dave Wilson', msg: 'Can we move to 5:45? Running late from work.', time: '3:01 PM' },
+];
+
+function renderChat() {
+  const box = document.getElementById('chat-messages');
+  box.innerHTML = chatMsgs.map(m => `
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:13px;font-weight:700;color:var(--gold)">${m.user}</span>
+        <span style="font-size:11px;color:var(--gray)">${m.time}</span>
+      </div>
+      <div style="font-size:14px;color:var(--gray-light)">${m.msg}</div>
+    </div>
+  `).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const now = new Date();
+  chatMsgs.push({ user: currentUser.name, msg, time: now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0') });
+  input.value = '';
+  renderChat();
+}
+
+// Render chat when that page is shown
+const origShowPage = showPage;
+
+// ═══════════════════════════════
+// TOAST
+// ═══════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
+
+ 
