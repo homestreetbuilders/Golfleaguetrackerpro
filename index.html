@@ -773,6 +773,152 @@
   .type-match { background: rgba(26,122,60,0.2); color: var(--green-light); }
   .type-scramble { background: rgba(212,175,55,0.15); color: var(--gold); }
 
+  /* PRINT SCORECARD */
+  .scorecard-preview-wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .scorecard-preview {
+    background: #fff;
+    border: 1px solid rgba(212,175,55,0.35);
+    border-radius: 4px;
+    padding: 14px;
+    max-width: 560px;
+  }
+
+  .scorecard-card {
+    width: 5in;
+    height: 7in;
+    background: #fff;
+    color: #111;
+    border: 2px solid var(--green);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    position: relative;
+  }
+
+  .scorecard-inner {
+    padding: 0.25in;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .scorecard-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .scorecard-title .left {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 2px;
+    font-size: 20px;
+    color: var(--green);
+  }
+
+  .scorecard-title .right {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    color: var(--gold-dark);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .scorecard-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+  }
+
+  .scorecard-meta .label { color: #666; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; }
+  .scorecard-meta .value { color: #111; font-weight: 700; }
+
+  .scorecard-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+  }
+
+  .scorecard-grid th,
+  .scorecard-grid td {
+    border: 1px solid #333;
+    padding: 6px;
+    text-align: center;
+  }
+
+  .scorecard-grid th {
+    background: rgba(26,74,46,0.08);
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 800;
+  }
+
+  .hole-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hole-top {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+  }
+
+  .stroke-dots {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+  }
+
+  .stroke-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 1px solid var(--green);
+  }
+
+  .score-box {
+    height: 20px;
+    border: 1px solid #333;
+    border-radius: 2px;
+    width: 100%;
+  }
+
+  .scorecard-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .print-only { display: none; }
+
+  @media print {
+    @page { size: 5in 7in; margin: 0; }
+    body { background: #fff; }
+    #login-screen, #app, .toast { display: none !important; }
+    .print-only { display: block !important; }
+    .print-only .scorecard-card { box-shadow: none; border-radius: 0; }
+  }
+
   /* PLAYER FORM */
   .form-grid {
     display: grid;
@@ -1012,6 +1158,9 @@
         <div class="nav-item" onclick="showPage('payments')">
           <span class="nav-icon">💳</span> Payments
         </div>
+        <div class="nav-item" onclick="showPage('profile')">
+          <span class="nav-icon">👤</span> My Profile
+        </div>
         <div class="nav-item" onclick="showPage('chat')">
           <span class="nav-icon">💬</span> League Chat
         </div>
@@ -1141,7 +1290,30 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">League Standings</div>
-            <button class="btn-sm">Export</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn-sm" id="lb-mode-gross" onclick="setLeaderboardMode('gross')">Gross</button>
+              <button class="btn-sm" id="lb-mode-net" onclick="setLeaderboardMode('net')">Net</button>
+              <button class="btn-sm" onclick="showToast('Export coming soon')">Export</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:16px 20px 0">
+            <div class="form-grid">
+              <div class="form-field">
+                <label>Week</label>
+                <select id="lb-week" onchange="applyLeaderboardFilters()"></select>
+              </div>
+              <div class="form-field">
+                <label>Start Date</label>
+                <input type="date" id="lb-start" onchange="applyLeaderboardFilters()" />
+              </div>
+              <div class="form-field">
+                <label>End Date</label>
+                <input type="date" id="lb-end" onchange="applyLeaderboardFilters()" />
+              </div>
+              <div class="form-field" style="display:flex;align-items:flex-end">
+                <button class="btn-sm" onclick="clearLeaderboardFilters()" style="width:100%">Clear</button>
+              </div>
+            </div>
           </div>
           <div class="card-body" style="padding:0">
             <table class="data-table">
@@ -1230,6 +1402,25 @@
         </div>
       </div>
 
+      <!-- ── MY PROFILE ── -->
+      <div class="page" id="page-profile">
+        <div class="page-header">
+          <h2>My Profile</h2>
+          <p>Update your contact information</p>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Profile Details</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Full Name</label><input id="profile-name" placeholder="Your name" /></div>
+              <div class="form-field"><label>Email</label><input id="profile-email" disabled /></div>
+              <div class="form-field"><label>Phone</label><input id="profile-phone" placeholder="(555) 000-0000" /></div>
+            </div>
+            <button class="btn-sm btn-green" onclick="saveMyProfile()">Save Profile</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ── LEAGUE CHAT ── -->
       <div class="page" id="page-chat">
         <div class="page-header"><h2>League Chat</h2><p>Real-time league messaging</p></div>
@@ -1252,20 +1443,40 @@
           <div class="card-body">
             <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
               <div class="form-field" style="flex:1;min-width:140px">
+                <label>Week</label>
+                <select id="score-week"></select>
+              </div>
+              <div class="form-field" style="flex:1;min-width:140px">
+                <label>Date</label>
+                <input id="score-date" type="date" />
+              </div>
+              <div class="form-field" style="flex:1;min-width:160px">
+                <label>Course</label>
+                <select id="score-course"><option value="Mud Run Golf Club">Mud Run Golf Club</option></select>
+              </div>
+              <div class="form-field" style="flex:1;min-width:140px">
                 <label>Player</label>
-                <select><option>Select player...</option><option>John Smith</option><option>Mike Johnson</option><option>Dave Wilson</option></select>
+                <select id="score-player"><option value="">Select player...</option></select>
               </div>
               <div class="form-field" style="flex:1;min-width:140px">
                 <label>Tee</label>
-                <select><option>White</option><option>Blue</option><option>Red</option></select>
+                <select id="score-tee"><option value="White">White</option><option value="Blue">Blue</option><option value="Red">Red</option></select>
               </div>
+            </div>
+            <div id="score-lock-row" style="display:flex;gap:10px;align-items:center;margin:-6px 0 16px">
+              <div style="font-size:12px;color:#666">Status: <span id="score-lock-status">—</span></div>
+              <button class="btn-sm" id="btn-unlock" style="display:none" onclick="unlockScorecard()">Unlock</button>
+              <div style="margin-left:auto;font-size:12px;color:#666">Scoring Mode: <span id="score-mode-label">—</span></div>
             </div>
             <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;margin-bottom:10px;font-weight:700">Hole Scores — Par 36</p>
             <div class="score-grid" id="score-grid"></div>
             <div style="display:flex;align-items:center;gap:16px;margin-top:16px">
               <div style="font-family:'Bebas Neue';font-size:28px;color:var(--gold-dark)">Total: <span id="score-total">—</span></div>
               <div style="font-size:13px;color:#666" id="score-diff"></div>
-              <button class="btn-sm btn-green" style="margin-left:auto" onclick="saveScore()">Save Score</button>
+              <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                <button class="btn-sm" onclick="saveScore('draft')">Save Draft</button>
+                <button class="btn-sm btn-green" onclick="saveScore('final')">Submit &amp; Lock</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1278,10 +1489,20 @@
           <div class="card-header"><div class="card-title">Generate Scorecard</div></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom:16px">
-              <div class="form-field"><label>Week</label><select><option>Week 8 — Jun 24</option><option>Week 7 — Jun 17</option></select></div>
-              <div class="form-field"><label>Course</label><select><option>Mud Run Golf Club</option></select></div>
+              <div class="form-field"><label>Week</label><select id="sc-week"></select></div>
+              <div class="form-field"><label>Date</label><input id="sc-date" type="date" /></div>
+              <div class="form-field"><label>Player</label><select id="sc-player"></select></div>
+              <div class="form-field"><label>Course</label><select id="sc-course"><option value="Mud Run Golf Club">Mud Run Golf Club</option></select></div>
+              <div class="form-field"><label>Tee</label><select id="sc-tee"><option value="White">White</option><option value="Blue">Blue</option><option value="Red">Red</option></select></div>
             </div>
-            <button class="btn-primary" style="width:auto;padding:12px 32px;font-size:16px" onclick="showToast('Scorecard ready to print!')">🖨️ Generate &amp; Print</button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+              <button class="btn-sm" onclick="generateScorecardPreview()">Preview</button>
+              <button class="btn-sm btn-green" onclick="printScorecard()">🖨️ Print 5×7</button>
+              <div style="font-size:12px;color:#666">Stroke dots are computed from player handicap + hole handicap indexes</div>
+            </div>
+            <div class="scorecard-preview-wrap">
+              <div class="scorecard-preview" id="scorecard-preview"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1371,6 +1592,16 @@
               <div class="form-field"><label>Season End</label><input type="date" value="2026-09-22" /></div>
               <div class="form-field"><label>Tee Placements (count)</label><input type="number" value="3" /></div>
             </div>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Scoring Mode</p>
+            <div class="form-grid" style="margin-bottom:20px">
+              <div class="form-field">
+                <label>Leaderboard Posting</label>
+                <select id="admin-scoring-mode" onchange="saveScoringMode(this.value)">
+                  <option value="batch">Batch (post after round finalized)</option>
+                  <option value="live">Live (update as entered)</option>
+                </select>
+              </div>
+            </div>
             <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Handicap Formula</p>
             <div class="form-grid" style="margin-bottom:20px">
               <div class="form-field"><label>Best N Rounds</label><input type="number" value="8" /></div>
@@ -1380,10 +1611,22 @@
               <div class="form-field"><label>Min Handicap</label><input type="number" value="0" /></div>
               <div class="form-field"><label>Bonus Strokes</label><input type="number" value="0" /></div>
             </div>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Batch Finalize Week</p>
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field">
+                <label>Week</label>
+                <select id="finalize-week"></select>
+              </div>
+              <div class="form-field" style="display:flex;align-items:flex-end">
+                <button class="btn-sm btn-green" style="width:100%" onclick="finalizeSelectedWeek()">Finalize &amp; Lock All</button>
+              </div>
+            </div>
             <button class="btn-sm btn-green" onclick="showToast('Settings saved!')">Save Settings</button>
           </div>
         </div>
       </div>
+
+      <div class="print-only" id="print-root"></div>
 
       <!-- ── SCRAMBLE (Admin) ── -->
       <div class="page" id="page-scramble">
@@ -1472,6 +1715,11 @@ const PAYMENT_DATA = [
 // ═══════════════════════════════
 let currentUser = null;
 let scores = new Array(9).fill('');
+let leaderboardMode = 'gross';
+let scoringMode = 'batch';
+let leaderboardFilters = { week: '', start: '', end: '' };
+
+const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
 
 // ═══════════════════════════════
 // AUTH
@@ -1696,6 +1944,9 @@ function showPage(id) {
   if (page) page.classList.add('active');
   const navItem = document.querySelector(`.nav-item[onclick="showPage('${id}')"]`);
   if (navItem) navItem.classList.add('active');
+  if (id === 'profile') {
+    loadMyProfile();
+  }
   // close mobile sidebar only
   if (window.innerWidth <= 768) {
     document.getElementById('sidebar').classList.remove('open');
@@ -1717,18 +1968,97 @@ function closeSidebar() {
 // DATA INIT
 // ═══════════════════════════════
 function initData() {
+  buildScoreGrid();
+  hydrateScoreEntryUI();
+  hydrateLeaderboardFiltersUI();
+  hydrateScorecardUI();
+  hydrateFinalizeWeekUI();
+  loadScoringMode();
+  setLeaderboardMode('gross');
   buildLeaderboard();
   buildSchedule();
-  buildScoreGrid();
   buildPlayerRoster();
   buildPaymentTable();
   buildRoleList();
 }
 
-function buildLeaderboard() {
-  const sorted = [...PLAYERS_DATA].sort((a,b) => a.avg - b.avg);
+function setLeaderboardMode(mode) {
+  leaderboardMode = mode === 'net' ? 'net' : 'gross';
+  const g = document.getElementById('lb-mode-gross');
+  const n = document.getElementById('lb-mode-net');
+  if (g) g.style.background = leaderboardMode === 'gross' ? 'rgba(212,175,55,0.22)' : 'rgba(212,175,55,0.12)';
+  if (n) n.style.background = leaderboardMode === 'net' ? 'rgba(212,175,55,0.22)' : 'rgba(212,175,55,0.12)';
+  buildLeaderboard();
+}
+
+function calcNetScore(gross, hdcp) {
+  const h = typeof hdcp === 'number' ? hdcp : parseFloat(hdcp);
+  if (!gross || isNaN(gross) || isNaN(h)) return gross;
+  const strokes = Math.max(0, Math.round(h / 2));
+  return gross - strokes;
+}
+
+async function buildLeaderboard() {
   const tbody = document.getElementById('leaderboard-body');
-  tbody.innerHTML = sorted.map((p,i) => {
+  if (!tbody) return;
+
+  // Default to demo data if API fails
+  let scoreRows = [];
+  let includeDraft = scoringMode === 'live';
+  try {
+    const qs = [];
+    if (includeDraft) qs.push('includeDraft=1');
+    if (leaderboardFilters.week) qs.push('week=' + encodeURIComponent(leaderboardFilters.week));
+    const res = await fetchJson('/api/scores' + (qs.length ? ('?' + qs.join('&')) : ''));
+    scoreRows = Array.isArray(res.scores) ? res.scores : [];
+  } catch (e) {
+    const sorted = [...PLAYERS_DATA].sort((a,b) => a.avg - b.avg);
+    tbody.innerHTML = sorted.map((p,i) => {
+      const rankClass = i < 3 ? `rank-${i+1}` : '';
+      return `<tr>
+        <td class="rank-num ${rankClass}">${i+1}</td>
+        <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
+        <td>${p.rounds}</td>
+        <td style="color:var(--gold-dark);font-weight:700">${p.avg}</td>
+        <td>${p.best}</td>
+        <td>${p.hdcp}</td>
+        <td style="color:var(--green);font-weight:700">${p.points}</td>
+      </tr>`;
+    }).join('');
+    return;
+  }
+
+  const startTs = leaderboardFilters.start ? Date.parse(leaderboardFilters.start) : null;
+  const endTs = leaderboardFilters.end ? Date.parse(leaderboardFilters.end) : null;
+
+  const byPlayer = new Map();
+  for (const s of scoreRows) {
+    if (!s || !s.player) continue;
+    if (startTs || endTs) {
+      const dts = s.date ? Date.parse(s.date) : null;
+      if (!dts || isNaN(dts)) continue;
+      if (startTs && dts < startTs) continue;
+      if (endTs && dts > (endTs + 24 * 60 * 60 * 1000 - 1)) continue;
+    }
+    const name = s.player;
+    const gross = typeof s.grossTotal === 'number' ? s.grossTotal : (Array.isArray(s.holes) ? s.holes.reduce((a,b)=>a+(parseInt(b)||0),0) : null);
+    if (gross === null || isNaN(gross)) continue;
+    const player = PLAYERS_DATA.find(p => String(p.name).toLowerCase() === String(name).toLowerCase()) || { name, hdcp: 0 };
+    const net = calcNetScore(gross, player.hdcp);
+    const val = leaderboardMode === 'net' ? net : gross;
+    if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: player.hdcp, values: [] });
+    byPlayer.get(name).values.push(val);
+  }
+
+  const rows = Array.from(byPlayer.values()).map(p => {
+    const rounds = p.values.length;
+    const avg = rounds ? (p.values.reduce((a,b)=>a+b,0) / rounds) : 0;
+    const best = rounds ? Math.min(...p.values) : 0;
+    const points = rounds ? Math.max(0, Math.round(100 - avg)) : 0;
+    return { ...p, rounds, avg: avg ? avg.toFixed(1) : '—', best: best || '—', points };
+  }).sort((a,b) => parseFloat(a.avg) - parseFloat(b.avg));
+
+  tbody.innerHTML = rows.map((p,i) => {
     const rankClass = i < 3 ? `rank-${i+1}` : '';
     return `<tr>
       <td class="rank-num ${rankClass}">${i+1}</td>
@@ -1739,25 +2069,249 @@ function buildLeaderboard() {
       <td>${p.hdcp}</td>
       <td style="color:var(--green);font-weight:700">${p.points}</td>
     </tr>`;
-  }).join('');
+  }).join('') || '<tr><td colspan="7" style="padding:18px;color:#666;text-align:center">No scores posted yet</td></tr>';
 }
 
-function buildSchedule() {
-  const list = document.getElementById('schedule-list');
-  list.innerHTML = SCHEDULE_DATA.map(m => `
-    <div class="match-row">
-      <div class="match-date">
-        <div class="match-day">${m.day}</div>
-        <div class="match-month">${m.month}</div>
+function hydrateLeaderboardFiltersUI() {
+  const weekEl = document.getElementById('lb-week');
+  const startEl = document.getElementById('lb-start');
+  const endEl = document.getElementById('lb-end');
+  if (weekEl && weekEl.options.length === 0) {
+    weekEl.innerHTML = '<option value="">All weeks</option>' +
+      Array.from({ length: 20 }).map((_, i) => `<option value="${i + 1}">Week ${i + 1}</option>`).join('');
+  }
+  if (startEl && leaderboardFilters.start) startEl.value = leaderboardFilters.start;
+  if (endEl && leaderboardFilters.end) endEl.value = leaderboardFilters.end;
+}
+
+function applyLeaderboardFilters() {
+  const weekEl = document.getElementById('lb-week');
+  const startEl = document.getElementById('lb-start');
+  const endEl = document.getElementById('lb-end');
+  leaderboardFilters.week = weekEl ? (weekEl.value || '') : '';
+  leaderboardFilters.start = startEl ? (startEl.value || '') : '';
+  leaderboardFilters.end = endEl ? (endEl.value || '') : '';
+  buildLeaderboard();
+}
+
+function clearLeaderboardFilters() {
+  leaderboardFilters = { week: '', start: '', end: '' };
+  const weekEl = document.getElementById('lb-week');
+  const startEl = document.getElementById('lb-start');
+  const endEl = document.getElementById('lb-end');
+  if (weekEl) weekEl.value = '';
+  if (startEl) startEl.value = '';
+  if (endEl) endEl.value = '';
+  buildLeaderboard();
+}
+
+function hydrateScorecardUI() {
+  const weekEl = document.getElementById('sc-week');
+  const playerEl = document.getElementById('sc-player');
+  const dateEl = document.getElementById('sc-date');
+  if (weekEl && weekEl.options.length === 0) {
+    weekEl.innerHTML = '<option value="">Select week...</option>' +
+      Array.from({ length: 20 }).map((_, i) => `<option value="${i + 1}">Week ${i + 1}</option>`).join('');
+  }
+  if (playerEl && playerEl.options.length === 0) {
+    playerEl.innerHTML = '<option value="">Select player...</option>' +
+      PLAYERS_DATA.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  }
+  if (dateEl && !dateEl.value) {
+    const d = new Date();
+    dateEl.value = d.toISOString().slice(0, 10);
+  }
+}
+
+function hydrateFinalizeWeekUI() {
+  const weekEl = document.getElementById('finalize-week');
+  if (weekEl && weekEl.options.length === 0) {
+    weekEl.innerHTML = '<option value="">Select week...</option>' +
+      Array.from({ length: 20 }).map((_, i) => `<option value="${i + 1}">Week ${i + 1}</option>`).join('');
+  }
+}
+
+function getStrokesForNine(hi) {
+  const h = typeof hi === 'number' ? hi : parseFloat(hi);
+  if (isNaN(h) || h <= 0) return 0;
+  return Math.max(0, Math.round(h / 2));
+}
+
+function allocateStrokeDots(strokes) {
+  const order = Array.from({ length: 9 }).map((_, i) => ({ hole: i + 1, idx: HOLE_HCP_INDEX[i] }))
+    .sort((a, b) => a.idx - b.idx);
+  const dots = new Array(9).fill(0);
+  for (let s = 0; s < strokes; s++) {
+    const pick = order[s % 9].hole;
+    dots[pick - 1] += 1;
+  }
+  return dots;
+}
+
+function buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, dots, holes }) {
+  const d = date ? new Date(date) : null;
+  const dateText = d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-US') : (date || '');
+  const dotHtml = (n) => `<span class="stroke-dots">${Array.from({ length: n }).map(() => '<span class="stroke-dot"></span>').join('')}</span>`;
+  const holeCells = Array.from({ length: 9 }).map((_, i) => {
+    const prefill = holes && holes[i] ? String(holes[i]) : '';
+    return `
+      <td>
+        <div class="hole-cell">
+          <div class="hole-top">H${i + 1}${dots[i] ? (' ' + dotHtml(dots[i])) : ''}</div>
+          <div style="font-size:11px;color:#333;font-weight:800">Par ${PARS[i]}</div>
+          <div class="score-box" style="display:flex;align-items:center;justify-content:center;font-weight:900;color:#111">${prefill}</div>
+        </div>
+      </td>
+    `;
+  }).join('');
+
+  return `
+    <div class="scorecard-card">
+      <div class="scorecard-inner">
+        <div class="scorecard-title">
+          <div class="left">Fairway Command</div>
+          <div class="right">Week ${week || '—'}</div>
+        </div>
+        <div class="scorecard-meta">
+          <div class="label">Player</div><div class="value">${playerName || '—'}</div>
+          <div class="label">Date</div><div class="value">${dateText || '—'}</div>
+          <div class="label">Course</div><div class="value">${course || '—'}</div>
+          <div class="label">Tee</div><div class="value">${tee || '—'}</div>
+          <div class="label">H.I.</div><div class="value">${(hi !== null && hi !== undefined) ? hi : '—'} (${strokes} strokes)</div>
+          <div class="label">Mode</div><div class="value">5×7 Card</div>
+        </div>
+        <table class="scorecard-grid">
+          <thead><tr>${Array.from({ length: 9 }).map((_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead>
+          <tbody><tr>${holeCells}</tr></tbody>
+        </table>
+        <div class="scorecard-footer">
+          <div>Total</div>
+          <div style="min-width:120px;border:1px solid #333;border-radius:2px;height:22px"></div>
+        </div>
       </div>
-      <div class="match-divider"></div>
-      <div class="match-info">
-        <div class="match-title">${m.title}</div>
-        <div class="match-course">${m.course}</div>
-      </div>
-      <span class="match-type type-${m.type}">${m.type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
     </div>
-  `).join('');
+  `;
+}
+
+async function generateScorecardPreview() {
+  const preview = document.getElementById('scorecard-preview');
+  if (!preview) return;
+  const weekEl = document.getElementById('sc-week');
+  const dateEl = document.getElementById('sc-date');
+  const playerEl = document.getElementById('sc-player');
+  const courseEl = document.getElementById('sc-course');
+  const teeEl = document.getElementById('sc-tee');
+  const week = weekEl ? weekEl.value : '';
+  const date = dateEl ? dateEl.value : '';
+  const playerName = playerEl ? playerEl.value : '';
+  const course = courseEl ? courseEl.value : '';
+  const tee = teeEl ? teeEl.value : '';
+
+  if (!week || !playerName) {
+    showToast('Select week and player');
+    return;
+  }
+
+  const player = PLAYERS_DATA.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
+  const hi = player ? player.hdcp : 0;
+  const strokes = getStrokesForNine(hi);
+  const dots = allocateStrokeDots(strokes);
+
+  let holes = null;
+  try {
+    const res = await fetchJson('/api/scores?week=' + encodeURIComponent(week) + '&player=' + encodeURIComponent(playerName) + '&includeDraft=1');
+    const rows = Array.isArray(res.scores) ? res.scores : [];
+    const latest = rows.sort((a, b) => (Date.parse(b.submittedAt || '') || 0) - (Date.parse(a.submittedAt || '') || 0))[0];
+    holes = latest && Array.isArray(latest.holes) ? latest.holes : null;
+  } catch (e) {
+    holes = null;
+  }
+
+  preview.innerHTML = buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, dots, holes });
+}
+
+async function printScorecard() {
+  const root = document.getElementById('print-root');
+  if (!root) return;
+  await generateScorecardPreview();
+  const preview = document.getElementById('scorecard-preview');
+  root.innerHTML = preview ? preview.innerHTML : '';
+  setTimeout(() => window.print(), 50);
+}
+
+async function finalizeSelectedWeek() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('finalize-week');
+  const week = weekEl ? weekEl.value : '';
+  if (!week) {
+    showToast('Select week');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/finalize-week', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week: parseInt(week, 10), submittedBy: currentUser.email })
+    });
+    const count = res && Array.isArray(res.finalized) ? res.finalized.length : 0;
+    showToast('Finalized ' + count + ' scorecards');
+    buildLeaderboard();
+    refreshScorecardLockStatus();
+  } catch (e) {
+    showToast('Finalize failed');
+  }
+}
+
+async function buildSchedule() {
+  const list = document.getElementById('schedule-list');
+  if (!list) return;
+  try {
+    const res = await fetchJson('/api/schedule');
+    const weeks = Array.isArray(res.weeks) ? res.weeks : [];
+    if (!weeks.length) throw new Error('No schedule');
+    const sorted = weeks.slice().sort((a,b) => (a.week || 0) - (b.week || 0));
+    list.innerHTML = sorted.map(w => {
+      const d = w.date ? new Date(w.date) : null;
+      const day = d && !isNaN(d.getTime()) ? String(d.getDate()).padStart(2,'0') : '--';
+      const month = d && !isNaN(d.getTime()) ? d.toLocaleString('en-US', { month: 'short' }) : '--';
+      const title = w.title || `Week ${w.week} — Regular Match`;
+      const course = w.course || '—';
+      const type = w.type || 'match';
+      const courseLine = w.teeTime ? `${course} · ${w.teeTime}` : course;
+      return `
+        <div class="match-row">
+          <div class="match-date">
+            <div class="match-day">${day}</div>
+            <div class="match-month">${month}</div>
+          </div>
+          <div class="match-divider"></div>
+          <div class="match-info">
+            <div class="match-title">${title}</div>
+            <div class="match-course">${courseLine}</div>
+          </div>
+          <span class="match-type type-${type}">${type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = SCHEDULE_DATA.map(m => `
+      <div class="match-row">
+        <div class="match-date">
+          <div class="match-day">${m.day}</div>
+          <div class="match-month">${m.month}</div>
+        </div>
+        <div class="match-divider"></div>
+        <div class="match-info">
+          <div class="match-title">${m.title}</div>
+          <div class="match-course">${m.course}</div>
+        </div>
+        <span class="match-type type-${m.type}">${m.type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
+      </div>
+    `).join('');
+  }
 }
 
 function buildScoreGrid() {
@@ -1784,7 +2338,201 @@ function updateScore(idx, val) {
   }
 }
 
-function saveScore() { showToast('Score saved successfully!'); scores = new Array(9).fill(''); buildScoreGrid(); }
+function getScoreEntryValues() {
+  const weekEl = document.getElementById('score-week');
+  const dateEl = document.getElementById('score-date');
+  const courseEl = document.getElementById('score-course');
+  const playerEl = document.getElementById('score-player');
+  const teeEl = document.getElementById('score-tee');
+  return {
+    week: weekEl ? parseInt(weekEl.value, 10) : null,
+    date: dateEl ? dateEl.value : null,
+    course: courseEl ? courseEl.value : null,
+    player: playerEl ? playerEl.value : null,
+    tee: teeEl ? teeEl.value : null
+  };
+}
+
+async function refreshScorecardLockStatus() {
+  const { week, player } = getScoreEntryValues();
+  const statusEl = document.getElementById('score-lock-status');
+  const btnUnlock = document.getElementById('btn-unlock');
+  if (!statusEl || !week || !player) {
+    if (statusEl) statusEl.textContent = '—';
+    if (btnUnlock) btnUnlock.style.display = 'none';
+    return;
+  }
+  try {
+    const lock = await fetchJson('/api/scorecard-lock?player=' + encodeURIComponent(player) + '&week=' + encodeURIComponent(week));
+    const locked = Boolean(lock && lock.locked);
+    statusEl.textContent = locked ? 'Locked' : 'Open';
+    if (btnUnlock) btnUnlock.style.display = (locked && currentUser && currentUser.role === 'admin') ? '' : 'none';
+  } catch (e) {
+    statusEl.textContent = '—';
+    if (btnUnlock) btnUnlock.style.display = 'none';
+  }
+}
+
+async function unlockScorecard() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const { week, player } = getScoreEntryValues();
+  if (!week || !player) {
+    showToast('Select player and week');
+    return;
+  }
+  try {
+    await fetchJson('/api/scorecard-lock', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ player, week, locked: false, reason: 'admin_unlock' })
+    });
+    showToast('Unlocked');
+    await refreshScorecardLockStatus();
+  } catch (e) {
+    showToast('Unlock failed');
+  }
+}
+
+async function saveScore(status) {
+  const { week, date, course, player, tee } = getScoreEntryValues();
+  if (!week || !date || !course || !player) {
+    showToast('Select week, date, course, and player');
+    return;
+  }
+  const filled = scores.filter(s => s !== '');
+  if (filled.length !== 9) {
+    showToast('Enter all 9 holes');
+    return;
+  }
+  const grossTotal = filled.reduce((a,b) => a + b, 0);
+  try {
+    await fetchJson('/api/scores', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        player,
+        playerEmail: null,
+        week,
+        date,
+        course,
+        tee,
+        holes: scores,
+        grossTotal,
+        status: status === 'final' ? 'final' : 'draft',
+        submittedBy: currentUser ? currentUser.email : null
+      })
+    });
+    showToast(status === 'final' ? 'Score submitted' : 'Draft saved');
+    if (status === 'final') {
+      await refreshScorecardLockStatus();
+    }
+    if (scoringMode === 'live' || status === 'final') {
+      buildLeaderboard();
+    }
+    scores = new Array(9).fill('');
+    buildScoreGrid();
+  } catch (e) {
+    if (String(e && e.message || '').toLowerCase().includes('locked')) {
+      showToast('Scorecard locked');
+      await refreshScorecardLockStatus();
+      return;
+    }
+    showToast('Save failed');
+  }
+}
+
+function hydrateScoreEntryUI() {
+  const weekEl = document.getElementById('score-week');
+  const playerEl = document.getElementById('score-player');
+  const dateEl = document.getElementById('score-date');
+  if (weekEl && weekEl.options.length === 0) {
+    weekEl.innerHTML = '<option value="">Select week...</option>' +
+      Array.from({ length: 10 }).map((_,i) => `<option value="${i+1}">Week ${i+1}</option>`).join('');
+  }
+  if (playerEl && playerEl.options.length <= 1) {
+    playerEl.innerHTML = '<option value="">Select player...</option>' +
+      PLAYERS_DATA.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  }
+  if (dateEl && !dateEl.value) {
+    const d = new Date();
+    dateEl.value = d.toISOString().slice(0, 10);
+  }
+
+  if (weekEl) weekEl.addEventListener('change', refreshScorecardLockStatus);
+  if (playerEl) playerEl.addEventListener('change', refreshScorecardLockStatus);
+}
+
+async function loadScoringMode() {
+  const modeLabel = document.getElementById('score-mode-label');
+  const adminSel = document.getElementById('admin-scoring-mode');
+  try {
+    const res = await fetchJson('/api/scoring-mode');
+    scoringMode = res && res.mode === 'live' ? 'live' : 'batch';
+  } catch (e) {
+    scoringMode = 'batch';
+  }
+  if (modeLabel) modeLabel.textContent = scoringMode === 'live' ? 'Live' : 'Batch';
+  if (adminSel && currentUser && currentUser.role === 'admin') {
+    adminSel.value = scoringMode;
+  }
+}
+
+async function saveScoringMode(mode) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/scoring-mode', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode })
+    });
+    scoringMode = res && res.mode === 'live' ? 'live' : 'batch';
+    const modeLabel = document.getElementById('score-mode-label');
+    if (modeLabel) modeLabel.textContent = scoringMode === 'live' ? 'Live' : 'Batch';
+    showToast('Scoring mode saved');
+    buildLeaderboard();
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function loadMyProfile() {
+  if (!currentUser) return;
+  const emailEl = document.getElementById('profile-email');
+  const nameEl = document.getElementById('profile-name');
+  const phoneEl = document.getElementById('profile-phone');
+  if (emailEl) emailEl.value = currentUser.email || '';
+  try {
+    const res = await fetchJson('/api/profile?email=' + encodeURIComponent(currentUser.email));
+    if (nameEl) nameEl.value = res && res.name ? res.name : currentUser.name;
+    if (phoneEl) phoneEl.value = res && res.phone ? res.phone : '';
+  } catch (e) {
+    if (nameEl) nameEl.value = currentUser.name;
+  }
+}
+
+async function saveMyProfile() {
+  if (!currentUser) return;
+  const nameEl = document.getElementById('profile-name');
+  const phoneEl = document.getElementById('profile-phone');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const phone = phoneEl ? phoneEl.value.trim() : '';
+  try {
+    await fetchJson('/api/profile', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: currentUser.email, name, phone })
+    });
+    showToast('Profile saved');
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
 
 function buildPlayerRoster() {
   const tbody = document.getElementById('player-roster');
