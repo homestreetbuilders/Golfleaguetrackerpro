@@ -14,9 +14,9 @@
     --gold: #D4AF37;
     --gold-light: #F0D060;
     --gold-dark: #A88B20;
-    --green: #1A7A3C;
-    --green-dark: #0F4E25;
-    --green-light: #2AA055;
+    --green: #1A4A2E;
+    --green-dark: #12341F;
+    --green-light: #2B6B45;
     --black: #0A0A0A;
     --dark: #111A14;
     --dark2: #162019;
@@ -1425,6 +1425,8 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
 <script>
 // ═══════════════════════════════
 // DEMO DATA
@@ -1480,12 +1482,102 @@ function switchTab(tab) {
   document.getElementById('signup-form').classList.toggle('hidden', tab !== 'signup');
 }
 
+function getIdentity() {
+  return window.netlifyIdentity || null;
+}
+
+async function identityPasswordLogin(email, pass) {
+  const ident = getIdentity();
+  if (!ident) throw new Error('Identity not available');
+  if (ident.gotrue && typeof ident.gotrue.login === 'function') {
+    return await ident.gotrue.login(email, pass, true);
+  }
+  if (typeof ident.login === 'function') {
+    return await ident.login(email, pass, true);
+  }
+  throw new Error('Password login not supported');
+}
+
+async function identitySignup(email, pass, meta) {
+  const ident = getIdentity();
+  if (!ident) throw new Error('Identity not available');
+  if (ident.gotrue && typeof ident.gotrue.signup === 'function') {
+    return await ident.gotrue.signup(email, pass, meta);
+  }
+  if (typeof ident.signup === 'function') {
+    return await ident.signup(email, pass, meta);
+  }
+  throw new Error('Signup not supported');
+}
+
+async function fetchJson(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || ('Request failed: ' + res.status));
+  }
+  return await res.json();
+}
+
+async function resolveUserRole(user) {
+  try {
+    const email = user && user.email;
+    if (!email) return 'player';
+    const roleRes = await fetchJson('/api/user-role?email=' + encodeURIComponent(email));
+    if (roleRes && roleRes.role) return roleRes.role;
+    return 'player';
+  } catch (e) {
+    return 'player';
+  }
+}
+
+function applyRoleAccess(role) {
+  const isAdmin = role === 'admin';
+  const isScorer = role === 'scorer' || role === 'admin';
+
+  const navScorer = document.getElementById('nav-scorer');
+  const navAdmin = document.getElementById('nav-admin');
+  if (navScorer) navScorer.style.display = isScorer ? '' : 'none';
+  if (navAdmin) navAdmin.style.display = isAdmin ? '' : 'none';
+
+  // Admin-only items that currently live under the Scorer group in the UI
+  const managePlayersNav = document.querySelector(".nav-item[onclick=\"showPage('manage-players')\"]");
+  const managePaymentsNav = document.querySelector(".nav-item[onclick=\"showPage('manage-payments')\"]");
+  if (managePlayersNav) managePlayersNav.style.display = isAdmin ? '' : 'none';
+  if (managePaymentsNav) managePaymentsNav.style.display = isAdmin ? '' : 'none';
+
+  // Guard: if user somehow lands on a restricted page, send to dashboard.
+  const activePage = document.querySelector('.page.active');
+  if (activePage) {
+    const pid = activePage.id || '';
+    const scorerPages = ['page-enter-scores', 'page-scorecards'];
+    const adminPages = ['page-user-roles', 'page-courses', 'page-league-settings', 'page-scramble', 'page-rainouts', 'page-manage-players', 'page-manage-payments'];
+    const scorerOnly = scorerPages.indexOf(pid) !== -1;
+    const adminOnly = adminPages.indexOf(pid) !== -1;
+    if ((scorerOnly && !isScorer) || (adminOnly && !isAdmin)) {
+      showPage('dashboard');
+      showToast('Access denied');
+    }
+  }
+}
+
 function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-password').value;
-  // Check demo users
+  const ident = getIdentity();
+  if (ident) {
+    document.getElementById('login-error').style.display = 'none';
+    identityPasswordLogin(email, pass).then(async (u) => {
+      const role = await resolveUserRole(u);
+      loginSuccess({ name: (u.user_metadata && u.user_metadata.full_name) ? u.user_metadata.full_name : (u.email || email), email: u.email || email, role });
+    }).catch(() => {
+      document.getElementById('login-error').style.display = 'block';
+    });
+    return;
+  }
+
+  // Fallback demo/local mode
   let user = Object.values(USERS).find(u => u.email === email && u.password === pass);
-  // Check localStorage users
   if (!user) {
     const stored = localStorage.getItem('fc_user_' + email);
     if (stored) {
@@ -1508,14 +1600,35 @@ function doSignup() {
     errEl.style.display = 'block';
     return;
   }
-  // Check if email already exists
+  const ident = getIdentity();
+  if (ident) {
+    errEl.style.display = 'none';
+    identitySignup(email, pass, { full_name: name }).then(async (u) => {
+      try {
+        await fetchJson('/.netlify/functions/identity-signup', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: email })
+        });
+      } catch (e) {
+        // Non-fatal; role will default on fetch.
+      }
+      const role = await resolveUserRole(u);
+      loginSuccess({ name, email, role });
+    }).catch((e) => {
+      errEl.textContent = (e && e.message) ? e.message : 'Sign up failed.';
+      errEl.style.display = 'block';
+    });
+    return;
+  }
+
+  // Fallback demo/local mode
   if (localStorage.getItem('fc_user_' + email) || Object.values(USERS).find(u => u.email === email)) {
     errEl.textContent = 'That email is already registered. Please sign in.';
     errEl.style.display = 'block';
     return;
   }
   errEl.style.display = 'none';
-  // First signup gets admin, rest get player
   const existingUsers = Object.keys(localStorage).filter(k => k.startsWith('fc_user_')).length;
   const role = existingUsers === 0 ? 'admin' : 'player';
   const newUser = { name, email, password: pass, role };
@@ -1537,8 +1650,7 @@ function loginSuccess(user) {
   rb.className = 'role-badge role-' + user.role;
   document.getElementById('dash-welcome').textContent = 'Welcome back, ' + user.name.split(' ')[0] + ' — Season 2026';
 
-  // Show/hide nav sections — always show all sections
-  // All sidebar sections are permanently visible
+  applyRoleAccess(user.role);
 
   initData();
   showPage('dashboard');
@@ -1550,6 +1662,28 @@ function doLogout() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
+
+  const ident = getIdentity();
+  if (ident && typeof ident.logout === 'function') {
+    ident.logout();
+  }
+}
+
+async function setRoleForUser(email, role) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    await fetchJson('/.netlify/functions/set-role', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, role })
+    });
+    showToast('Role updated');
+  } catch (e) {
+    showToast('Role update failed');
+  }
 }
 
 // ═══════════════════════════════
@@ -1692,12 +1826,35 @@ function buildRoleList() {
         <div class="role-user-name">${p.name}</div>
         <div class="role-user-email">${p.email}</div>
       </div>
-      <select class="role-select" onchange="showToast('Role updated!')">
-        ${roles.map(r => `<option ${r===cur?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
+      <select class="role-select" onchange="setRoleForUser('${p.email}', this.value.toLowerCase())">
+        ${roles.map(r => `<option value="${r}" ${r===cur?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
       </select>
     </div>`;
   }).join('');
 }
+
+// Netlify Identity: keep session + role on refresh
+(() => {
+  const ident = getIdentity();
+  if (!ident || typeof ident.on !== 'function') return;
+
+  ident.on('init', async (user) => {
+    if (!user) return;
+    const role = await resolveUserRole(user);
+    const name = (user.user_metadata && user.user_metadata.full_name) ? user.user_metadata.full_name : (user.email || 'User');
+    loginSuccess({ name, email: user.email, role });
+  });
+
+  ident.on('login', async (user) => {
+    if (!user) return;
+    const role = await resolveUserRole(user);
+    const name = (user.user_metadata && user.user_metadata.full_name) ? user.user_metadata.full_name : (user.email || 'User');
+    loginSuccess({ name, email: user.email, role });
+    ident.close();
+  });
+
+  ident.init();
+})();
 
 // ═══════════════════════════════
 // CHAT
