@@ -1152,6 +1152,12 @@
         <div class="nav-item" onclick="showPage('schedule')">
           <span class="nav-icon">📅</span> Schedule
         </div>
+        <div class="nav-item" onclick="showPage('season-overview')">
+          <span class="nav-icon">📘</span> Season Overview
+        </div>
+        <div class="nav-item" onclick="showPage('team-scorecard')">
+          <span class="nav-icon">🧾</span> Team Scorecard
+        </div>
         <div class="nav-item" onclick="showPage('analytics')">
           <span class="nav-icon">📈</span> My Analytics
         </div>
@@ -1334,9 +1340,60 @@
           <h2>Schedule</h2>
           <p>Season 2026 — weekly matches & scramble events</p>
         </div>
+        <div class="card" id="schedule-admin-card" style="display:none">
+          <div class="card-header"><div class="card-title">Schedule Management</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Week</label><input id="sch-week" type="number" min="1" placeholder="1" /></div>
+              <div class="form-field"><label>Date</label><input id="sch-date" type="date" /></div>
+              <div class="form-field"><label>Title</label><input id="sch-title" placeholder="Week 1 — Regular Match" /></div>
+              <div class="form-field"><label>Course</label><input id="sch-course" placeholder="Mud Run GC" /></div>
+              <div class="form-field"><label>Tee Time</label><input id="sch-tee" placeholder="5:30 PM" /></div>
+              <div class="form-field"><label>Type</label>
+                <select id="sch-type"><option value="match">Match</option><option value="scramble">Scramble</option></select>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn-sm btn-green" onclick="saveScheduleWeekFromUI()">Save Week</button>
+              <button class="btn-sm" onclick="deleteScheduleWeekFromUI()">Delete Week</button>
+              <button class="btn-sm" onclick="showToast('Tip: Use Rainout Mgmt to shift schedule')">Rainout Shift</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="schedule-proposal-card" style="display:none">
+          <div class="card-header"><div class="card-title">Pending Schedule Adjustment</div></div>
+          <div class="card-body">
+            <div id="schedule-proposal-body" style="color:#333"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <button class="btn-sm btn-green" onclick="approveScheduleProposal()">Approve Adjustment</button>
+              <button class="btn-sm" onclick="rejectScheduleProposal()">Reject</button>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header"><div class="card-title">Full Schedule</div></div>
           <div class="card-body" id="schedule-list"></div>
+        </div>
+      </div>
+
+      <!-- ── SEASON OVERVIEW ── -->
+      <div class="page" id="page-season-overview">
+        <div class="page-header"><h2 id="season-title">Season Overview</h2><p>League rules & season info</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Rules</div></div>
+          <div class="card-body">
+            <div id="season-content" style="white-space:pre-wrap;color:#333;line-height:1.5"></div>
+          </div>
+        </div>
+        <div class="card" id="season-admin" style="display:none">
+          <div class="card-header"><div class="card-title">Edit (Admin)</div></div>
+          <div class="card-body">
+            <div class="form-field" style="margin-bottom:12px"><label>Title</label><input id="season-title-input" /></div>
+            <div class="form-field" style="margin-bottom:12px"><label>Content</label><textarea id="season-content-input" style="width:100%;min-height:220px;background:#fff;border:1px solid #ccc;border-radius:3px;padding:10px 14px;color:#1a1a1a;font-family:'Barlow',sans-serif;font-size:14px;outline:none;"></textarea></div>
+            <button class="btn-sm btn-green" onclick="saveSeasonOverviewFromUI()">Save Season Overview</button>
+          </div>
         </div>
       </div>
 
@@ -1500,6 +1557,22 @@
               <div class="form-field"><label>Course</label><select id="sc-course"><option value="Mud Run Golf Club">Mud Run Golf Club</option></select></div>
               <div class="form-field"><label>Tee</label><select id="sc-tee"><option value="White">White</option><option value="Blue">Blue</option><option value="Red">Red</option></select></div>
             </div>
+
+            <div class="card" id="sub-card" style="margin:0 0 16px;display:none">
+              <div class="card-header"><div class="card-title">Substitute (Admin)</div></div>
+              <div class="card-body">
+                <div class="form-grid" style="margin-bottom:12px">
+                  <div class="form-field"><label>Sub Name</label><input id="sub-name" placeholder="Substitute Name" /></div>
+                  <div class="form-field"><label>Sub Handicap</label><input id="sub-hcap" type="number" step="0.1" placeholder="0.0" /></div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn-sm btn-green" onclick="saveSubFromUI()">Save Sub</button>
+                  <button class="btn-sm" onclick="clearSubFromUI()">Clear Sub</button>
+                </div>
+                <div style="margin-top:10px;font-size:12px;color:#666">Subs replace the selected player's name + handicap on the printed scorecard for that week.</div>
+              </div>
+            </div>
+
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
               <button class="btn-sm" onclick="generateScorecardPreview()">Preview</button>
               <button class="btn-sm btn-green" onclick="printScorecard()">🖨️ Print 5×7</button>
@@ -1675,13 +1748,71 @@
           <div class="card-header"><div class="card-title">Create Scramble Event</div></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom:16px">
-              <div class="form-field"><label>Event Name</label><input placeholder="Summer Scramble 2026" /></div>
-              <div class="form-field"><label>Date</label><input type="date" /></div>
-              <div class="form-field"><label>Team Size</label><select><option>2 Players</option><option>3 Players</option><option value="4" selected>4 Players</option></select></div>
-              <div class="form-field"><label>Format</label><select><option>Scramble</option><option>Best Ball</option><option>Chapman</option></select></div>
-              <div class="form-field"><label>Live Leaderboard</label><select><option>Yes</option><option>No</option></select></div>
+              <div class="form-field"><label>Schedule Week (Scramble)</label><select id="scr-week"></select></div>
+              <div class="form-field"><label>Event Name</label><input id="scr-name" placeholder="Summer Scramble 2026" /></div>
+              <div class="form-field"><label>Date</label><input id="scr-date" type="date" /></div>
+              <div class="form-field"><label>Team Size</label><select id="scr-team-size"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option></select></div>
+              <div class="form-field"><label>Scoring Type</label><select id="scr-scoring"><option value="stroke_gross">Stroke Play (Gross)</option><option value="stroke_net">Stroke Play (Net)</option><option value="stableford">Stableford</option><option value="best_ball">Best Ball</option></select></div>
             </div>
-            <button class="btn-sm btn-green" onclick="showToast('Scramble event created!')">Create Event</button>
+            <button class="btn-sm btn-green" onclick="createScrambleEventFromUI()">Create Event</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Manage Event</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Event</label><select id="scr-event" onchange="loadSelectedScrambleEvent()"></select></div>
+              <div class="form-field"><label>Team</label><select id="scr-team" onchange="hydrateScrambleScoreInputs()"></select></div>
+            </div>
+
+            <div class="card" style="margin:0 0 16px">
+              <div class="card-header"><div class="card-title">Teams</div></div>
+              <div class="card-body" id="scr-teams"></div>
+              <div class="card-body" style="padding-top:0">
+                <button class="btn-sm btn-green" onclick="saveScrambleTeamsFromUI()">Save Teams</button>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0 0 16px">
+              <div class="card-header"><div class="card-title">Team Score (18 holes)</div></div>
+              <div class="card-body">
+                <div id="scr-score-grid" style="display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:10px"></div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+                  <button class="btn-sm btn-green" onclick="submitScrambleScoreFromUI()">Submit Team Score</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0">
+              <div class="card-header"><div class="card-title">Leaderboard</div></div>
+              <div class="card-body" style="padding:0">
+                <table class="data-table">
+                  <thead><tr><th>#</th><th>Team</th><th>Score</th><th>Submitted</th></tr></thead>
+                  <tbody id="scr-leaderboard"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TEAM SCORECARD ── -->
+      <div class="page" id="page-team-scorecard">
+        <div class="page-header"><h2>Team Scorecard</h2><p>Scramble results</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Event</div></div>
+          <div class="card-body">
+            <select id="ts-event" onchange="loadTeamScorecard()"></select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Leaderboard</div></div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Team</th><th>Score</th></tr></thead>
+              <tbody id="ts-leaderboard"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1693,10 +1824,20 @@
           <div class="card-header"><div class="card-title">Mark Rainout</div></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom:16px">
-              <div class="form-field"><label>Affected Match</label><select><option>Week 8 — Jun 24</option><option>Week 9 — Jul 1</option></select></div>
-              <div class="form-field"><label>Reschedule Date</label><input type="date" /></div>
+              <div class="form-field"><label>Affected Week</label><select id="ro-week"></select></div>
+              <div class="form-field"><label>Reschedule Date</label><input id="ro-date" type="date" /></div>
+              <div class="form-field"><label>Reason</label><input id="ro-reason" placeholder="Weather / course closure" /></div>
             </div>
-            <button class="btn-sm" onclick="showToast('Rainout marked — pending approval')">Mark Rainout</button>
+            <button class="btn-sm btn-green" onclick="proposeRainoutShiftFromUI()">Propose Rainout Shift</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Rainout History</div></div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>Week</th><th>Original</th><th>Rescheduled</th><th>Status</th></tr></thead>
+              <tbody id="rainout-table"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1761,6 +1902,9 @@ let leaderboardFilters = { week: '', start: '', end: '' };
 let playersCache = [];
 let paymentSettingsCache = null;
 let editingPlayerEmail = null;
+let scheduleCache = [];
+let scrambleEventsCache = [];
+let activeScrambleEvent = null;
 
 const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
 
@@ -1819,6 +1963,118 @@ async function resolveUserRole(user) {
     return 'player';
   } catch (e) {
     return 'player';
+  }
+}
+
+async function saveScheduleWeekFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('sch-week');
+  const dateEl = document.getElementById('sch-date');
+  const titleEl = document.getElementById('sch-title');
+  const courseEl = document.getElementById('sch-course');
+  const teeEl = document.getElementById('sch-tee');
+  const typeEl = document.getElementById('sch-type');
+  const week = weekEl ? parseInt(weekEl.value, 10) : null;
+  if (!week) {
+    showToast('Week required');
+    return;
+  }
+  try {
+    await fetchJson('/api/schedule', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        week,
+        date: dateEl ? dateEl.value : null,
+        title: titleEl ? titleEl.value.trim() : '',
+        course: courseEl ? courseEl.value.trim() : '',
+        teeTime: teeEl ? teeEl.value.trim() : '',
+        type: typeEl ? typeEl.value : 'match'
+      })
+    });
+    showToast('Schedule saved');
+    buildSchedule();
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function deleteScheduleWeekFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('sch-week');
+  const week = weekEl ? parseInt(weekEl.value, 10) : null;
+  if (!week) {
+    showToast('Week required');
+    return;
+  }
+  if (!confirm('Delete schedule for Week ' + week + '?')) return;
+  try {
+    await fetchJson('/api/schedule?week=' + encodeURIComponent(week), { method: 'DELETE' });
+    showToast('Deleted');
+    buildSchedule();
+  } catch (e) {
+    showToast('Delete failed');
+  }
+}
+
+async function proposeRainoutShiftFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('ro-week');
+  const dateEl = document.getElementById('ro-date');
+  const reasonEl = document.getElementById('ro-reason');
+  const week = weekEl ? parseInt(weekEl.value, 10) : null;
+  const rescheduledDate = dateEl ? dateEl.value : '';
+  if (!week || !rescheduledDate) {
+    showToast('Select week and reschedule date');
+    return;
+  }
+  try {
+    await fetchJson('/api/schedule?action=propose_rainout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week, rescheduledDate, reason: reasonEl ? reasonEl.value.trim() : '' })
+    });
+    showToast('Proposal created');
+    buildSchedule();
+  } catch (e) {
+    showToast('Proposal failed');
+  }
+}
+
+async function approveScheduleProposal() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    await fetchJson('/api/schedule?action=apply_proposal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    showToast('Schedule adjusted');
+    buildSchedule();
+  } catch (e) {
+    showToast('Approve failed');
+  }
+}
+
+async function rejectScheduleProposal() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    await fetchJson('/api/schedule?action=reject_proposal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    showToast('Proposal rejected');
+    buildSchedule();
+  } catch (e) {
+    showToast('Reject failed');
   }
 }
 
@@ -2004,6 +2260,18 @@ function showPage(id) {
       hydratePlayerSelectors();
     });
   }
+  if (id === 'rainouts') {
+    buildSchedule();
+  }
+  if (id === 'season-overview') {
+    loadSeasonOverview();
+  }
+  if (id === 'scramble') {
+    hydrateScrambleAdminUI();
+  }
+  if (id === 'team-scorecard') {
+    hydrateTeamScorecardUI();
+  }
   if (id === 'user-roles') {
     buildRoleList();
   }
@@ -2051,6 +2319,382 @@ function initData() {
   loadPaymentSettings();
   buildPaymentTable();
   loadMyPayments();
+  loadSeasonOverview();
+  hydrateScrambleAdminUI();
+}
+
+async function loadSeasonOverview() {
+  const titleEl = document.getElementById('season-title');
+  const contentEl = document.getElementById('season-content');
+  const adminCard = document.getElementById('season-admin');
+  const titleInput = document.getElementById('season-title-input');
+  const contentInput = document.getElementById('season-content-input');
+
+  if (adminCard) adminCard.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+
+  try {
+    const res = await fetchJson('/api/season-overview');
+    const rules = res && res.rules ? res.rules : { title: 'Season Overview', content: '' };
+    if (titleEl) titleEl.textContent = rules.title || 'Season Overview';
+    if (contentEl) contentEl.textContent = rules.content || '';
+    if (titleInput) titleInput.value = rules.title || 'Season Overview';
+    if (contentInput) contentInput.value = rules.content || '';
+  } catch (e) {
+    if (titleEl) titleEl.textContent = 'Season Overview';
+    if (contentEl) contentEl.textContent = '';
+  }
+}
+
+async function saveSeasonOverviewFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const titleInput = document.getElementById('season-title-input');
+  const contentInput = document.getElementById('season-content-input');
+  try {
+    await fetchJson('/api/season-overview', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: titleInput ? titleInput.value : 'Season Overview',
+        content: contentInput ? contentInput.value : ''
+      })
+    });
+    showToast('Season overview saved');
+    loadSeasonOverview();
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function loadScheduleCache() {
+  try {
+    const res = await fetchJson('/api/schedule');
+    scheduleCache = Array.isArray(res && res.weeks) ? res.weeks : [];
+  } catch (e) {
+    scheduleCache = [];
+  }
+  return scheduleCache;
+}
+
+async function loadScrambleEvents() {
+  try {
+    const res = await fetchJson('/api/scramble-events');
+    scrambleEventsCache = Array.isArray(res && res.events) ? res.events : [];
+  } catch (e) {
+    scrambleEventsCache = [];
+  }
+  return scrambleEventsCache;
+}
+
+async function hydrateScrambleAdminUI() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  await loadPlayers();
+  await loadScheduleCache();
+  await loadScrambleEvents();
+
+  const weekSel = document.getElementById('scr-week');
+  if (weekSel) {
+    const cur = weekSel.value;
+    const scrWeeks = (scheduleCache || []).filter(w => (w.type || 'match') === 'scramble');
+    weekSel.innerHTML = '<option value="">Select week...</option>' + scrWeeks.map(w => `<option value="${w.week}">Week ${w.week} — ${w.title || 'Scramble'}</option>`).join('');
+    if (cur) weekSel.value = cur;
+  }
+
+  const eventSel = document.getElementById('scr-event');
+  if (eventSel) {
+    const cur = eventSel.value;
+    eventSel.innerHTML = '<option value="">Select event...</option>' + (scrambleEventsCache || []).map(e => `<option value="${e.id}">${e.name} — ${e.date}</option>`).join('');
+    if (cur) eventSel.value = cur;
+  }
+
+  const tsSel = document.getElementById('ts-event');
+  if (tsSel) {
+    const cur = tsSel.value;
+    tsSel.innerHTML = '<option value="">Select event...</option>' + (scrambleEventsCache || []).map(e => `<option value="${e.id}">${e.name} — ${e.date}</option>`).join('');
+    if (cur) tsSel.value = cur;
+  }
+
+  if (eventSel && eventSel.value) {
+    await loadSelectedScrambleEvent();
+  }
+}
+
+async function createScrambleEventFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('scr-week');
+  const nameEl = document.getElementById('scr-name');
+  const dateEl = document.getElementById('scr-date');
+  const sizeEl = document.getElementById('scr-team-size');
+  const scoringEl = document.getElementById('scr-scoring');
+  const week = weekEl && weekEl.value ? parseInt(weekEl.value, 10) : null;
+  const name = nameEl ? nameEl.value.trim() : '';
+  const date = dateEl ? dateEl.value : '';
+  const teamSize = sizeEl ? parseInt(sizeEl.value, 10) : 4;
+  const scoringType = scoringEl ? scoringEl.value : 'stroke_gross';
+
+  if (!date || !name) {
+    showToast('Name and date required');
+    return;
+  }
+
+  let course = '';
+  let teeTime = '';
+  if (week && scheduleCache && scheduleCache.length) {
+    const w = scheduleCache.find(x => (x.week || 0) === week);
+    course = w && w.course ? w.course : '';
+    teeTime = w && w.teeTime ? w.teeTime : '';
+  }
+
+  try {
+    const res = await fetchJson('/api/scramble-events?action=create', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week, name, date, course, teeTime, teamSize, scoringType })
+    });
+    showToast('Scramble created');
+    await loadScrambleEvents();
+    await hydrateScrambleAdminUI();
+    const sel = document.getElementById('scr-event');
+    if (sel && res && res.event && res.event.id) {
+      sel.value = res.event.id;
+      await loadSelectedScrambleEvent();
+    }
+  } catch (e) {
+    showToast('Create failed');
+  }
+}
+
+async function loadSelectedScrambleEvent() {
+  const sel = document.getElementById('scr-event');
+  if (!sel || !sel.value) return;
+  try {
+    const res = await fetchJson('/api/scramble-events?id=' + encodeURIComponent(sel.value));
+    activeScrambleEvent = res && res.event ? res.event : null;
+    buildScrambleTeamsUI();
+    hydrateScrambleTeamSelector();
+    hydrateScrambleScoreInputs();
+    buildScrambleLeaderboard();
+  } catch (e) {
+    activeScrambleEvent = null;
+  }
+}
+
+function buildScrambleTeamsUI() {
+  const box = document.getElementById('scr-teams');
+  if (!box || !activeScrambleEvent) return;
+  const teamSize = activeScrambleEvent.teamSize || 4;
+  const teams = Array.isArray(activeScrambleEvent.teams) ? activeScrambleEvent.teams : [];
+  const playerOpts = (playersCache || []).map(p => `<option value="${p.email}">${p.name}</option>`).join('');
+
+  if (!teams.length) {
+    const count = Math.max(2, Math.ceil((playersCache || []).length / teamSize) || 2);
+    activeScrambleEvent.teams = Array.from({ length: count }).map((_, i) => ({ id: 'T' + (i + 1), name: 'Team ' + (i + 1), players: [] }));
+  }
+
+  box.innerHTML = (activeScrambleEvent.teams || []).map(t => {
+    const slots = Array.from({ length: teamSize }).map((_, idx) => {
+      const cur = t.players && t.players[idx] ? t.players[idx] : '';
+      return `<div class="form-field" style="min-width:180px"><label>Player ${idx + 1}</label>
+        <select data-team-id="${t.id}" data-slot="${idx}">
+          <option value="">—</option>
+          ${playerOpts}
+        </select>
+      </div>`;
+    }).join('');
+    return `
+      <div style="border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:12px;margin-bottom:12px;background:rgba(212,175,55,0.06)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="font-weight:900;color:var(--gold-dark)">${t.name}</div>
+          <div style="font-size:12px;color:#666">(${t.id})</div>
+        </div>
+        <div class="form-grid" style="grid-template-columns:repeat(2, minmax(0, 1fr));gap:10px">${slots}</div>
+      </div>
+    `;
+  }).join('');
+
+  // set selected values
+  for (const t of (activeScrambleEvent.teams || [])) {
+    const players = Array.isArray(t.players) ? t.players : [];
+    for (let i = 0; i < teamSize; i++) {
+      const sel = box.querySelector(`select[data-team-id="${t.id}"][data-slot="${i}"]`);
+      if (sel) sel.value = players[i] || '';
+    }
+  }
+}
+
+function hydrateScrambleTeamSelector() {
+  const sel = document.getElementById('scr-team');
+  if (!sel || !activeScrambleEvent) return;
+  const cur = sel.value;
+  const teams = Array.isArray(activeScrambleEvent.teams) ? activeScrambleEvent.teams : [];
+  sel.innerHTML = '<option value="">Select team...</option>' + teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+async function saveScrambleTeamsFromUI() {
+  if (!currentUser || currentUser.role !== 'admin' || !activeScrambleEvent) {
+    showToast('Access denied');
+    return;
+  }
+  const box = document.getElementById('scr-teams');
+  if (!box) return;
+  const teamSize = activeScrambleEvent.teamSize || 4;
+  const teams = Array.isArray(activeScrambleEvent.teams) ? activeScrambleEvent.teams : [];
+  const updated = teams.map(t => ({ ...t, players: new Array(teamSize).fill('').map((_, i) => {
+    const sel = box.querySelector(`select[data-team-id="${t.id}"][data-slot="${i}"]`);
+    return sel ? sel.value : '';
+  }).filter(Boolean) }));
+  try {
+    const res = await fetchJson('/api/scramble-events?action=save_teams', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: activeScrambleEvent.id, teams: updated })
+    });
+    activeScrambleEvent = res && res.event ? res.event : activeScrambleEvent;
+    showToast('Teams saved');
+    hydrateScrambleTeamSelector();
+    buildScrambleLeaderboard();
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+function hydrateScrambleScoreInputs() {
+  const grid = document.getElementById('scr-score-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (!activeScrambleEvent) return;
+  const teamSel = document.getElementById('scr-team');
+  const teamId = teamSel ? teamSel.value : '';
+  if (!teamId) return;
+  const existing = activeScrambleEvent.scores && activeScrambleEvent.scores[teamId] ? activeScrambleEvent.scores[teamId] : null;
+  const holes = existing && Array.isArray(existing.holes) ? existing.holes : new Array(18).fill('');
+  grid.innerHTML = Array.from({ length: 18 }).map((_, i) => {
+    const val = holes[i] === null || holes[i] === undefined ? '' : holes[i];
+    return `<div class="form-field"><label>H${i + 1}</label><input type="number" min="1" max="15" value="${val}" data-hole="${i}" /></div>`;
+  }).join('');
+}
+
+async function submitScrambleScoreFromUI() {
+  if (!currentUser || currentUser.role !== 'admin' || !activeScrambleEvent) {
+    showToast('Access denied');
+    return;
+  }
+  const teamSel = document.getElementById('scr-team');
+  const teamId = teamSel ? teamSel.value : '';
+  const grid = document.getElementById('scr-score-grid');
+  if (!teamId || !grid) {
+    showToast('Select a team');
+    return;
+  }
+  const holes = new Array(18).fill(null).map((_, i) => {
+    const el = grid.querySelector(`input[data-hole="${i}"]`);
+    return el ? (el.value === '' ? null : Number(el.value)) : null;
+  });
+  if (holes.some(v => v === null || !Number.isFinite(v))) {
+    showToast('Enter all 18 holes');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/scramble-events?action=submit_score', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: activeScrambleEvent.id, teamId, holes })
+    });
+    activeScrambleEvent = res && res.event ? res.event : activeScrambleEvent;
+    showToast('Score submitted');
+    buildScrambleLeaderboard();
+    hydrateTeamScorecardUI();
+  } catch (e) {
+    showToast('Submit failed');
+  }
+}
+
+function computeTeamScore(event, teamId) {
+  const score = event && event.scores && event.scores[teamId] ? event.scores[teamId] : null;
+  const holes = score && Array.isArray(score.holes) ? score.holes : null;
+  if (!holes || holes.length !== 18) return null;
+
+  const scoringType = event && event.scoringType ? String(event.scoringType) : 'stroke_gross';
+
+  const gross = holes.reduce((a, b) => a + (Number(b) || 0), 0);
+
+  if (scoringType === 'stableford') {
+    // For stableford, treat inputs as per-hole points (higher is better)
+    return gross;
+  }
+
+  if (scoringType === 'stroke_net') {
+    const team = (event.teams || []).find(t => t.id === teamId);
+    const emails = team && Array.isArray(team.players) ? team.players : [];
+    const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+    const hcaps = emails.map(e => {
+      const p = pool.find(x => String(x.email).toLowerCase() === String(e).toLowerCase());
+      const h = p ? (p.hdcp !== undefined ? p.hdcp : p.handicap) : 0;
+      return Number(h) || 0;
+    });
+    const avg = hcaps.length ? (hcaps.reduce((a, b) => a + b, 0) / hcaps.length) : 0;
+    const netAdj = Math.max(0, Math.round(avg));
+    return gross - netAdj;
+  }
+
+  // stroke_gross / best_ball: lower is better
+  return gross;
+}
+
+function buildScrambleLeaderboard() {
+  const body = document.getElementById('scr-leaderboard');
+  if (!body || !activeScrambleEvent) return;
+  const teams = Array.isArray(activeScrambleEvent.teams) ? activeScrambleEvent.teams : [];
+  const scoringType = activeScrambleEvent.scoringType ? String(activeScrambleEvent.scoringType) : 'stroke_gross';
+  const rows = teams.map(t => {
+    const total = computeTeamScore(activeScrambleEvent, t.id);
+    const submittedAt = activeScrambleEvent.scores && activeScrambleEvent.scores[t.id] ? activeScrambleEvent.scores[t.id].submittedAt : null;
+    return { id: t.id, name: t.name, total, submittedAt };
+  }).filter(r => r.total !== null)
+    .sort((a, b) => scoringType === 'stableford' ? (b.total - a.total) : (a.total - b.total));
+
+  body.innerHTML = rows.map((r, i) => {
+    const dt = r.submittedAt ? new Date(r.submittedAt) : null;
+    const submitted = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('en-US') : '—';
+    return `<tr><td style="font-weight:900;color:var(--gold-dark)">${i + 1}</td><td>${r.name}</td><td style="font-weight:900;color:var(--green)">${r.total}</td><td>${submitted}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" style="padding:18px;color:#666;text-align:center">No scores submitted</td></tr>';
+
+  const tsBody = document.getElementById('ts-leaderboard');
+  if (tsBody) {
+    tsBody.innerHTML = rows.map((r, i) => `<tr><td style="font-weight:900;color:var(--gold-dark)">${i + 1}</td><td>${r.name}</td><td style="font-weight:900;color:var(--green)">${r.total}</td></tr>`).join('') || '<tr><td colspan="3" style="padding:18px;color:#666;text-align:center">No scores submitted</td></tr>';
+  }
+}
+
+async function hydrateTeamScorecardUI() {
+  await loadScrambleEvents();
+  const sel = document.getElementById('ts-event');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select event...</option>' + (scrambleEventsCache || []).map(e => `<option value="${e.id}">${e.name} — ${e.date}</option>`).join('');
+  if (cur) sel.value = cur;
+  if (sel.value) {
+    await loadTeamScorecard();
+  }
+}
+
+async function loadTeamScorecard() {
+  const sel = document.getElementById('ts-event');
+  if (!sel || !sel.value) return;
+  try {
+    const res = await fetchJson('/api/scramble-events?id=' + encodeURIComponent(sel.value));
+    const ev = res && res.event ? res.event : null;
+    if (!ev) return;
+    activeScrambleEvent = ev;
+    buildScrambleLeaderboard();
+  } catch (e) {
+    // ignore
+  }
 }
 
 async function loadPlayers(includeRoles) {
@@ -2325,6 +2969,119 @@ function hydrateScorecardUI() {
     const d = new Date();
     dateEl.value = d.toISOString().slice(0, 10);
   }
+
+  const subCard = document.getElementById('sub-card');
+  if (subCard) {
+    subCard.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+  }
+
+  if (weekEl && playerEl) {
+    weekEl.addEventListener('change', loadSubForSelectedScorecard);
+    playerEl.addEventListener('change', loadSubForSelectedScorecard);
+  }
+}
+
+async function loadSubForSelectedScorecard() {
+  const subCard = document.getElementById('sub-card');
+  if (!subCard || !currentUser || currentUser.role !== 'admin') return;
+  const weekEl = document.getElementById('sc-week');
+  const playerEl = document.getElementById('sc-player');
+  const subNameEl = document.getElementById('sub-name');
+  const subHcapEl = document.getElementById('sub-hcap');
+  const week = weekEl ? parseInt(weekEl.value, 10) : null;
+  const playerName = playerEl ? playerEl.value : '';
+  if (!week || !playerName) {
+    if (subNameEl) subNameEl.value = '';
+    if (subHcapEl) subHcapEl.value = '';
+    return;
+  }
+  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
+  const playerEmail = player ? player.email : '';
+  if (!playerEmail) {
+    if (subNameEl) subNameEl.value = '';
+    if (subHcapEl) subHcapEl.value = '';
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/substitutes?week=' + encodeURIComponent(week) + '&playerEmail=' + encodeURIComponent(playerEmail));
+    const sub = res && res.substitute ? res.substitute : null;
+    if (subNameEl) subNameEl.value = sub ? (sub.substituteName || '') : '';
+    if (subHcapEl) subHcapEl.value = sub && sub.substituteHandicap !== null && sub.substituteHandicap !== undefined ? sub.substituteHandicap : '';
+  } catch (e) {
+    if (subNameEl) subNameEl.value = '';
+    if (subHcapEl) subHcapEl.value = '';
+  }
+}
+
+async function saveSubFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('sc-week');
+  const playerEl = document.getElementById('sc-player');
+  const subNameEl = document.getElementById('sub-name');
+  const subHcapEl = document.getElementById('sub-hcap');
+  const week = weekEl ? parseInt(weekEl.value, 10) : null;
+  const playerName = playerEl ? playerEl.value : '';
+  const substituteName = subNameEl ? subNameEl.value.trim() : '';
+  const substituteHandicap = subHcapEl ? subHcapEl.value : '';
+  if (!week || !playerName || !substituteName) {
+    showToast('Select week, player, and sub name');
+    return;
+  }
+  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
+  const playerEmail = player ? player.email : '';
+  if (!playerEmail) {
+    showToast('Player email not found');
+    return;
+  }
+  try {
+    await fetchJson('/api/substitutes', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week, playerEmail, substituteName, substituteHandicap: substituteHandicap === '' ? null : Number(substituteHandicap) })
+    });
+    showToast('Sub saved');
+    generateScorecardPreview();
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function clearSubFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('sc-week');
+  const playerEl = document.getElementById('sc-player');
+  const subNameEl = document.getElementById('sub-name');
+  const subHcapEl = document.getElementById('sub-hcap');
+  const week = weekEl ? parseInt(weekEl.value, 10) : null;
+  const playerName = playerEl ? playerEl.value : '';
+  if (!week || !playerName) {
+    showToast('Select week and player');
+    return;
+  }
+  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
+  const playerEmail = player ? player.email : '';
+  if (!playerEmail) {
+    showToast('Player email not found');
+    return;
+  }
+  try {
+    await fetchJson('/api/substitutes?week=' + encodeURIComponent(week) + '&playerEmail=' + encodeURIComponent(playerEmail), { method: 'DELETE' });
+    if (subNameEl) subNameEl.value = '';
+    if (subHcapEl) subHcapEl.value = '';
+    showToast('Sub cleared');
+    generateScorecardPreview();
+  } catch (e) {
+    showToast('Clear failed');
+  }
 }
 
 function hydrateFinalizeWeekUI() {
@@ -2418,7 +3175,23 @@ async function generateScorecardPreview() {
 
   const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
   const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
-  const hi = player ? (player.hdcp !== undefined ? player.hdcp : player.handicap) : 0;
+  let displayName = playerName;
+  let hi = player ? (player.hdcp !== undefined ? player.hdcp : player.handicap) : 0;
+
+  if (currentUser && currentUser.role === 'admin' && week && player && player.email) {
+    try {
+      const subRes = await fetchJson('/api/substitutes?week=' + encodeURIComponent(parseInt(week, 10)) + '&playerEmail=' + encodeURIComponent(player.email));
+      const sub = subRes && subRes.substitute ? subRes.substitute : null;
+      if (sub && sub.substituteName) {
+        displayName = sub.substituteName;
+        if (sub.substituteHandicap !== null && sub.substituteHandicap !== undefined) {
+          hi = sub.substituteHandicap;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
   const strokes = getStrokesForNine(hi);
   const dots = allocateStrokeDots(strokes);
 
@@ -2432,7 +3205,7 @@ async function generateScorecardPreview() {
     holes = null;
   }
 
-  preview.innerHTML = buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, dots, holes });
+  preview.innerHTML = buildScorecardHtml({ week, date, playerName: displayName, course, tee, hi, strokes, dots, holes });
 }
 
 async function printScorecard() {
@@ -2476,6 +3249,48 @@ async function buildSchedule() {
   try {
     const res = await fetchJson('/api/schedule');
     const weeks = Array.isArray(res.weeks) ? res.weeks : [];
+    const rainouts = Array.isArray(res.rainouts) ? res.rainouts : [];
+    const pendingProposal = res.pendingProposal || null;
+
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    const adminCard = document.getElementById('schedule-admin-card');
+    if (adminCard) adminCard.style.display = isAdmin ? '' : 'none';
+
+    const propCard = document.getElementById('schedule-proposal-card');
+    const propBody = document.getElementById('schedule-proposal-body');
+    if (propCard) propCard.style.display = (isAdmin && pendingProposal) ? '' : 'none';
+    if (isAdmin && pendingProposal && propBody) {
+      propBody.innerHTML = `
+        <div style="font-weight:900;color:var(--gold-dark);margin-bottom:6px">Rainout shift proposed (Week ${pendingProposal.week})</div>
+        <div style="font-size:13px;color:#444">Original: <b>${pendingProposal.originalDate}</b></div>
+        <div style="font-size:13px;color:#444">Rescheduled: <b>${pendingProposal.rescheduledDate}</b></div>
+        <div style="font-size:13px;color:#444">Shift: <b>${pendingProposal.deltaDays}</b> day(s)</div>
+      `;
+    }
+
+    const roWeek = document.getElementById('ro-week');
+    if (roWeek && weeks.length) {
+      const cur = roWeek.value;
+      roWeek.innerHTML = '<option value="">Select week...</option>' +
+        weeks.slice().sort((a,b) => (a.week||0)-(b.week||0)).map(w => `<option value="${w.week}">Week ${w.week} — ${w.title || 'Match'}</option>`).join('');
+      if (cur) roWeek.value = cur;
+    }
+
+    const rainBody = document.getElementById('rainout-table');
+    if (rainBody) {
+      const rows = rainouts.slice().sort((a,b) => (a.week||0)-(b.week||0));
+      rainBody.innerHTML = rows.map(r => {
+        const status = r.status || 'pending';
+        const color = status === 'approved' ? '#4CAF50' : status === 'rejected' ? '#f66' : 'var(--gold)';
+        return `<tr>
+          <td style="font-weight:800;color:#1a1a1a">${r.week}</td>
+          <td>${r.originalDate || '—'}</td>
+          <td>${r.rescheduledDate || '—'}</td>
+          <td style="font-weight:900;color:${color}">${status}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="4" style="padding:18px;color:#666;text-align:center">No rainouts</td></tr>';
+    }
+
     if (!weeks.length) throw new Error('No schedule');
     const sorted = weeks.slice().sort((a,b) => (a.week || 0) - (b.week || 0));
     list.innerHTML = sorted.map(w => {
@@ -2486,6 +3301,10 @@ async function buildSchedule() {
       const course = w.course || '—';
       const type = w.type || 'match';
       const courseLine = w.teeTime ? `${course} · ${w.teeTime}` : course;
+
+      const rain = rainouts.find(r => (r.week || 0) === (w.week || 0));
+      const rainStatus = rain ? (rain.status || 'pending') : null;
+      const badge = rain ? `<span style="margin-left:10px;font-size:11px;font-weight:900;color:${rainStatus==='approved'?'#4CAF50':rainStatus==='rejected'?'#f66':'var(--gold-dark)'};text-transform:uppercase">Rainout ${rainStatus}</span>` : '';
       return `
         <div class="match-row">
           <div class="match-date">
@@ -2494,7 +3313,7 @@ async function buildSchedule() {
           </div>
           <div class="match-divider"></div>
           <div class="match-info">
-            <div class="match-title">${title}</div>
+            <div class="match-title">${title}${badge}</div>
             <div class="match-course">${courseLine}</div>
           </div>
           <span class="match-type type-${type}">${type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
