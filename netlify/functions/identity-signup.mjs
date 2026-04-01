@@ -25,7 +25,3 @@ export default async (req) => {
 
   return Response.json({ success: true, email, role: existing || role })
 }
-
-export const config = {
-  path: '/.netlify/functions/identity-signup'
-}

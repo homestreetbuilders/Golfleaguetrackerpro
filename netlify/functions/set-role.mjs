@@ -24,7 +24,3 @@ export default async (req) => {
 
   return Response.json({ success: true, email, role: normalizedRole })
 }
-
-export const config = {
-  path: '/.netlify/functions/set-role'
-}
