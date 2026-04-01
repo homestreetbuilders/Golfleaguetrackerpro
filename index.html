@@ -30,8 +30,8 @@
 
   body {
     font-family: 'Barlow', sans-serif;
-    background: var(--dark);
-    color: var(--white);
+    background: #FFFFFF;
+    color: #1a1a1a;
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -402,6 +402,29 @@
     overflow-y: auto;
   }
 
+  .sidebar-close {
+    display: none;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 4px;
+    color: var(--gold);
+    font-size: 22px;
+    line-height: 30px;
+    text-align: center;
+    cursor: pointer;
+    z-index: 51;
+  }
+
+  .sidebar-close:hover {
+    background: rgba(212,175,55,0.15);
+    border-color: var(--gold);
+  }
+
   .sidebar-section {
     margin-bottom: 8px;
   }
@@ -452,7 +475,8 @@
     flex: 1;
     overflow-y: auto;
     padding: 28px;
-    background: var(--dark);
+    background: #FFFFFF;
+    color: #1a1a1a;
   }
 
   /* PAGE HEADER */
@@ -464,12 +488,12 @@
     font-family: 'Bebas Neue', sans-serif;
     font-size: 36px;
     letter-spacing: 3px;
-    color: var(--gold);
+    color: var(--gold-dark);
     line-height: 1;
   }
 
   .page-header p {
-    color: var(--gray);
+    color: #666;
     font-size: 13px;
     margin-top: 4px;
   }
@@ -483,8 +507,8 @@
   }
 
   .stat-card {
-    background: rgba(22,32,25,0.8);
-    border: 1px solid rgba(212,175,55,0.15);
+    background: #f8f9fa;
+    border: 1px solid rgba(212,175,55,0.25);
     border-radius: 4px;
     padding: 20px;
     position: relative;
@@ -516,7 +540,7 @@
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--gray);
+    color: #666;
     margin-bottom: 10px;
   }
 
@@ -524,20 +548,20 @@
     font-family: 'Bebas Neue', sans-serif;
     font-size: 42px;
     letter-spacing: 2px;
-    color: var(--gold);
+    color: var(--gold-dark);
     line-height: 1;
   }
 
   .stat-sub {
     font-size: 12px;
-    color: var(--gray);
+    color: #666;
     margin-top: 4px;
   }
 
   /* SECTION CARDS */
   .card {
-    background: rgba(22,32,25,0.8);
-    border: 1px solid rgba(212,175,55,0.12);
+    background: #f8f9fa;
+    border: 1px solid rgba(212,175,55,0.2);
     border-radius: 4px;
     margin-bottom: 20px;
     overflow: hidden;
@@ -547,7 +571,7 @@
 
   .card-header {
     padding: 16px 20px;
-    border-bottom: 1px solid rgba(212,175,55,0.1);
+    border-bottom: 1px solid rgba(212,175,55,0.15);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -559,7 +583,7 @@
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--gold-dark);
   }
 
   .card-body { padding: 20px; }
@@ -577,29 +601,29 @@
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--gray);
+    color: #666;
     text-align: left;
     padding: 10px 12px;
-    border-bottom: 1px solid rgba(212,175,55,0.1);
+    border-bottom: 1px solid rgba(212,175,55,0.2);
   }
 
   .data-table td {
     padding: 12px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    color: var(--gray-light);
+    border-bottom: 1px solid #eee;
+    color: #333;
   }
 
   .data-table tr:last-child td { border-bottom: none; }
 
   .data-table tr:hover td {
-    background: rgba(212,175,55,0.04);
-    color: var(--white);
+    background: rgba(212,175,55,0.08);
+    color: #1a1a1a;
   }
 
   .rank-num {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 18px;
-    color: var(--gold);
+    color: var(--gold-dark);
     width: 32px;
   }
 
@@ -623,23 +647,23 @@
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 1px;
-    color: var(--gray);
+    color: #666;
     margin-bottom: 4px;
   }
 
   .hole-par {
     font-size: 9px;
-    color: var(--green-light);
+    color: var(--green);
     margin-bottom: 4px;
   }
 
   .hole-score {
     width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(212,175,55,0.2);
+    background: #fff;
+    border: 1px solid #ccc;
     border-radius: 3px;
     padding: 8px 4px;
-    color: var(--white);
+    color: #1a1a1a;
     font-size: 16px;
     font-weight: 700;
     text-align: center;
@@ -690,7 +714,7 @@
     align-items: center;
     gap: 12px;
     padding: 12px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid #eee;
   }
 
   .match-row:last-child { border-bottom: none; }
@@ -704,7 +728,7 @@
   .match-day {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 22px;
-    color: var(--gold);
+    color: var(--gold-dark);
     line-height: 1;
   }
 
@@ -712,13 +736,13 @@
     font-size: 10px;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: var(--gray);
+    color: #666;
   }
 
   .match-divider {
     width: 1px;
     height: 36px;
-    background: rgba(212,175,55,0.2);
+    background: rgba(212,175,55,0.3);
     flex-shrink: 0;
   }
 
@@ -727,12 +751,12 @@
   .match-title {
     font-size: 14px;
     font-weight: 600;
-    color: var(--white);
+    color: #1a1a1a;
   }
 
   .match-course {
     font-size: 12px;
-    color: var(--gray);
+    color: #666;
     margin-top: 2px;
   }
 
@@ -762,24 +786,24 @@
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--gray);
+    color: #666;
     margin-bottom: 6px;
   }
 
   .form-field input, .form-field select {
     width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(212,175,55,0.2);
+    background: #fff;
+    border: 1px solid #ccc;
     border-radius: 3px;
     padding: 10px 12px;
-    color: var(--white);
+    color: #1a1a1a;
     font-family: 'Barlow', sans-serif;
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s;
   }
 
-  .form-field select option { background: var(--dark2); }
+  .form-field select option { background: #fff; color: #1a1a1a; }
 
   .form-field input:focus, .form-field select:focus {
     border-color: var(--gold);
@@ -791,7 +815,7 @@
     align-items: center;
     gap: 16px;
     padding: 12px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid #eee;
   }
 
   .role-row:last-child { border-bottom: none; }
@@ -811,15 +835,15 @@
   }
 
   .role-user-info { flex: 1; }
-  .role-user-name { font-size: 14px; font-weight: 600; color: var(--white); }
-  .role-user-email { font-size: 12px; color: var(--gray); }
+  .role-user-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .role-user-email { font-size: 12px; color: #666; }
 
   .role-select {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(212,175,55,0.2);
+    background: #fff;
+    border: 1px solid #ccc;
     border-radius: 3px;
     padding: 6px 10px;
-    color: var(--gold);
+    color: var(--gold-dark);
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 12px;
     font-weight: 700;
@@ -828,7 +852,7 @@
     cursor: pointer;
   }
 
-  .role-select option { background: var(--dark2); color: var(--white); }
+  .role-select option { background: #fff; color: #1a1a1a; }
 
   /* MOBILE */
   .sidebar-overlay {
@@ -849,6 +873,7 @@
 
     .sidebar.open { transform: translateX(0); }
     .sidebar-overlay.open { display: block; }
+    .sidebar-close { display: block; }
 
     .main-content { padding: 16px; }
     .score-grid { grid-template-columns: repeat(5, 1fr); }
@@ -967,6 +992,7 @@
   <div class="app-body">
     <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
+      <div class="sidebar-close" onclick="closeSidebar()" title="Close sidebar">&times;</div>
 
       <!-- Player sections (all roles) -->
       <div class="sidebar-section" id="nav-player">
@@ -992,7 +1018,7 @@
       </div>
 
       <!-- Scorer sections -->
-      <div class="sidebar-section hidden" id="nav-scorer">
+      <div class="sidebar-section" id="nav-scorer">
         <div class="sidebar-label">Scorer</div>
         <div class="nav-item" onclick="showPage('enter-scores')">
           <span class="nav-icon">✏️</span> Enter Scores
@@ -1009,7 +1035,7 @@
       </div>
 
       <!-- Admin sections -->
-      <div class="sidebar-section hidden" id="nav-admin">
+      <div class="sidebar-section" id="nav-admin">
         <div class="sidebar-label">Admin</div>
         <div class="nav-item" onclick="showPage('user-roles')">
           <span class="nav-icon">🔐</span> User Roles
@@ -1209,10 +1235,10 @@
         <div class="page-header"><h2>League Chat</h2><p>Real-time league messaging</p></div>
         <div class="card">
           <div class="card-body" id="chat-messages" style="min-height:300px;max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
-            <div style="color:var(--gray);font-size:13px;text-align:center;padding:20px">Chat messages will appear here</div>
+            <div style="color:#999;font-size:13px;text-align:center;padding:20px">Chat messages will appear here</div>
           </div>
           <div style="display:flex;gap:8px;padding:0 0 4px">
-            <input id="chat-input" placeholder="Type a message..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(212,175,55,0.2);border-radius:3px;padding:10px 14px;color:var(--white);font-family:'Barlow',sans-serif;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')sendChat()" />
+            <input id="chat-input" placeholder="Type a message..." style="flex:1;background:#fff;border:1px solid #ccc;border-radius:3px;padding:10px 14px;color:#1a1a1a;font-family:'Barlow',sans-serif;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')sendChat()" />
             <button class="btn-sm" onclick="sendChat()">Send</button>
           </div>
         </div>
@@ -1234,11 +1260,11 @@
                 <select><option>White</option><option>Blue</option><option>Red</option></select>
               </div>
             </div>
-            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:10px;font-weight:700">Hole Scores — Par 36</p>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;margin-bottom:10px;font-weight:700">Hole Scores — Par 36</p>
             <div class="score-grid" id="score-grid"></div>
             <div style="display:flex;align-items:center;gap:16px;margin-top:16px">
-              <div style="font-family:'Bebas Neue';font-size:28px;color:var(--gold)">Total: <span id="score-total">—</span></div>
-              <div style="font-size:13px;color:var(--gray)" id="score-diff"></div>
+              <div style="font-family:'Bebas Neue';font-size:28px;color:var(--gold-dark)">Total: <span id="score-total">—</span></div>
+              <div style="font-size:13px;color:#666" id="score-diff"></div>
               <button class="btn-sm btn-green" style="margin-left:auto" onclick="saveScore()">Save Score</button>
             </div>
           </div>
@@ -1318,13 +1344,13 @@
           <div class="card-header"><div class="card-title">Mud Run Golf Club</div><button class="btn-sm">+ Add Course</button></div>
           <div class="card-body">
             <div style="margin-bottom:16px">
-              <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:10px">Hole Configuration</p>
+              <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:10px">Hole Configuration</p>
               <table class="data-table">
                 <thead><tr><th>Hole</th><th>Par</th><th>Handicap Index</th><th>White Yds</th><th>Blue Yds</th><th>Red Yds</th></tr></thead>
                 <tbody>
-                  <tr><td>1</td><td><input type="number" value="4" style="width:48px;background:rgba(255,255,255,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:4px;color:var(--white);text-align:center"></td><td>5</td><td>380</td><td>355</td><td>310</td></tr>
-                  <tr><td>2</td><td><input type="number" value="3" style="width:48px;background:rgba(255,255,255,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:4px;color:var(--white);text-align:center"></td><td>9</td><td>165</td><td>148</td><td>120</td></tr>
-                  <tr><td>3</td><td><input type="number" value="5" style="width:48px;background:rgba(255,255,255,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:2px;padding:4px;color:var(--white);text-align:center"></td><td>1</td><td>520</td><td>500</td><td>460</td></tr>
+                  <tr><td>1</td><td><input type="number" value="4" style="width:48px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:4px;color:#1a1a1a;text-align:center"></td><td>5</td><td>380</td><td>355</td><td>310</td></tr>
+                  <tr><td>2</td><td><input type="number" value="3" style="width:48px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:4px;color:#1a1a1a;text-align:center"></td><td>9</td><td>165</td><td>148</td><td>120</td></tr>
+                  <tr><td>3</td><td><input type="number" value="5" style="width:48px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:4px;color:#1a1a1a;text-align:center"></td><td>1</td><td>520</td><td>500</td><td>460</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1345,7 +1371,7 @@
               <div class="form-field"><label>Season End</label><input type="date" value="2026-09-22" /></div>
               <div class="form-field"><label>Tee Placements (count)</label><input type="number" value="3" /></div>
             </div>
-            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Handicap Formula</p>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Handicap Formula</p>
             <div class="form-grid" style="margin-bottom:20px">
               <div class="form-field"><label>Best N Rounds</label><input type="number" value="8" /></div>
               <div class="form-field"><label>Last N Rounds</label><input type="number" value="20" /></div>
@@ -1511,9 +1537,8 @@ function loginSuccess(user) {
   rb.className = 'role-badge role-' + user.role;
   document.getElementById('dash-welcome').textContent = 'Welcome back, ' + user.name.split(' ')[0] + ' — Season 2026';
 
-  // Show/hide nav sections
-  document.getElementById('nav-scorer').classList.toggle('hidden', user.role === 'player');
-  document.getElementById('nav-admin').classList.toggle('hidden', user.role !== 'admin');
+  // Show/hide nav sections — always show all sections
+  // All sidebar sections are permanently visible
 
   initData();
   showPage('dashboard');
@@ -1537,14 +1562,21 @@ function showPage(id) {
   if (page) page.classList.add('active');
   const navItem = document.querySelector(`.nav-item[onclick="showPage('${id}')"]`);
   if (navItem) navItem.classList.add('active');
-  // close mobile sidebar
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('open');
+  // close mobile sidebar only
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+  }
 }
 
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
 // ═══════════════════════════════
@@ -1566,12 +1598,12 @@ function buildLeaderboard() {
     const rankClass = i < 3 ? `rank-${i+1}` : '';
     return `<tr>
       <td class="rank-num ${rankClass}">${i+1}</td>
-      <td style="font-weight:600;color:var(--white)">${p.name}</td>
+      <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
       <td>${p.rounds}</td>
-      <td style="color:var(--gold);font-weight:700">${p.avg}</td>
+      <td style="color:var(--gold-dark);font-weight:700">${p.avg}</td>
       <td>${p.best}</td>
       <td>${p.hdcp}</td>
-      <td style="color:var(--green-light);font-weight:700">${p.points}</td>
+      <td style="color:var(--green);font-weight:700">${p.points}</td>
     </tr>`;
   }).join('');
 }
@@ -1624,7 +1656,7 @@ function buildPlayerRoster() {
   const tbody = document.getElementById('player-roster');
   tbody.innerHTML = PLAYERS_DATA.map(p => `
     <tr>
-      <td style="font-weight:600;color:var(--white)">${p.name}</td>
+      <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
       <td>${p.email}</td>
       <td>${p.phone}</td>
       <td>${p.hdcp}</td>
@@ -1639,7 +1671,7 @@ function buildPaymentTable() {
     const bal = p.due - p.paid;
     const color = p.status === 'Paid' ? '#4CAF50' : p.status === 'Partial' ? 'var(--gold)' : '#f66';
     return `<tr>
-      <td style="font-weight:600;color:var(--white)">${p.name}</td>
+      <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
       <td>$${p.due}</td>
       <td style="color:#4CAF50">$${p.paid}</td>
       <td style="color:${bal > 0 ? '#f66' : '#4CAF50'}">$${bal}</td>
@@ -1681,10 +1713,10 @@ function renderChat() {
   box.innerHTML = chatMsgs.map(m => `
     <div style="display:flex;flex-direction:column;gap:2px">
       <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:13px;font-weight:700;color:var(--gold)">${m.user}</span>
-        <span style="font-size:11px;color:var(--gray)">${m.time}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--gold-dark)">${m.user}</span>
+        <span style="font-size:11px;color:#999">${m.time}</span>
       </div>
-      <div style="font-size:14px;color:var(--gray-light)">${m.msg}</div>
+      <div style="font-size:14px;color:#333">${m.msg}</div>
     </div>
   `).join('');
   box.scrollTop = box.scrollHeight;
