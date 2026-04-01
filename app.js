@@ -1,3 +1,5 @@
+Content is user-generated and unverified.
+1
 // ============================================
 // FAIRWAY COMMAND — The Ultimate League System
 // ============================================
