@@ -3,1245 +3,1292 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fairway Command — The Ultimate League System</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23D4AF37'/><text x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-weight='bold' font-size='16' fill='%231A4A2E'>FC</text></svg>">
+<title>Fairway Command \u2014 The Ultimate League System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
   :root {
     --gold: #D4AF37;
-    --gold-light: #e2c55e;
-    --gold-dark: #b8951f;
-    --green-deep: #1A4A2E;
-    --green-dark: #1A4A2E;
-    --green-mid: #257a42;
-    --green-accent: #2d8a4f;
-    --cream: #f5f0e8;
-    --cream-dark: #ede6d6;
-    --white: #ffffff;
-    --gray-light: #f8f6f2;
-    --gray-mid: #e2ddd5;
-    --gray-text: #8a8070;
-    --text-dark: #1a1610;
-    --text-mid: #3d3428;
-    --red: #c0392b;
-    --blue: #2471a3;
-    --sidebar-w: 230px;
-    --header-h: 60px;
-    --radius: 10px;
-    --shadow: 0 2px 16px rgba(26,74,46,0.10);
-    --shadow-card: 0 1px 8px rgba(26,74,46,0.08);
+    --gold-light: #F0D060;
+    --gold-dark: #A88B20;
+    --green: #1A7A3C;
+    --green-dark: #0F4E25;
+    --green-light: #2AA055;
+    --black: #0A0A0A;
+    --dark: #111A14;
+    --dark2: #162019;
+    --dark3: #1E2E22;
+    --gray: #8A9E8F;
+    --gray-light: #C5D4C8;
+    --white: #F5F7F5;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--cream);
-    color: var(--text-dark);
+    font-family: 'Barlow', sans-serif;
+    background: var(--dark);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+     LOGIN SCREEN
+  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+  #login-screen {
     min-height: 100vh;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--black);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #login-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,122,60,0.25) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(212,175,55,0.12) 0%, transparent 60%);
+  }
+
+  .login-grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(212,175,55,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,175,55,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .login-box {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    margin: 20px;
+    background: rgba(22, 32, 25, 0.95);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 4px;
+    padding: 48px 40px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.05);
+    animation: loginFadeIn 0.6s ease forwards;
+  }
+
+  @keyframes loginFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .fc-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    border-radius: 4px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(212,175,55,0.3);
+  }
+
+  .fc-badge span {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--black);
+    letter-spacing: 2px;
+  }
+
+  .login-logo h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .login-logo p {
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .tab-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    border-bottom: 1px solid rgba(212,175,55,0.2);
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 8px;
+  }
+
+  .form-group input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 3px;
+    padding: 12px 14px;
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.05);
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    border: none;
+    border-radius: 3px;
+    padding: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--black);
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(212,175,55,0.25);
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    box-shadow: 0 6px 24px rgba(212,175,55,0.4);
+    transform: translateY(-1px);
+  }
+
+  .error-msg {
+    background: rgba(200,50,50,0.15);
+    border: 1px solid rgba(200,50,50,0.3);
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #ff8080;
+    margin-top: 12px;
+    display: none;
+  }
+
+  /* Demo login pills */
+  .demo-logins {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(212,175,55,0.1);
+  }
+
+  .demo-logins p {
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .demo-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .demo-pill {
+    background: rgba(212,175,55,0.08);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .demo-pill:hover {
+    background: rgba(212,175,55,0.18);
+    border-color: var(--gold);
+  }
+
+  /* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+     MAIN APP LAYOUT
+  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+  #app {
+    display: none;
+    min-height: 100vh;
     flex-direction: column;
   }
 
-  /* HEADER */
-  .header {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    height: var(--header-h);
-    background: var(--green-deep);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 1.25rem 0 1rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-  }
-  .header-brand { display: flex; align-items: center; gap: 0.6rem; }
-  .logo-icon {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: var(--gold);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 0.85rem; font-weight: 900; color: var(--green-deep);
-    flex-shrink: 0;
-    box-shadow: 0 0 0 3px rgba(212,175,55,0.3);
-    letter-spacing: -0.02em;
-    object-fit: cover;
-  }
-  .header-brand h1 {
-    font-family: 'Playfair Display', serif;
-    color: var(--white); font-size: 1.15rem; font-weight: 700;
-    letter-spacing: 0.01em;
-  }
-  .header-brand h1 span { color: var(--gold); }
-  .header-right { display: flex; align-items: center; gap: 0.75rem; }
-  .role-selector {
-    background: rgba(255,255,255,0.1); color: var(--gold);
-    border: 1px solid rgba(212,175,55,0.35); border-radius: 6px;
-    padding: 0.3rem 0.6rem; font-size: 0.8rem;
-    font-family: 'DM Sans', sans-serif; cursor: pointer;
-  }
-  .role-selector option { background: var(--green-deep); color: var(--gold); }
-  .menu-toggle {
-    display: none; background: none; border: none;
-    color: var(--white); font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+  /* TOP BAR */
+  .topbar {
+    height: 56px;
+    background: var(--black);
+    border-bottom: 1px solid rgba(212,175,55,0.2);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-badge {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topbar-badge span {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    color: var(--black);
+    letter-spacing: 1px;
+  }
+
+  .topbar-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .topbar-title small {
+    display: block;
+    font-family: 'Barlow', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--gray);
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .hamburger {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-right: 4px;
+  }
+
+  .hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .role-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+
+  .role-admin { background: rgba(212,175,55,0.2); color: var(--gold); border: 1px solid rgba(212,175,55,0.4); }
+  .role-scorer { background: rgba(26,122,60,0.2); color: var(--green-light); border: 1px solid rgba(26,122,60,0.4); }
+  .role-player { background: rgba(138,158,143,0.15); color: var(--gray-light); border: 1px solid rgba(138,158,143,0.3); }
+
+  .user-name {
+    font-size: 13px;
+    color: var(--gray-light);
+    font-weight: 500;
+  }
+
+  .btn-logout {
+    background: none;
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 3px;
+    padding: 6px 12px;
+    color: var(--gray);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Barlow', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .btn-logout:hover { border-color: var(--gold); color: var(--gold); }
+
   /* LAYOUT */
-  .app-layout { display: flex; margin-top: var(--header-h); flex: 1; }
+  .app-body {
+    display: flex;
+    flex: 1;
+  }
 
   /* SIDEBAR */
   .sidebar {
-    width: var(--sidebar-w); min-height: calc(100vh - var(--header-h));
-    background: var(--green-deep);
-    position: fixed; top: var(--header-h); left: 0; bottom: 0;
-    overflow-y: auto; z-index: 50;
-    border-right: 1px solid rgba(212,175,55,0.15);
+    width: 220px;
+    background: rgba(10,10,10,0.95);
+    border-right: 1px solid rgba(212,175,55,0.12);
+    padding: 16px 0;
+    flex-shrink: 0;
     transition: transform 0.3s ease;
-  }
-  .sidebar-nav { padding: 0.75rem 0.5rem 2rem; }
-  .sidebar-group-label {
-    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
-    text-transform: uppercase; color: rgba(212,175,55,0.55);
-    padding: 0.9rem 0.75rem 0.3rem;
-  }
-  .sidebar-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.5rem 0.5rem; }
-  .sidebar-btn {
-    width: 100%; background: none; border: none; cursor: pointer;
-    display: flex; align-items: center; gap: 0.6rem;
-    padding: 0.55rem 0.75rem; border-radius: 7px;
-    color: rgba(255,255,255,0.72); font-size: 0.85rem;
-    font-family: 'DM Sans', sans-serif; font-weight: 400;
-    transition: background 0.15s, color 0.15s;
-    text-align: left;
-  }
-  .sidebar-btn:hover { background: rgba(255,255,255,0.07); color: var(--white); }
-  .sidebar-btn.active {
-    background: rgba(212,175,55,0.18); color: var(--gold);
-    font-weight: 600;
-  }
-  .sidebar-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
-  .sidebar-btn.hidden { display: none; }
-
-  /* MAIN */
-  .main {
-    margin-left: var(--sidebar-w);
-    flex: 1; padding: 1.75rem 1.5rem 2rem;
-    min-width: 0; max-width: 1200px;
+    overflow-y: auto;
   }
 
-  /* VIEWS */
-  .view { display: none; animation: fadeIn 0.2s ease; }
-  .view.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-  .view-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6rem; font-weight: 700; color: var(--green-deep);
-    margin-bottom: 1.25rem; letter-spacing: -0.01em;
-    border-bottom: 2px solid var(--gold); padding-bottom: 0.4rem;
-    display: inline-block;
+  .sidebar-section {
+    margin-bottom: 8px;
   }
 
-  /* STATS GRID */
-  .stats-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem;
-    margin-bottom: 1.25rem;
+  .sidebar-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray);
+    padding: 8px 20px 4px;
+    opacity: 0.6;
   }
-  .stat-card {
-    background: var(--white); border-radius: var(--radius);
-    padding: 1rem 1rem 0.9rem;
-    box-shadow: var(--shadow-card);
-    border-top: 3px solid var(--gold);
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--gray-light);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+  }
+
+  .nav-item:hover {
+    background: rgba(212,175,55,0.06);
+    color: var(--white);
+  }
+
+  .nav-item.active {
+    background: rgba(212,175,55,0.1);
+    color: var(--gold);
+    border-left-color: var(--gold);
+  }
+
+  .nav-icon {
+    font-size: 16px;
+    width: 20px;
     text-align: center;
   }
-  .stat-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
-  .stat-value {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.75rem; font-weight: 900; color: var(--green-deep);
+
+  /* MAIN CONTENT */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    background: var(--dark);
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    margin-bottom: 28px;
+  }
+
+  .page-header h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 3px;
+    color: var(--gold);
     line-height: 1;
   }
-  .stat-label { font-size: 0.75rem; color: var(--gray-text); margin-top: 0.25rem; font-weight: 500; }
 
-  /* DASHBOARD GRID */
-  .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .page-header p {
+    color: var(--gray);
+    font-size: 13px;
+    margin-top: 4px;
+  }
 
-  /* CARDS */
+  /* STAT CARDS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: rgba(22,32,25,0.8);
+    border: 1px solid rgba(212,175,55,0.15);
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 4px;
+  }
+
+  /* SECTION CARDS */
   .card {
-    background: var(--white); border-radius: var(--radius);
-    padding: 1.1rem 1.25rem; box-shadow: var(--shadow-card);
-    margin-bottom: 1rem;
-  }
-  .card h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem; font-weight: 700; color: var(--green-dark);
-    margin-bottom: 0.9rem; padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--gray-mid);
+    background: rgba(22,32,25,0.8);
+    border: 1px solid rgba(212,175,55,0.12);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    animation: cardIn 0.4s ease forwards;
+    opacity: 0;
   }
 
-  /* TABLES */
-  .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(212,175,55,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .card-body { padding: 20px; }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
   .data-table th {
-    background: var(--green-deep); color: var(--gold);
-    padding: 0.55rem 0.75rem; text-align: left;
-    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray);
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(212,175,55,0.1);
   }
-  .data-table th:first-child { border-radius: 6px 0 0 6px; }
-  .data-table th:last-child { border-radius: 0 6px 6px 0; }
+
   .data-table td {
-    padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--gray-mid);
-    color: var(--text-mid);
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--gray-light);
   }
+
   .data-table tr:last-child td { border-bottom: none; }
-  .data-table tr:hover td { background: var(--gray-light); }
 
-  /* STATUS BADGES */
-  .status {
-    display: inline-block; padding: 0.2rem 0.55rem; border-radius: 20px;
-    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  .data-table tr:hover td {
+    background: rgba(212,175,55,0.04);
+    color: var(--white);
   }
-  .status.upcoming { background: #e8f5e9; color: #2e7d32; }
-  .status.completed { background: #e3f2fd; color: #1565c0; }
-  .status.pending { background: #fff8e1; color: #f57f17; }
-  .status.rainout { background: #fce4ec; color: #c62828; }
-  .status.cancelled { background: #f3e5f5; color: #7b1fa2; }
 
-  /* EVENT LIST */
-  .event-list { list-style: none; }
-  .event-item {
-    display: flex; align-items: flex-start; gap: 0.75rem;
-    padding: 0.6rem 0; border-bottom: 1px solid var(--gray-mid);
+  .rank-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--gold);
+    width: 32px;
   }
-  .event-item:last-child { border-bottom: none; }
-  .event-date {
-    background: var(--green-deep); color: var(--gold);
-    border-radius: 6px; padding: 0.3rem 0.5rem;
-    font-size: 0.75rem; font-weight: 700; min-width: 44px; text-align: center;
-    flex-shrink: 0;
-  }
-  .event-details { font-size: 0.875rem; }
-  .event-details strong { display: block; color: var(--text-dark); }
-  .event-details span { color: var(--gray-text); font-size: 0.8rem; }
 
-  /* ANNOUNCEMENTS */
-  .announcement {
-    padding: 0.65rem 0.75rem; margin-bottom: 0.6rem;
-    background: var(--gray-light); border-left: 3px solid var(--gold);
-    border-radius: 0 6px 6px 0; font-size: 0.875rem;
-  }
-  .announcement strong { display: block; color: var(--green-dark); margin-bottom: 0.2rem; }
-  .announcement p { color: var(--text-mid); font-size: 0.825rem; }
+  .rank-1 { color: var(--gold); }
+  .rank-2 { color: var(--gray-light); }
+  .rank-3 { color: #CD7F32; }
 
-  /* PERFORMERS */
-  .performer-list { display: flex; flex-direction: column; gap: 0.5rem; }
-  .performer {
-    display: flex; align-items: center; gap: 0.75rem;
-    padding: 0.5rem 0.6rem; border-radius: 7px;
-    background: var(--gray-light);
+  /* SCORE ENTRY */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
   }
-  .rank {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: var(--green-deep); color: var(--gold);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
-  }
-  .performer:first-child .rank { background: var(--gold); color: var(--green-deep); }
-  .performer-info strong { display: block; font-size: 0.875rem; color: var(--text-dark); }
-  .performer-info span { font-size: 0.775rem; color: var(--gray-text); }
 
-  /* SEASON INFO */
-  .season-header { margin-bottom: 1rem; }
-  .season-info-card {
-    background: var(--green-deep); color: var(--white);
-    border-radius: var(--radius); padding: 1.1rem 1.25rem;
-    box-shadow: var(--shadow);
+  .hole-input-wrap {
+    text-align: center;
   }
-  .season-info-card h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.15rem; color: var(--gold); margin-bottom: 0.6rem;
+
+  .hole-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--gray);
+    margin-bottom: 4px;
   }
-  .season-meta { display: flex; gap: 2rem; flex-wrap: wrap; font-size: 0.875rem; }
-  .season-meta div { color: rgba(255,255,255,0.8); }
-  .season-meta strong { color: var(--gold); margin-right: 0.25rem; }
 
-  /* RULES */
-  .rules-list { padding-left: 1.25rem; }
-  .rules-list li { padding: 0.35rem 0; font-size: 0.875rem; color: var(--text-mid); border-bottom: 1px solid var(--gray-mid); }
-  .rules-list li:last-child { border-bottom: none; }
-
-  /* COURSE LIST */
-  .course-list { display: flex; flex-direction: column; gap: 0.6rem; }
-  .course-item {
-    padding: 0.65rem 0.85rem; background: var(--gray-light);
-    border-radius: 7px; border-left: 3px solid var(--green-accent);
+  .hole-par {
+    font-size: 9px;
+    color: var(--green-light);
+    margin-bottom: 4px;
   }
-  .course-item strong { display: block; font-size: 0.9rem; color: var(--green-dark); margin-bottom: 0.15rem; }
-  .course-item span { font-size: 0.8rem; color: var(--gray-text); }
 
-  /* COURSE DETAIL */
-  .course-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
-  .course-meta span { font-size: 0.875rem; color: var(--text-mid); }
-  .course-desc { font-size: 0.875rem; color: var(--gray-text); line-height: 1.5; }
-  .tee-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.82rem; }
-  .tee-table th { background: var(--green-deep); color: var(--gold); padding: 0.4rem 0.6rem; text-align: left; font-size: 0.72rem; text-transform: uppercase; }
-  .tee-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--gray-mid); }
-  .tee-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; }
-
-  /* FORMS */
-  .form-group { margin-bottom: 0.85rem; }
-  .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-mid); margin-bottom: 0.3rem; }
-  .form-control {
-    width: 100%; padding: 0.55rem 0.75rem;
-    border: 1.5px solid var(--gray-mid); border-radius: 7px;
-    font-size: 0.875rem; font-family: 'DM Sans', sans-serif;
-    background: var(--white); color: var(--text-dark);
-    transition: border-color 0.15s;
+  .hole-score {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 3px;
+    padding: 8px 4px;
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: all 0.15s;
   }
-  .form-control:focus { outline: none; border-color: var(--green-accent); }
-  .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+
+  .hole-score:focus {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.08);
+  }
 
   /* BUTTONS */
-  .btn-primary {
-    background: var(--green-deep); color: var(--gold);
-    border: none; border-radius: 7px; padding: 0.6rem 1.4rem;
-    font-size: 0.875rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
-    cursor: pointer; transition: background 0.15s, transform 0.1s;
+  .btn-sm {
+    background: rgba(212,175,55,0.12);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 3px;
+    padding: 6px 14px;
+    color: var(--gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
   }
-  .btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); }
-  .btn-gold {
-    background: var(--gold); color: var(--green-deep);
-    border: none; border-radius: 7px; padding: 0.6rem 1.4rem;
-    font-size: 0.875rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
-    cursor: pointer; transition: background 0.15s, transform 0.1s;
+
+  .btn-sm:hover {
+    background: rgba(212,175,55,0.22);
+    border-color: var(--gold);
   }
-  .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
-  .btn-danger {
-    background: var(--red); color: var(--white);
-    border: none; border-radius: 7px; padding: 0.5rem 1rem;
-    font-size: 0.82rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
+
+  .btn-green {
+    background: rgba(26,122,60,0.2);
+    border-color: rgba(26,122,60,0.4);
+    color: var(--green-light);
+  }
+
+  .btn-green:hover {
+    background: rgba(26,122,60,0.35);
+    border-color: var(--green-light);
+  }
+
+  /* SCHEDULE */
+  .match-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .match-row:last-child { border-bottom: none; }
+
+  .match-date {
+    width: 52px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .match-day {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .match-month {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+
+  .match-divider {
+    width: 1px;
+    height: 36px;
+    background: rgba(212,175,55,0.2);
+    flex-shrink: 0;
+  }
+
+  .match-info { flex: 1; }
+
+  .match-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  .match-course {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 2px;
+  }
+
+  .match-type {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .type-match { background: rgba(26,122,60,0.2); color: var(--green-light); }
+  .type-scramble { background: rgba(212,175,55,0.15); color: var(--gold); }
+
+  /* PLAYER FORM */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 6px;
+  }
+
+  .form-field input, .form-field select {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 3px;
+    padding: 10px 12px;
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-field select option { background: var(--dark2); }
+
+  .form-field input:focus, .form-field select:focus {
+    border-color: var(--gold);
+  }
+
+  /* ROLE MGMT */
+  .role-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .role-row:last-child { border-bottom: none; }
+
+  .role-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green-dark), var(--green));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .role-user-info { flex: 1; }
+  .role-user-name { font-size: 14px; font-weight: 600; color: var(--white); }
+  .role-user-email { font-size: 12px; color: var(--gray); }
+
+  .role-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 3px;
+    padding: 6px 10px;
+    color: var(--gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    outline: none;
     cursor: pointer;
   }
-  .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.78rem; }
-  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
 
-  /* CHAT */
-  .chat-container { display: flex; flex-direction: column; }
-  .chat-messages { max-height: 340px; overflow-y: auto; margin-bottom: 0.85rem; }
-  .chat-message { padding: 0.6rem 0; border-bottom: 1px solid var(--gray-mid); }
-  .chat-message:last-child { border-bottom: none; }
-  .chat-author { font-weight: 600; font-size: 0.875rem; color: var(--green-dark); }
-  .chat-text { font-size: 0.875rem; color: var(--text-mid); margin: 0.15rem 0; }
-  .chat-time { font-size: 0.75rem; color: var(--gray-text); }
-  .chat-input-area { display: flex; gap: 0.5rem; }
-  .chat-input {
-    flex: 1; padding: 0.55rem 0.75rem;
-    border: 1.5px solid var(--gray-mid); border-radius: 7px;
-    font-size: 0.875rem; font-family: 'DM Sans', sans-serif;
-  }
-  .chat-input:focus { outline: none; border-color: var(--green-accent); }
+  .role-select option { background: var(--dark2); color: var(--white); }
 
-  /* INSTRUCTIONS */
-  .instructions-content p { font-size: 0.875rem; color: var(--text-mid); }
-  .instructions-list { padding-left: 1.25rem; }
-  .instructions-list li { padding: 0.3rem 0; font-size: 0.875rem; color: var(--text-mid); }
-
-  /* ADMIN SETTINGS */
-  .admin-settings { display: flex; flex-direction: column; gap: 0.5rem; }
-  .setting-item { font-size: 0.875rem; padding: 0.5rem 0.75rem; background: var(--gray-light); border-radius: 6px; }
-  .setting-item strong { color: var(--green-dark); margin-right: 0.5rem; }
-
-  /* SCORECARD */
-  .match-chip {
-    font-size: 0.8rem; padding: 0.3rem 0.6rem; margin: 0.2rem 0;
-    background: var(--gray-light); border-radius: 5px; border-left: 3px solid var(--green-accent);
-  }
-  .override-card { background: var(--gray-light); border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 1rem; }
-  .override-card h4 { font-size: 0.875rem; color: var(--green-dark); margin-bottom: 0.5rem; }
-
-  /* SCORECARD PRINT */
-  .scorecard-pair { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px dashed #ccc; }
-  .scorecard-pair:last-child { border-bottom: none; }
-  .scorecard-pair-label { font-size: 0.95rem; font-weight: 700; color: var(--green-deep); margin: 1rem 0 0.4rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
-  .scorecard { border: 2px solid var(--green-deep); border-radius: 8px; overflow: hidden; margin-bottom: 1rem; background: white; }
-  .scorecard-header { background: var(--green-deep); color: white; padding: 0.6rem 1rem; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: center; }
-  .scorecard-header > div { font-size: 0.85rem; }
-  .scorecard-date { font-weight: 700; }
-  .scorecard-side { background: var(--gold); color: var(--green-deep); padding: 0.15rem 0.6rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem !important; }
-  .scorecard-course { font-style: italic; }
-  .scorecard-teams { font-weight: 600; }
-  .scorecard-table { width: 100%; border-collapse: collapse; }
-  .scorecard-table th, .scorecard-table td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: center; font-size: 0.8rem; }
-  .scorecard-table .sc-label { text-align: left; font-weight: 600; width: 150px; min-width: 120px; font-size: 0.78rem; }
-  .sc-player-name { color: var(--green-deep); }
-  .sc-hole-row th { background: var(--green-deep); color: white; font-size: 0.8rem; font-weight: 600; }
-  .sc-yards-row td { background: #f5f5f5; font-size: 0.75rem; color: #777; }
-  .sc-par-row td { background: #e8f5e9; font-weight: 600; }
-  .sc-hdcp-row td { background: #fff8e1; font-size: 0.75rem; }
-  .sc-player-row td { height: 36px; position: relative; }
-  .sc-score-cell { position: relative; }
-  .stroke-dot { position: absolute; top: 1px; right: 3px; color: var(--gold); font-size: 0.85rem; line-height: 1; }
-  .sc-score-blank { display: inline-block; width: 22px; border-bottom: 1px solid #ccc; }
-
-  /* SCRAMBLE */
-  .scramble-team { background: var(--gray-light); border-radius: 7px; padding: 0.75rem; margin-bottom: 0.5rem; border-left: 3px solid var(--gold); }
-  .scramble-team strong { color: var(--green-deep); }
-
-  /* HANDICAP FORMULA */
-  .formula-display { background: var(--green-deep); color: var(--gold); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; margin-bottom: 1rem; }
-
-  /* PRINTABLE ANALYTICS */
-  @media print {
-    .header, .sidebar, .footer, .menu-toggle, .btn-primary, .btn-gold, .btn-danger, .role-selector, .no-print { display: none !important; }
-    .main { margin-left: 0; padding: 0.5rem; max-width: 100%; }
-    .view { display: none !important; }
-    .view.print-target { display: block !important; }
-    .card { box-shadow: none; border: 1px solid #ddd; }
-    body { background: white; }
+  /* MOBILE */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 49;
   }
 
-  /* FOOTER */
-  .footer {
-    margin-left: var(--sidebar-w);
-    background: var(--green-deep); color: rgba(255,255,255,0.45);
-    text-align: center; padding: 0.75rem;
-    font-size: 0.78rem; letter-spacing: 0.03em;
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed;
+      left: 0; top: 56px; bottom: 0;
+      z-index: 50;
+      transform: translateX(-100%);
+    }
+
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+
+    .main-content { padding: 16px; }
+    .score-grid { grid-template-columns: repeat(5, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   /* TOAST */
   .toast {
-    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
-    background: var(--green-deep); color: var(--gold);
-    padding: 0.75rem 1.25rem; border-radius: 8px;
-    font-size: 0.875rem; font-weight: 600;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-    transform: translateY(80px); opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--green-dark);
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    padding: 12px 20px;
+    font-size: 14px;
+    color: var(--white);
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
   }
+
   .toast.show { transform: translateY(0); opacity: 1; }
 
-  /* RESPONSIVE */
-  @media (max-width: 900px) {
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .dashboard-grid { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 700px) {
-    .menu-toggle { display: block; }
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .main { margin-left: 0; padding: 1.25rem 1rem; }
-    .footer { margin-left: 0; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .form-row { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-  }
+  /* HIDDEN UTIL */
+  .hidden { display: none !important; }
+  .page { display: none; }
+  .page.active { display: block; }
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="header-brand">
-    <img class="logo-icon" src="fairwaycommandlogo.png" alt="FC" onerror="this.style.display='flex';this.outerHTML='<div class=\'logo-icon\'>FC</div>'">
-    <h1>Fairway <span>Command</span></h1>
+<!-- \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 LOGIN SCREEN \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 -->
+<div id="login-screen">
+  <div class="login-grid-bg"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="fc-badge"><span>FC</span></div>
+      <h1>Fairway Command</h1>
+      <p>The Ultimate League System</p>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@email.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" />
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Sign In</button>
+      <div class="error-msg" id="login-error">Invalid email or password.</div>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="signup-form" class="hidden">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="John Smith" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@email.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="Min 6 characters" />
+      </div>
+      <button class="btn-primary" onclick="doSignup()">Create Account</button>
+      <div class="error-msg" id="signup-error">Please fill all fields.</div>
+    </div>
+
+    <!-- Demo Logins -->
+    <div class="demo-logins">
+      <p>Quick Demo Login</p>
+      <div class="demo-pills">
+        <div class="demo-pill" onclick="demoLogin('admin')">\u2b50 Admin</div>
+        <div class="demo-pill" onclick="demoLogin('scorer')">\u270f\ufe0f Scorer</div>
+        <div class="demo-pill" onclick="demoLogin('player')">\ud83c\udfcc\ufe0f Player</div>
+      </div>
+    </div>
   </div>
-  <div class="header-right">
-    <select class="role-selector" id="role-selector" onchange="switchRole(this.value)">
-      <option value="admin">Admin</option>
-      <option value="scorer">Scorer</option>
-      <option value="player">Player</option>
-    </select>
-    <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
-  </div>
-</header>
-
-<div class="app-layout">
-  <aside class="sidebar" id="sidebar">
-    <nav class="sidebar-nav" id="sidebar-nav">
-      <button class="sidebar-btn active" data-view="dashboard">
-        <span class="sidebar-icon">&#127968;</span><span class="sidebar-label">Dashboard</span>
-      </button>
-      <button class="sidebar-btn" data-view="season-overview">
-        <span class="sidebar-icon">&#9971;</span><span class="sidebar-label">Season Overview</span>
-      </button>
-      <button class="sidebar-btn" data-view="leaderboard">
-        <span class="sidebar-icon">&#127942;</span><span class="sidebar-label">Leaderboard</span>
-      </button>
-      <button class="sidebar-btn" data-view="schedule">
-        <span class="sidebar-icon">&#128197;</span><span class="sidebar-label">Schedule</span>
-      </button>
-      <button class="sidebar-btn" data-view="enter-scores" data-roles="admin scorer">
-        <span class="sidebar-icon">&#9998;</span><span class="sidebar-label">Enter Scores</span>
-      </button>
-      <div class="sidebar-group-label">Manage</div>
-      <button class="sidebar-btn" data-view="players">
-        <span class="sidebar-icon">&#128101;</span><span class="sidebar-label">Players</span>
-      </button>
-      <button class="sidebar-btn" data-view="analytics">
-        <span class="sidebar-icon">&#128200;</span><span class="sidebar-label">Analytics</span>
-      </button>
-      <button class="sidebar-btn" data-view="payments" data-roles="admin">
-        <span class="sidebar-icon">&#128176;</span><span class="sidebar-label">Payments</span>
-      </button>
-      <button class="sidebar-btn" data-view="courses">
-        <span class="sidebar-icon">&#127969;</span><span class="sidebar-label">Courses</span>
-      </button>
-      <button class="sidebar-btn" data-view="scramble-events" data-roles="admin scorer">
-        <span class="sidebar-icon">&#127948;</span><span class="sidebar-label">Scramble Events</span>
-      </button>
-      <button class="sidebar-btn" data-view="rainout" data-roles="admin">
-        <span class="sidebar-icon">&#127783;</span><span class="sidebar-label">Rainout Manager</span>
-      </button>
-      <div class="sidebar-group-label">Social</div>
-      <button class="sidebar-btn" data-view="league-chat">
-        <span class="sidebar-icon">&#128172;</span><span class="sidebar-label">League Chat</span>
-      </button>
-      <button class="sidebar-btn" data-view="instructions">
-        <span class="sidebar-icon">&#128214;</span><span class="sidebar-label">Instructions</span>
-      </button>
-      <hr class="sidebar-divider">
-      <button class="sidebar-btn" data-view="handicap-formula" data-roles="admin">
-        <span class="sidebar-icon">&#128290;</span><span class="sidebar-label">Handicap Formula</span>
-      </button>
-      <button class="sidebar-btn" data-view="admin" data-roles="admin">
-        <span class="sidebar-icon">&#9881;</span><span class="sidebar-label">Admin</span>
-      </button>
-    </nav>
-  </aside>
-
-  <main class="main">
-
-    <!-- DASHBOARD -->
-    <section id="dashboard" class="view active">
-      <h2 class="view-title">Dashboard</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">&#9971;</div><div class="stat-value">40</div><div class="stat-label">Active Players</div></div>
-        <div class="stat-card"><div class="stat-icon">&#127942;</div><div class="stat-value">8</div><div class="stat-label">Rounds Played</div></div>
-        <div class="stat-card"><div class="stat-icon">&#128197;</div><div class="stat-value">12</div><div class="stat-label">Upcoming Matches</div></div>
-        <div class="stat-card"><div class="stat-icon">&#127941;</div><div class="stat-value">20</div><div class="stat-label">Teams</div></div>
-      </div>
-      <div class="dashboard-grid">
-        <div class="card">
-          <h3>Recent Results</h3>
-          <table class="data-table">
-            <thead><tr><th>Date</th><th>Player</th><th>Score</th><th>Course</th></tr></thead>
-            <tbody>
-              <tr><td>Mar 29</td><td>Tom Davis</td><td>35</td><td>Pine Valley (Front)</td></tr>
-              <tr><td>Mar 29</td><td>Mike Johnson</td><td>36</td><td>Pine Valley (Front)</td></tr>
-              <tr><td>Mar 22</td><td>Ken Nelson</td><td>34</td><td>Oak Ridge (Back)</td></tr>
-              <tr><td>Mar 22</td><td>Bill Harris</td><td>35</td><td>Oak Ridge (Front)</td></tr>
-              <tr><td>Mar 15</td><td>Dave Wilson</td><td>37</td><td>Lakeside (Back)</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Upcoming Events</h3>
-          <ul class="event-list">
-            <li class="event-item"><div class="event-date">Apr 5</div><div class="event-details"><strong>Weekly Round – Pine Valley</strong><span>Tee time: 8:00 AM · 9 Holes</span></div></li>
-            <li class="event-item"><div class="event-date">Apr 12</div><div class="event-details"><strong>Weekly Round – Oak Ridge</strong><span>Tee time: 8:30 AM · 9 Holes</span></div></li>
-            <li class="event-item"><div class="event-date">Apr 19</div><div class="event-details"><strong>Scramble – Lakeside GC</strong><span>Tee time: 7:00 AM · 18 Holes</span></div></li>
-            <li class="event-item"><div class="event-date">Apr 26</div><div class="event-details"><strong>Weekly Round – Pine Valley</strong><span>Tee time: 8:00 AM · 9 Holes</span></div></li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>Announcements</h3>
-          <div class="announcement"><strong>Welcome to Fairway Command!</strong><p>The 2026 Spring Season has officially kicked off. Check the schedule for your next tee time.</p></div>
-          <div class="announcement"><strong>Custom Handicap System Active</strong><p>The league uses a custom handicap formula. Admins can adjust parameters in the Handicap Formula section.</p></div>
-          <div class="announcement"><strong>Scramble Event April 19</strong><p>Sign up for the 18-hole scramble at Lakeside GC. Four-person teams, best ball format.</p></div>
-        </div>
-        <div class="card">
-          <h3>Top Performers</h3>
-          <div class="performer-list">
-            <div class="performer"><span class="rank">1</span><div class="performer-info"><strong>Tom Davis</strong><span>Avg: 35.5 (9-hole)</span></div></div>
-            <div class="performer"><span class="rank">2</span><div class="performer-info"><strong>Ken Nelson</strong><span>Avg: 35.8 (9-hole)</span></div></div>
-            <div class="performer"><span class="rank">3</span><div class="performer-info"><strong>Bill Harris</strong><span>Avg: 36.1 (9-hole)</span></div></div>
-            <div class="performer"><span class="rank">4</span><div class="performer-info"><strong>Mike Johnson</strong><span>Avg: 36.3 (9-hole)</span></div></div>
-            <div class="performer"><span class="rank">5</span><div class="performer-info"><strong>Walt Phillips</strong><span>Avg: 36.5 (9-hole)</span></div></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SEASON OVERVIEW -->
-    <section id="season-overview" class="view">
-      <h2 class="view-title">Season Overview</h2>
-      <div class="season-header">
-        <div class="season-info-card">
-          <h3>2026 Spring Season — Fairway Command League</h3>
-          <div class="season-meta">
-            <div><strong>Start:</strong> April 5, 2026</div>
-            <div><strong>End:</strong> June 7, 2026</div>
-            <div><strong>Weeks:</strong> 10</div>
-            <div><strong>Format:</strong> 9-Hole Match Play</div>
-            <div><strong>Teams:</strong> 20 (2-man teams)</div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Team Standings</h3>
-        <table class="data-table" id="standings-table">
-          <thead><tr><th>Pos</th><th>Team</th><th>Matches</th><th>Points</th><th>Avg Score</th></tr></thead>
-          <tbody>
-            <tr><td>1</td><td>Team 1 (Davis / Johnson)</td><td>8</td><td>48</td><td>35.8</td></tr>
-            <tr><td>2</td><td>Team 13 (Nelson / Carter)</td><td>8</td><td>45</td><td>35.9</td></tr>
-            <tr><td>3</td><td>Team 6 (Harris / Lewis)</td><td>8</td><td>42</td><td>36.2</td></tr>
-            <tr><td>4</td><td>Team 8 (Allen / Young)</td><td>8</td><td>40</td><td>36.5</td></tr>
-            <tr><td>5</td><td>Team 16 (Phillips / Campbell)</td><td>8</td><td>38</td><td>36.7</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>Season Rules</h3>
-        <ul class="rules-list">
-          <li>Weekly 9-hole matches played on Saturday mornings</li>
-          <li>Custom league handicap formula (adjustable by admin)</li>
-          <li>Teams earn points based on head-to-head matchups (low HCP vs low HCP, high vs high)</li>
-          <li>Playoff for top 4 teams at end of season</li>
-          <li>Subs allowed with 48-hour advance notice</li>
-          <li>Rainout rounds managed via Rainout Manager</li>
-          <li>18-hole scramble events scheduled throughout season</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Course Rotation</h3>
-        <div class="course-list">
-          <div class="course-item"><strong>Pine Valley Golf Club</strong><span>Par 36 (Front) / 36 (Back) · 4 tee boxes · Rating: 72.5 / Slope: 134</span></div>
-          <div class="course-item"><strong>Oak Ridge Country Club</strong><span>Par 36 (Front) / 35 (Back) · 4 tee boxes · Rating: 71.2 / Slope: 128</span></div>
-          <div class="course-item"><strong>Lakeside Golf Course</strong><span>Par 36 (Front) / 36 (Back) · 4 tee boxes · Rating: 73.1 / Slope: 138</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- LEADERBOARD -->
-    <section id="leaderboard" class="view">
-      <h2 class="view-title">Leaderboard</h2>
-      <div class="card">
-        <h3>Individual Standings (9-Hole)</h3>
-        <table class="data-table">
-          <thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Rounds</th><th>Best</th><th>Avg</th><th>Handicap</th></tr></thead>
-          <tbody>
-            <tr><td>1</td><td>Tom Davis</td><td>Team 1</td><td>8</td><td>33</td><td>35.5</td><td>4.2</td></tr>
-            <tr><td>2</td><td>Ken Nelson</td><td>Team 13</td><td>8</td><td>33</td><td>35.8</td><td>3.8</td></tr>
-            <tr><td>3</td><td>Bill Harris</td><td>Team 6</td><td>8</td><td>34</td><td>36.1</td><td>3.5</td></tr>
-            <tr><td>4</td><td>Mike Johnson</td><td>Team 1</td><td>8</td><td>34</td><td>36.3</td><td>5.1</td></tr>
-            <tr><td>5</td><td>Walt Phillips</td><td>Team 16</td><td>8</td><td>34</td><td>36.5</td><td>4.0</td></tr>
-            <tr><td>6</td><td>Jim Allen</td><td>Team 8</td><td>8</td><td>35</td><td>36.8</td><td>4.8</td></tr>
-            <tr><td>7</td><td>Max Edwards</td><td>Team 18</td><td>7</td><td>35</td><td>37.0</td><td>5.0</td></tr>
-            <tr><td>8</td><td>Sam Lopez</td><td>Team 10</td><td>8</td><td>35</td><td>37.2</td><td>5.3</td></tr>
-            <tr><td>9</td><td>Lee Carter</td><td>Team 13</td><td>8</td><td>36</td><td>37.5</td><td>5.5</td></tr>
-            <tr><td>10</td><td>Dave Wilson</td><td>Team 2</td><td>8</td><td>36</td><td>37.8</td><td>5.8</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- SCHEDULE -->
-    <section id="schedule" class="view">
-      <h2 class="view-title">Schedule</h2>
-      <div class="card">
-        <h3>Season Schedule (10 Weeks)</h3>
-        <table class="data-table" id="schedule-table">
-          <thead><tr><th>Week</th><th>Date</th><th>Course</th><th>Format</th><th>Status</th></tr></thead>
-          <tbody id="schedule-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ENTER SCORES -->
-    <section id="enter-scores" class="view">
-      <h2 class="view-title">Enter Scores</h2>
-      <div class="card" style="max-width:600px;">
-        <h3>Submit 9-Hole Round Score</h3>
-        <div class="score-form">
-          <div class="form-group">
-            <label for="score-player">Player</label>
-            <select id="score-player" class="form-control">
-              <option value="">Select Player</option>
-            </select>
-          </div>
-          <div class="form-row" style="grid-template-columns:1fr 1fr;">
-            <div class="form-group">
-              <label for="score-course">Course</label>
-              <select id="score-course" class="form-control">
-                <option value="">Select Course</option>
-                <option>Pine Valley Golf Club</option>
-                <option>Oak Ridge Country Club</option>
-                <option>Lakeside Golf Course</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="score-side">Side</label>
-              <select id="score-side" class="form-control">
-                <option value="front">Front 9</option>
-                <option value="back">Back 9</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="score-date">Date</label>
-            <input type="date" id="score-date" class="form-control">
-          </div>
-          <div class="form-row" style="grid-template-columns:1fr 1fr 1fr;">
-            <div class="form-group">
-              <label for="score-total">Total Score (9 holes)</label>
-              <input type="number" id="score-total" class="form-control" placeholder="e.g. 36">
-            </div>
-            <div class="form-group">
-              <label for="score-putts">Putts</label>
-              <input type="number" id="score-putts" class="form-control" placeholder="e.g. 15">
-            </div>
-            <div class="form-group">
-              <label for="score-fairways">Fairways Hit</label>
-              <input type="number" id="score-fairways" class="form-control" placeholder="e.g. 5">
-            </div>
-          </div>
-          <h4 style="font-size:0.9rem; color:var(--green-deep); margin:0.5rem 0;">Hole-by-Hole Scores</h4>
-          <div id="hole-by-hole-inputs" style="display:grid; grid-template-columns:repeat(9,1fr); gap:0.3rem; margin-bottom:1rem;">
-          </div>
-          <button class="btn-primary" onclick="submitScore()">Submit Score</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- PLAYERS -->
-    <section id="players" class="view">
-      <h2 class="view-title">Players</h2>
-
-      <!-- Add Player Form (Admin Only) -->
-      <div class="card" id="add-player-form-card" style="display:none;">
-        <h3>Add Player</h3>
-        <form id="add-player-form" onsubmit="return addPlayer(event)">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-            <div>
-              <label class="form-label">Player Name</label>
-              <input type="text" class="form-control" id="add-player-name" placeholder="Full Name" required>
-            </div>
-            <div>
-              <label class="form-label">Team</label>
-              <select class="form-control" id="add-player-team" required>
-                <option value="">Select Team…</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Handicap</label>
-              <input type="number" class="form-control" id="add-player-hcp" step="0.1" min="0" max="54" placeholder="e.g. 8.5" required>
-            </div>
-            <div>
-              <label class="form-label">Role</label>
-              <select class="form-control" id="add-player-role" required>
-                <option value="">Select Role…</option>
-                <option value="admin">Admin</option>
-                <option value="scorer">Scorer</option>
-                <option value="player">Player</option>
-              </select>
-            </div>
-          </div>
-          <div style="margin-top:1rem;">
-            <button type="submit" class="btn-primary">Add Player</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>League Roster — 20 Two-Man Teams</h3>
-        <table class="data-table" id="players-table">
-          <thead><tr><th>Team</th><th>Player 1</th><th>HCP</th><th>Player 2</th><th>HCP</th><th>Status</th></tr></thead>
-          <tbody id="players-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ANALYTICS -->
-    <section id="analytics" class="view">
-      <h2 class="view-title">Analytics</h2>
-      <div class="btn-row no-print" style="margin-bottom:1rem;">
-        <button class="btn-primary" onclick="printAnalytics()">Print Analytics Report</button>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">&#128200;</div><div class="stat-value">37.2</div><div class="stat-label">League Avg (9-Hole)</div></div>
-        <div class="stat-card"><div class="stat-icon">&#127942;</div><div class="stat-value">33</div><div class="stat-label">Best Round</div></div>
-        <div class="stat-card"><div class="stat-icon">&#9971;</div><div class="stat-value">15.4</div><div class="stat-label">Avg Putts / 9</div></div>
-        <div class="stat-card"><div class="stat-icon">&#127919;</div><div class="stat-value">58%</div><div class="stat-label">Fairways Hit</div></div>
-      </div>
-      <div class="card">
-        <h3>Scoring Trends by Course</h3>
-        <table class="data-table">
-          <thead><tr><th>Course</th><th>Avg Score (9)</th><th>Best Score</th><th>Rounds Played</th><th>Difficulty</th></tr></thead>
-          <tbody>
-            <tr><td>Pine Valley GC</td><td>37.1</td><td>33</td><td>40</td><td>Medium</td></tr>
-            <tr><td>Oak Ridge CC</td><td>36.4</td><td>33</td><td>32</td><td>Easy</td></tr>
-            <tr><td>Lakeside GC</td><td>38.2</td><td>34</td><td>28</td><td>Hard</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>Top Improvers</h3>
-        <table class="data-table">
-          <thead><tr><th>Player</th><th>Starting Avg</th><th>Current Avg</th><th>Improvement</th></tr></thead>
-          <tbody>
-            <tr><td>Dave Wilson</td><td>39.0</td><td>37.8</td><td style="color:#2e7d32;font-weight:600;">-1.2</td></tr>
-            <tr><td>Chris Brown</td><td>39.5</td><td>38.2</td><td style="color:#2e7d32;font-weight:600;">-1.3</td></tr>
-            <tr><td>Rob Taylor</td><td>40.0</td><td>38.8</td><td style="color:#2e7d32;font-weight:600;">-1.2</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>Handicap Distribution</h3>
-        <table class="data-table">
-          <thead><tr><th>Range</th><th>Players</th><th>% of League</th></tr></thead>
-          <tbody>
-            <tr><td>0 – 5.0</td><td>8</td><td>20%</td></tr>
-            <tr><td>5.1 – 8.0</td><td>12</td><td>30%</td></tr>
-            <tr><td>8.1 – 11.0</td><td>12</td><td>30%</td></tr>
-            <tr><td>11.1 – 15.0+</td><td>8</td><td>20%</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- PAYMENTS -->
-    <section id="payments" class="view">
-      <h2 class="view-title">Payments</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">&#128181;</div><div class="stat-value">$4,800</div><div class="stat-label">Total Collected</div></div>
-        <div class="stat-card"><div class="stat-icon">&#128184;</div><div class="stat-value">$1,200</div><div class="stat-label">Outstanding</div></div>
-        <div class="stat-card"><div class="stat-icon">&#128179;</div><div class="stat-value">$150</div><div class="stat-label">Season Fee</div></div>
-        <div class="stat-card"><div class="stat-icon">&#10004;</div><div class="stat-value">32/40</div><div class="stat-label">Members Paid</div></div>
-      </div>
-      <div class="card">
-        <h3>Payment Status</h3>
-        <table class="data-table" id="payments-table">
-          <thead><tr><th>Team</th><th>Player</th><th>Season Fee</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="payments-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- COURSES -->
-    <section id="courses" class="view">
-      <h2 class="view-title">Courses</h2>
-
-      <div class="card">
-        <h3>Pine Valley Golf Club</h3>
-        <div class="course-detail">
-          <div class="course-meta">
-            <span><strong>Par:</strong> 36/36 = 72</span>
-            <span><strong>Rating:</strong> 72.5</span>
-            <span><strong>Slope:</strong> 134</span>
-          </div>
-          <p class="course-desc">Championship-level course known for challenging greens and tight fairways.</p>
-          <table class="tee-table">
-            <thead><tr><th>Tee</th><th>Color</th><th>Front 9</th><th>Back 9</th><th>Total Yards</th><th>Rating/Slope</th></tr></thead>
-            <tbody>
-              <tr><td><span class="tee-dot" style="background:#333;"></span>Black</td><td>Championship</td><td>3,505</td><td>3,425</td><td>6,930</td><td>73.5/138</td></tr>
-              <tr><td><span class="tee-dot" style="background:#2196F3;"></span>Blue</td><td>Men's</td><td>3,300</td><td>3,225</td><td>6,525</td><td>71.8/132</td></tr>
-              <tr><td><span class="tee-dot" style="background:#fff;border:1px solid #ccc;"></span>White</td><td>Senior</td><td>3,050</td><td>2,980</td><td>6,030</td><td>69.5/126</td></tr>
-              <tr><td><span class="tee-dot" style="background:#f44336;"></span>Red</td><td>Forward</td><td>2,700</td><td>2,650</td><td>5,350</td><td>66.8/118</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Oak Ridge Country Club</h3>
-        <div class="course-detail">
-          <div class="course-meta">
-            <span><strong>Par:</strong> 36/35 = 71</span>
-            <span><strong>Rating:</strong> 71.2</span>
-            <span><strong>Slope:</strong> 128</span>
-          </div>
-          <p class="course-desc">Member-friendly course with wide fairways and well-maintained greens.</p>
-          <table class="tee-table">
-            <thead><tr><th>Tee</th><th>Color</th><th>Front 9</th><th>Back 9</th><th>Total Yards</th><th>Rating/Slope</th></tr></thead>
-            <tbody>
-              <tr><td><span class="tee-dot" style="background:#333;"></span>Black</td><td>Championship</td><td>3,380</td><td>3,305</td><td>6,685</td><td>72.0/132</td></tr>
-              <tr><td><span class="tee-dot" style="background:#2196F3;"></span>Blue</td><td>Men's</td><td>3,160</td><td>3,080</td><td>6,240</td><td>70.5/128</td></tr>
-              <tr><td><span class="tee-dot" style="background:#fff;border:1px solid #ccc;"></span>White</td><td>Senior</td><td>2,920</td><td>2,850</td><td>5,770</td><td>68.2/122</td></tr>
-              <tr><td><span class="tee-dot" style="background:#f44336;"></span>Red</td><td>Forward</td><td>2,580</td><td>2,520</td><td>5,100</td><td>65.5/114</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Lakeside Golf Course</h3>
-        <div class="course-detail">
-          <div class="course-meta">
-            <span><strong>Par:</strong> 36/36 = 72</span>
-            <span><strong>Rating:</strong> 73.1</span>
-            <span><strong>Slope:</strong> 138</span>
-          </div>
-          <p class="course-desc">The most challenging course in rotation. Water hazards on 8 holes. Tournament host.</p>
-          <table class="tee-table">
-            <thead><tr><th>Tee</th><th>Color</th><th>Front 9</th><th>Back 9</th><th>Total Yards</th><th>Rating/Slope</th></tr></thead>
-            <tbody>
-              <tr><td><span class="tee-dot" style="background:#333;"></span>Black</td><td>Championship</td><td>3,620</td><td>3,525</td><td>7,145</td><td>74.2/142</td></tr>
-              <tr><td><span class="tee-dot" style="background:#2196F3;"></span>Blue</td><td>Men's</td><td>3,420</td><td>3,325</td><td>6,745</td><td>72.8/138</td></tr>
-              <tr><td><span class="tee-dot" style="background:#fff;border:1px solid #ccc;"></span>White</td><td>Senior</td><td>3,150</td><td>3,060</td><td>6,210</td><td>70.1/130</td></tr>
-              <tr><td><span class="tee-dot" style="background:#f44336;"></span>Red</td><td>Forward</td><td>2,780</td><td>2,710</td><td>5,490</td><td>67.5/120</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCRAMBLE EVENTS -->
-    <section id="scramble-events" class="view">
-      <h2 class="view-title">Scramble Events (18-Hole)</h2>
-      <div class="card">
-        <h3>Upcoming Scramble Events</h3>
-        <table class="data-table">
-          <thead><tr><th>Date</th><th>Course</th><th>Format</th><th>Teams</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Apr 19, 2026</td><td>Lakeside Golf Course</td><td>4-Person Scramble (18 holes)</td><td>10</td><td><span class="status upcoming">Open</span></td></tr>
-            <tr><td>May 17, 2026</td><td>Pine Valley Golf Club</td><td>4-Person Scramble (18 holes)</td><td>10</td><td><span class="status pending">Registration</span></td></tr>
-            <tr><td>Jun 7, 2026</td><td>Oak Ridge Country Club</td><td>Season Finale Scramble (18 holes)</td><td>10</td><td><span class="status pending">Registration</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>Create Scramble Event</h3>
-        <div class="score-form">
-          <div class="form-row" style="grid-template-columns:1fr 1fr;">
-            <div class="form-group">
-              <label for="scramble-date">Event Date</label>
-              <input type="date" id="scramble-date" class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="scramble-course">Course</label>
-              <select id="scramble-course" class="form-control">
-                <option>Pine Valley Golf Club</option>
-                <option>Oak Ridge Country Club</option>
-                <option>Lakeside Golf Course</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row" style="grid-template-columns:1fr 1fr;">
-            <div class="form-group">
-              <label for="scramble-teams">Team Size</label>
-              <select id="scramble-teams" class="form-control">
-                <option>2-Person</option>
-                <option selected>4-Person</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="scramble-tee">Tee Time</label>
-              <input type="time" id="scramble-tee" class="form-control" value="07:00">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="scramble-notes">Notes</label>
-            <input type="text" id="scramble-notes" class="form-control" placeholder="e.g. Prizes for longest drive, closest to pin">
-          </div>
-          <button class="btn-gold" onclick="createScramble()">Create Scramble Event</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Scramble Teams — Apr 19 Lakeside GC</h3>
-        <div id="scramble-teams-list">
-          <div class="scramble-team"><strong>Team A:</strong> Tom Davis (4.2), Dave Wilson (5.8), John Martinez (8.4), Al Adams (11.0)</div>
-          <div class="scramble-team"><strong>Team B:</strong> Ken Nelson (3.8), Mike Johnson (5.1), Rob Taylor (8.8), Pete Baker (14.2)</div>
-          <div class="scramble-team"><strong>Team C:</strong> Bill Harris (3.5), Sam Lopez (5.3), Dan Anderson (9.2), Len Stewart (12.0)</div>
-          <div class="scramble-team"><strong>Team D:</strong> Walt Phillips (4.0), Max Edwards (5.0), Mark Thomas (9.7), Gus Evans (11.5)</div>
-          <div class="scramble-team"><strong>Team E:</strong> Jim Allen (4.8), Lee Carter (5.5), Chris Brown (7.9), Ray King (10.5)</div>
-          <div class="scramble-team"><strong>Team F:</strong> Paul Lewis (6.3), Gary Walker (7.0), Steve Williams (6.5), Ned Parker (9.0)</div>
-          <div class="scramble-team"><strong>Team G:</strong> Fred Campbell (6.7), Roy Collins (7.2), Jeff Clark (10.1), Cal Rogers (8.5)</div>
-          <div class="scramble-team"><strong>Team H:</strong> Joe Hill (7.6), Carl Scott (6.1), Rick Hall (11.2), Ed Wright (13.4)</div>
-          <div class="scramble-team"><strong>Team I:</strong> Ron Green (9.9), Bob Young (8.0), Hank Turner (10.8), Art Sanchez (15.1)</div>
-          <div class="scramble-team"><strong>Team J:</strong> Don Mitchell (8.7), Tim Perez (12.3), Vic Roberts (7.4), Bud Morris (6.9)</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- RAINOUT MANAGER -->
-    <section id="rainout" class="view">
-      <h2 class="view-title">Rainout Manager</h2>
-      <div class="card">
-        <h3>Mark Rainout</h3>
-        <div class="score-form">
-          <div class="form-row" style="grid-template-columns:1fr 1fr;">
-            <div class="form-group">
-              <label for="rainout-week">Select Week</label>
-              <select id="rainout-week" class="form-control">
-                <option value="">Select week...</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="rainout-reschedule">Reschedule To</label>
-              <input type="date" id="rainout-reschedule" class="form-control">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="rainout-reason">Reason</label>
-            <select id="rainout-reason" class="form-control">
-              <option>Rain</option>
-              <option>Thunderstorms</option>
-              <option>Course Conditions</option>
-              <option>Extreme Heat</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div class="btn-row">
-            <button class="btn-danger" onclick="markRainout()">Mark as Rainout</button>
-            <button class="btn-primary" onclick="rescheduleWeek()">Reschedule Week</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Rainout History</h3>
-        <table class="data-table" id="rainout-table">
-          <thead><tr><th>Week</th><th>Original Date</th><th>Reason</th><th>Rescheduled</th><th>Status</th></tr></thead>
-          <tbody id="rainout-body">
-            <tr><td colspan="5" style="text-align:center;color:var(--gray-text);">No rainouts this season</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- LEAGUE CHAT -->
-    <section id="league-chat" class="view">
-      <h2 class="view-title">League Chat</h2>
-      <div class="card chat-container">
-        <h3>League Discussion</h3>
-        <div class="chat-messages" id="chat-messages">
-          <div class="chat-message"><div class="chat-author">Tom Davis</div><div class="chat-text">Great round at Pine Valley today! Course was in perfect shape.</div><div class="chat-time">Mar 29, 2:15 PM</div></div>
-          <div class="chat-message"><div class="chat-author">Mike Johnson</div><div class="chat-text">Anyone up for a practice round this Wednesday at Oak Ridge?</div><div class="chat-time">Mar 29, 1:30 PM</div></div>
-          <div class="chat-message"><div class="chat-author">Dave Wilson</div><div class="chat-text">The scramble at Lakeside is going to be great. Who's on my team?</div><div class="chat-time">Mar 28, 5:45 PM</div></div>
-          <div class="chat-message"><div class="chat-author">Steve Williams</div><div class="chat-text">Just paid my season fee. Fairway Command is a huge upgrade!</div><div class="chat-time">Mar 28, 10:00 AM</div></div>
-          <div class="chat-message"><div class="chat-author">Chris Brown</div><div class="chat-text">Can someone check if there's a rain delay for next Saturday?</div><div class="chat-time">Mar 27, 4:20 PM</div></div>
-        </div>
-        <div class="chat-input-area">
-          <input type="text" class="chat-input" id="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()">
-          <button class="btn-primary chat-send" onclick="sendChat()">Send</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- INSTRUCTIONS -->
-    <section id="instructions" class="view">
-      <h2 class="view-title">Instructions</h2>
-      <div class="card"><h3>Getting Started</h3><div class="instructions-content"><p>Welcome to <strong>Fairway Command</strong> — The Ultimate League System. Use the sidebar to navigate between sections. Select your role (Player, Scorer, Admin) in the header to see relevant sections.</p></div></div>
-      <div class="card">
-        <h3>Roles</h3>
-        <ol class="instructions-list">
-          <li><strong>Player:</strong> View dashboard, leaderboard, schedule, analytics, courses, chat, and instructions</li>
-          <li><strong>Scorer:</strong> All Player access plus Enter Scores and Scramble Events</li>
-          <li><strong>Admin:</strong> Full access including Payments, Rainout Manager, Handicap Formula, Score Card Printing, and League Settings</li>
-        </ol>
-      </div>
-      <div class="card">
-        <h3>How to Enter Scores</h3>
-        <ol class="instructions-list">
-          <li>Switch to <strong>Scorer</strong> or <strong>Admin</strong> role</li>
-          <li>Go to <strong>Enter Scores</strong> from the sidebar</li>
-          <li>Select the player, course, side, and date</li>
-          <li>Enter hole-by-hole scores or just the total</li>
-          <li>Click <strong>Submit Score</strong></li>
-        </ol>
-      </div>
-      <div class="card">
-        <h3>9-Hole Scorecards</h3>
-        <ol class="instructions-list">
-          <li>Go to <strong>Admin</strong> section and find <strong>Print Score Cards</strong></li>
-          <li>Select the match week to see all pairings</li>
-          <li>Preview scorecards with handicap stroke dots</li>
-          <li>Print on 7x5 card stock for on-course use</li>
-        </ol>
-      </div>
-      <div class="card">
-        <h3>Scramble Events</h3>
-        <ol class="instructions-list">
-          <li>Go to <strong>Scramble Events</strong> to view upcoming 18-hole scrambles</li>
-          <li>Admins can create new events and assign teams</li>
-          <li>Teams are balanced by combined handicap</li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- HANDICAP FORMULA -->
-    <section id="handicap-formula" class="view">
-      <h2 class="view-title">Custom Handicap Formula</h2>
-      <div class="card">
-        <h3>Current Formula</h3>
-        <div class="formula-display">
-          HCP = (Avg of Best <span id="formula-best-n">8</span> of Last <span id="formula-last-n">20</span> Scores - Course Rating) &times; <span id="formula-multiplier">0.96</span> &times; (113 / Slope Rating)
-        </div>
-        <p style="font-size:0.85rem;color:var(--gray-text);margin-bottom:1rem;">This formula calculates the 9-hole league handicap index. Adjust the parameters below to customize for your league.</p>
-      </div>
-      <div class="card">
-        <h3>Adjust Formula Parameters</h3>
-        <div class="score-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="hcp-best-n">Best N Scores to Use</label>
-              <input type="number" id="hcp-best-n" class="form-control" value="8" min="1" max="20">
-            </div>
-            <div class="form-group">
-              <label for="hcp-last-n">Out of Last N Rounds</label>
-              <input type="number" id="hcp-last-n" class="form-control" value="20" min="5" max="40">
-            </div>
-            <div class="form-group">
-              <label for="hcp-multiplier">Multiplier</label>
-              <input type="number" id="hcp-multiplier" class="form-control" value="0.96" step="0.01" min="0.5" max="1.0">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="hcp-max">Maximum Handicap</label>
-              <input type="number" id="hcp-max" class="form-control" value="18" min="10" max="36">
-            </div>
-            <div class="form-group">
-              <label for="hcp-min-rounds">Minimum Rounds Required</label>
-              <input type="number" id="hcp-min-rounds" class="form-control" value="3" min="1" max="10">
-            </div>
-            <div class="form-group">
-              <label for="hcp-bonus">Low Round Bonus</label>
-              <select id="hcp-bonus" class="form-control">
-                <option value="none">None</option>
-                <option value="1">-1 stroke for sub-par round</option>
-                <option value="2">-2 strokes for eagle or better</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn-gold" onclick="saveHandicapFormula()">Save Formula</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Example Calculations</h3>
-        <table class="data-table">
-          <thead><tr><th>Player</th><th>Avg Best 8</th><th>Course Rtg</th><th>Slope</th><th>Calculated HCP</th></tr></thead>
-          <tbody>
-            <tr><td>Tom Davis</td><td>35.2</td><td>36.0</td><td>134</td><td>4.2</td></tr>
-            <tr><td>Ken Nelson</td><td>35.5</td><td>36.0</td><td>134</td><td>3.8</td></tr>
-            <tr><td>Al Adams</td><td>40.5</td><td>36.0</td><td>134</td><td>11.0</td></tr>
-            <tr><td>Art Sanchez</td><td>42.8</td><td>36.0</td><td>134</td><td>15.1</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ADMIN -->
-    <section id="admin" class="view">
-      <h2 class="view-title">Admin</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">&#128101;</div><div class="stat-value">40</div><div class="stat-label">Total Players</div></div>
-        <div class="stat-card"><div class="stat-icon">&#127941;</div><div class="stat-value">20</div><div class="stat-label">Teams</div></div>
-        <div class="stat-card"><div class="stat-icon">&#128197;</div><div class="stat-value">10</div><div class="stat-label">Season Weeks</div></div>
-        <div class="stat-card"><div class="stat-icon">&#9971;</div><div class="stat-value">3</div><div class="stat-label">Courses</div></div>
-      </div>
-      <div class="card">
-        <h3>League Settings</h3>
-        <div class="admin-settings">
-          <div class="setting-item"><strong>League Name:</strong> Fairway Command Spring 2026</div>
-          <div class="setting-item"><strong>Season Dates:</strong> April 5 – June 7, 2026</div>
-          <div class="setting-item"><strong>Format:</strong> 9-Hole Match Play (weekly), 18-Hole Scramble (monthly)</div>
-          <div class="setting-item"><strong>Handicap System:</strong> Custom League Formula</div>
-          <div class="setting-item"><strong>Season Fee:</strong> $150 per player</div>
-          <div class="setting-item"><strong>Tee Boxes:</strong> 4 per course (Black, Blue, White, Red)</div>
-          <div class="setting-item"><strong>Roles:</strong> Player, Scorer, Admin</div>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Team Management</h3>
-        <table class="data-table" id="admin-teams-table">
-          <thead><tr><th>Team</th><th>Player 1</th><th>Player 2</th><th>Combined HCP</th><th>Status</th></tr></thead>
-          <tbody id="admin-teams-body"></tbody>
-        </table>
-      </div>
-
-      <!-- PRINT SCORE CARDS -->
-      <div class="card" id="print-scorecards-section">
-        <h3>Print Score Cards</h3>
-        <p style="font-size:0.85rem;color:#555;margin-bottom:1rem;">Generate and print 9-hole scorecards with handicap stroke dots for weekly league matches.</p>
-        <div class="score-form">
-          <div class="form-row" style="grid-template-columns:1fr 1fr;">
-            <div class="form-group">
-              <label for="sc-week">Match Week</label>
-              <select id="sc-week" class="form-control"></select>
-            </div>
-            <div class="form-group">
-              <label for="sc-date-override">Date Override</label>
-              <input type="date" id="sc-date-override" class="form-control">
-            </div>
-          </div>
-
-          <div id="sc-matches-container" style="display:none;">
-            <h4 style="color:var(--green-deep);margin:1rem 0 0.5rem;font-size:0.95rem;">Weekly Matches</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
-              <div>
-                <strong style="font-size:0.8rem;color:var(--green-mid);display:block;margin-bottom:0.35rem;">Front 9 Matches</strong>
-                <div id="sc-front-matches"></div>
-              </div>
-              <div>
-                <strong style="font-size:0.8rem;color:var(--green-mid);display:block;margin-bottom:0.35rem;">Back 9 Matches</strong>
-                <div id="sc-back-matches"></div>
-              </div>
-            </div>
-
-            <div class="override-card">
-              <h4>Admin Overrides</h4>
-              <div class="form-group">
-                <label for="sc-override-match">Select Match to Override</label>
-                <select id="sc-override-match" class="form-control">
-                  <option value="">Select a match...</option>
-                </select>
-              </div>
-              <div id="sc-override-fields" style="display:none;">
-                <div class="form-row" style="grid-template-columns:1fr 1fr;">
-                  <div class="form-group">
-                    <label for="sc-override-player1">Player 1 (Low HCP)</label>
-                    <select id="sc-override-player1" class="form-control"><option value="">--</option></select>
-                  </div>
-                  <div class="form-group">
-                    <label for="sc-override-hcp1">HCP Override</label>
-                    <input type="number" id="sc-override-hcp1" class="form-control" step="0.1" placeholder="Auto">
-                  </div>
-                </div>
-                <div class="form-row" style="grid-template-columns:1fr 1fr;">
-                  <div class="form-group">
-                    <label for="sc-override-player2">Player 2 (High HCP)</label>
-                    <select id="sc-override-player2" class="form-control"><option value="">--</option></select>
-                  </div>
-                  <div class="form-group">
-                    <label for="sc-override-hcp2">HCP Override</label>
-                    <input type="number" id="sc-override-hcp2" class="form-control" step="0.1" placeholder="Auto">
-                  </div>
-                </div>
-                <div class="form-row" style="grid-template-columns:1fr 1fr;">
-                  <div class="form-group">
-                    <label for="sc-override-side">Side Override</label>
-                    <select id="sc-override-side" class="form-control">
-                      <option value="">Keep as scheduled</option>
-                      <option value="front">Move to Front 9</option>
-                      <option value="back">Move to Back 9</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label for="sc-override-strokes">Extra Strokes</label>
-                    <input type="number" id="sc-override-strokes" class="form-control" placeholder="0">
-                  </div>
-                </div>
-                <button class="btn-primary" onclick="applyOverride()">Apply Override</button>
-              </div>
-            </div>
-
-            <div class="btn-row">
-              <button class="btn-primary" onclick="previewScorecards()">Preview All Score Cards</button>
-              <button class="btn-gold" onclick="printScorecards()">Print All Score Cards</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="sc-preview-area" style="display:none;"></div>
-    </section>
-
-  </main>
 </div>
 
-<footer class="footer">
-  <p>&copy; 2026 Fairway Command — The Ultimate League System</p>
-</footer>
+<!-- \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 MAIN APP \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 -->
+<div id="app">
 
-<div class="toast" id="toast"></div>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="topbar-logo">
+      <div class="topbar-badge"><span>FC</span></div>
+      <div class="topbar-title">
+        Fairway Command
+        <small>Golf League Tracker Pro</small>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="user-name" id="topbar-name"></span>
+      <span class="role-badge" id="topbar-role"></span>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
 
-<script src="app.js"></script>
-</body>
-</html>
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+
+      <!-- Player sections (all roles) -->
+      <div class="sidebar-section" id="nav-player">
+        <div class="sidebar-label">Player</div>
+        <div class="nav-item active" onclick="showPage('dashboard')">
+          <span class="nav-icon">\ud83d\udcca</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="showPage('leaderboard')">
+          <span class="nav-icon">\ud83c\udfc6</span> Leaderboard
+        </div>
+        <div class="nav-item" onclick="showPage('schedule')">
+          <span class="nav-icon">\ud83d\udcc5</span> Schedule
+        </div>
+        <div class="nav-item" onclick="showPage('analytics')">
+          <span class="nav-icon">\ud83d\udcc8</span> My Analytics
+        </div>
+        <div class="nav-item" onclick="showPage('payments')">
+          <span class="nav-icon">\ud83d\udcb3</span> Payments
+        </div>
+        <div class="nav-item" onclick="showPage('chat')">
+          <span class="nav-icon">\ud83d\udcac</span> League Chat
+        </div>
+      </div>
+
+      <!-- Scorer sections -->
+      <div class="sidebar-section hidden" id="nav-scorer">
+        <div class="sidebar-label">Scorer</div>
+        <div class="nav-item" onclick="showPage('enter-scores')">
+          <span class="nav-icon">\u270f\ufe0f</span> Enter Scores
+        </div>
+        <div class="nav-item" onclick="showPage('scorecards')">
+          <span class="nav-icon">\ud83d\udda8\ufe0f</span> Print Scorecards
+        </div>
+        <div class="nav-item" onclick="showPage('manage-players')">
+          <span class="nav-icon">\ud83d\udc65</span> Manage Players
+        </div>
+        <div class="nav-item" onclick="showPage('manage-payments')">
+          <span class="nav-icon">\ud83d\udcb0</span> Manage Payments
+        </div>
+      </div>
+
+      <!-- Admin sections -->
+      <div class="sidebar-section hidden" id="nav-admin">
+        <div class="sidebar-label">Admin</div>
+        <div class="nav-item" onclick="showPage('user-roles')">
+          <span class="nav-icon">\ud83d\udd10</span> User Roles
+        </div>
+        <div class="nav-item" onclick="showPage('courses')">
+          <span class="nav-icon">\u26f3</span> Courses
+        </div>
+        <div class="nav-item" onclick="showPage('league-settings')">
+          <span class="nav-icon">\u2699\ufe0f</span> League Settings
+        </div>
+        <div class="nav-item" onclick="showPage('scramble')">
+          <span class="nav-icon">\ud83d\udd00</span> Scramble Events
+        </div>
+        <div class="nav-item" onclick="showPage('rainouts')">
+          <span class="nav-icon">\ud83c\udf27\ufe0f</span> Rainout Mgmt
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+      <!-- \u2500\u2500 DASHBOARD \u2500\u2500 -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h2>Dashboard</h2>
+          <p id="dash-welcome">Welcome back \u2014 Season 2026</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Scoring Avg</div>
+            <div class="stat-value">42.3</div>
+            <div class="stat-sub">9 holes \u00b7 par 36</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Best Round</div>
+            <div class="stat-value">38</div>
+            <div class="stat-sub">Week 4 \u00b7 Mud Run</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Handicap</div>
+            <div class="stat-value">12.4</div>
+            <div class="stat-sub">\u2193 0.6 this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">League Rank</div>
+            <div class="stat-value">3rd</div>
+            <div class="stat-sub">of 24 players</div>
+          </div>
+        </div>
+
+        <div class="card" style="animation-delay:0.25s">
+          <div class="card-header">
+            <div class="card-title">Recent Rounds</div>
+            <button class="btn-sm" onclick="showPage('analytics')">View All</button>
+          </div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Course</th><th>Score</th><th>+/-</th><th>Putts</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Jun 17</td><td>Mud Run GC</td><td>38</td><td style="color:#4CAF50">+2</td><td>14</td></tr>
+                <tr><td>Jun 10</td><td>Mud Run GC</td><td>44</td><td style="color:#f66">+8</td><td>18</td></tr>
+                <tr><td>Jun 3</td><td>Mud Run GC</td><td>41</td><td style="color:#f66">+5</td><td>16</td></tr>
+                <tr><td>May 27</td><td>Mud Run GC</td><td>39</td><td style="color:#4CAF50">+3</td><td>15</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="animation-delay:0.35s">
+          <div class="card-header">
+            <div class="card-title">Next Match</div>
+          </div>
+          <div class="card-body">
+            <div class="match-row">
+              <div class="match-date">
+                <div class="match-day">24</div>
+                <div class="match-month">Jun</div>
+              </div>
+              <div class="match-divider"></div>
+              <div class="match-info">
+                <div class="match-title">Week 8 \u2014 Regular Match</div>
+                <div class="match-course">Mud Run Golf Club \u00b7 5:30 PM tee time</div>
+              </div>
+              <span class="match-type type-match">Match</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 LEADERBOARD \u2500\u2500 -->
+      <div class="page" id="page-leaderboard">
+        <div class="page-header">
+          <h2>Leaderboard</h2>
+          <p>Season 2026 standings</p>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">League Standings</div>
+            <button class="btn-sm">Export</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Player</th><th>Rounds</th><th>Avg</th><th>Best</th><th>Hdcp</th><th>Points</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 SCHEDULE \u2500\u2500 -->
+      <div class="page" id="page-schedule">
+        <div class="page-header">
+          <h2>Schedule</h2>
+          <p>Season 2026 \u2014 weekly matches & scramble events</p>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Full Schedule</div></div>
+          <div class="card-body" id="schedule-list"></div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 MY ANALYTICS \u2500\u2500 -->
+      <div class="page" id="page-analytics">
+        <div class="page-header">
+          <h2>My Analytics</h2>
+          <p>Personal performance stats</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Rounds Played</div><div class="stat-value">7</div></div>
+          <div class="stat-card"><div class="stat-label">Scoring Avg</div><div class="stat-value">42.3</div></div>
+          <div class="stat-card"><div class="stat-label">Putts / Round</div><div class="stat-value">15.6</div></div>
+          <div class="stat-card"><div class="stat-label">Best Round</div><div class="stat-value">38</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Hole-by-Hole Averages</div>
+            <button class="btn-sm" onclick="window.print()">\ud83d\udda8\ufe0f Print</button>
+          </div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Hole</th><th>Par</th><th>Your Avg</th><th>+/-</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>4</td><td>4.7</td><td style="color:#f66">+0.7</td></tr>
+                <tr><td>2</td><td>3</td><td>3.3</td><td style="color:#f66">+0.3</td></tr>
+                <tr><td>3</td><td>5</td><td>6.1</td><td style="color:#f66">+1.1</td></tr>
+                <tr><td>4</td><td>4</td><td>4.4</td><td style="color:#f66">+0.4</td></tr>
+                <tr><td>5</td><td>3</td><td>3.0</td><td style="color:#4CAF50">E</td></tr>
+                <tr><td>6</td><td>4</td><td>4.9</td><td style="color:#f66">+0.9</td></tr>
+                <tr><td>7</td><td>4</td><td>5.1</td><td style="color:#f66">+1.1</td></tr>
+                <tr><td>8</td><td>3</td><td>3.4</td><td style="color:#f66">+0.4</td></tr>
+                <tr><td>9</td><td>4</td><td>4.4</td><td style="color:#f66">+0.4</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 PAYMENTS \u2500\u2500 -->
+      <div class="page" id="page-payments">
+        <div class="page-header">
+          <h2>Payments</h2>
+          <p>Your payment status</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Season Dues</div><div class="stat-value" style="font-size:28px">$120</div></div>
+          <div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value" style="color:#4CAF50;font-size:28px">$80</div></div>
+          <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value" style="color:#f66;font-size:28px">$40</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Payment History</div></div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Apr 1</td><td>$40</td><td>Cash</td><td style="color:#4CAF50">\u2713 Paid</td></tr>
+                <tr><td>May 1</td><td>$40</td><td>Venmo</td><td style="color:#4CAF50">\u2713 Paid</td></tr>
+                <tr><td>Jun 1</td><td>$40</td><td>\u2014</td><td style="color:#f66">\u26a0 Due</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 LEAGUE CHAT \u2500\u2500 -->
+      <div class="page" id="page-chat">
+        <div class="page-header"><h2>League Chat</h2><p>Real-time league messaging</p></div>
+        <div class="card">
+          <div class="card-body" id="chat-messages" style="min-height:300px;max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+            <div style="color:var(--gray);font-size:13px;text-align:center;padding:20px">Chat messages will appear here</div>
+          </div>
+          <div style="display:flex;gap:8px;padding:0 0 4px">
+            <input id="chat-input" placeholder="Type a message..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(212,175,55,0.2);border-radius:3px;padding:10px 14px;color:var(--white);font-family:'Barlow',sans-serif;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')sendChat()" />
+            <button class="btn-sm" onclick="sendChat()">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 ENTER SCORES (Scorer+) \u2500\u2500 -->
+      <div class="page" id="page-enter-scores">
+        <div class="page-header"><h2>Enter Scores</h2><p>Hole-by-hole score entry</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Score Entry \u2014 Week 8</div></div>
+          <div class="card-body">
+            <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+              <div class="form-field" style="flex:1;min-width:140px">
+                <label>Player</label>
+                <select><option>Select player...</option><option>John Smith</option><option>Mike Johnson</option><option>Dave Wilson</option></select>
+              </div>
+              <div class="form-field" style="flex:1;min-width:140px">
+                <label>Tee</label>
+                <select><option>White</option><option>Blue</option><option>Red</option></select>
+              </div>
+            </div>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:10px;font-weight:700">Hole Scores \u2014 Par 36</p>
+            <div class="score-grid" id="score-grid"></div>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:16px">
+              <div style="font-family:'Bebas Neue';font-size:28px;color:var(--gold)">Total: <span id="score-total">\u2014</span></div>
+              <div style="font-size:13px;color:var(--gray)" id="score-diff"></div>
+              <button class="btn-sm btn-green" style="margin-left:auto" onclick="saveScore()">Save Score</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 SCORECARDS (Scorer+) \u2500\u2500 -->
+      <div class="page" id="page-scorecards">
+        <div class="page-header"><h2>Print Scorecards</h2><p>Generate print-ready 9-hole scorecards</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Generate Scorecard</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Week</label><select><option>Week 8 \u2014 Jun 24</option><option>Week 7 \u2014 Jun 17</option></select></div>
+              <div class="form-field"><label>Course</label><select><option>Mud Run Golf Club</option></select></div>
+            </div>
+            <button class="btn-primary" style="width:auto;padding:12px 32px;font-size:16px" onclick="showToast('Scorecard ready to print!')">\ud83d\udda8\ufe0f Generate &amp; Print</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 MANAGE PLAYERS (Scorer+) \u2500\u2500 -->
+      <div class="page" id="page-manage-players">
+        <div class="page-header"><h2>Manage Players</h2><p>Add, edit, and manage league members</p></div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Add Player</div>
+          </div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Full Name</label><input placeholder="John Smith" /></div>
+              <div class="form-field"><label>Email</label><input type="email" placeholder="john@email.com" /></div>
+              <div class="form-field"><label>Phone</label><input placeholder="(555) 000-0000" /></div>
+              <div class="form-field"><label>Handicap</label><input type="number" placeholder="0.0" /></div>
+            </div>
+            <button class="btn-sm btn-green" onclick="showToast('Player added!')">+ Add Player</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Player Roster</div></div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Hdcp</th><th>Actions</th></tr></thead>
+              <tbody id="player-roster"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- \u2500\u2500 MANAGE PAYMENTS (Scorer+) \u2500\u2500 -->
+      <div class="page" id="page-manage-payments">
+        <div class="page-header"><h2>Manage Payments</h2><p>Track and update payment status</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Payment Status</div></div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>Player</th><th>Due
