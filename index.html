@@ -1383,20 +1383,25 @@
           <p>Your payment status</p>
         </div>
         <div class="stats-grid">
-          <div class="stat-card"><div class="stat-label">Season Dues</div><div class="stat-value" style="font-size:28px">$120</div></div>
-          <div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value" style="color:#4CAF50;font-size:28px">$80</div></div>
-          <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value" style="color:#f66;font-size:28px">$40</div></div>
+          <div class="stat-card"><div class="stat-label">Total Due</div><div class="stat-value" id="my-pay-due" style="font-size:28px">—</div></div>
+          <div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value" id="my-pay-paid" style="color:#4CAF50;font-size:28px">—</div></div>
+          <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value" id="my-pay-balance" style="color:#f66;font-size:28px">—</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Payment Status</div></div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Category</th><th>Due</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+              <tbody id="my-pay-categories"></tbody>
+            </table>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><div class="card-title">Payment History</div></div>
           <div class="card-body">
             <table class="data-table">
-              <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>Apr 1</td><td>$40</td><td>Cash</td><td style="color:#4CAF50">✓ Paid</td></tr>
-                <tr><td>May 1</td><td>$40</td><td>Venmo</td><td style="color:#4CAF50">✓ Paid</td></tr>
-                <tr><td>Jun 1</td><td>$40</td><td>—</td><td style="color:#f66">⚠ Due</td></tr>
-              </tbody>
+              <thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Method</th><th>Note</th></tr></thead>
+              <tbody id="my-pay-history"></tbody>
             </table>
           </div>
         </div>
@@ -1516,12 +1521,15 @@
           </div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom:16px">
-              <div class="form-field"><label>Full Name</label><input placeholder="John Smith" /></div>
-              <div class="form-field"><label>Email</label><input type="email" placeholder="john@email.com" /></div>
-              <div class="form-field"><label>Phone</label><input placeholder="(555) 000-0000" /></div>
-              <div class="form-field"><label>Handicap</label><input type="number" placeholder="0.0" /></div>
+              <div class="form-field"><label>Full Name</label><input id="pm-name" placeholder="John Smith" /></div>
+              <div class="form-field"><label>Email</label><input id="pm-email" type="email" placeholder="john@email.com" /></div>
+              <div class="form-field"><label>Phone</label><input id="pm-phone" placeholder="(555) 000-0000" /></div>
+              <div class="form-field"><label>Handicap</label><input id="pm-handicap" type="number" placeholder="0.0" step="0.1" /></div>
             </div>
-            <button class="btn-sm btn-green" onclick="showToast('Player added!')">+ Add Player</button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn-sm btn-green" onclick="savePlayerFromForm()">Save Player</button>
+              <button class="btn-sm" id="pm-cancel" style="display:none" onclick="clearPlayerForm()">Cancel Edit</button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -1539,12 +1547,44 @@
       <div class="page" id="page-manage-payments">
         <div class="page-header"><h2>Manage Payments</h2><p>Track and update payment status</p></div>
         <div class="card">
+          <div class="card-header"><div class="card-title">Payment Categories</div></div>
+          <div class="card-body">
+            <div id="pay-categories-admin"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <button class="btn-sm btn-green" onclick="savePaymentSettingsFromUI()">Save Categories</button>
+              <button class="btn-sm" onclick="loadPaymentSettings()">Reload</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Record Payment</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Player</label><select id="pay-player"></select></div>
+              <div class="form-field"><label>Category</label><select id="pay-category"></select></div>
+              <div class="form-field"><label>Amount</label><input id="pay-amount" type="number" step="0.01" placeholder="0.00" /></div>
+              <div class="form-field"><label>Method</label><select id="pay-method"><option value="">—</option><option value="Cash">Cash</option><option value="Venmo">Venmo</option><option value="Check">Check</option><option value="Other">Other</option></select></div>
+            </div>
+            <div class="form-field" style="margin-bottom:12px"><label>Note (optional)</label><input id="pay-note" placeholder="e.g., Week 1 skins" /></div>
+            <button class="btn-sm btn-green" onclick="recordPaymentFromUI()">Record Payment</button>
+          </div>
+        </div>
+        <div class="card">
           <div class="card-header"><div class="card-title">Payment Status</div></div>
           <div class="card-body" style="padding:0">
             <table class="data-table">
               <thead><tr><th>Player</th><th>Due</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
               <tbody id="payment-table"></tbody>
             </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Reminders</div></div>
+          <div class="card-body">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+              <div class="form-field" style="flex:1;min-width:220px"><label>Message (optional)</label><input id="reminder-message" placeholder="Payment reminder" /></div>
+              <button class="btn-sm" onclick="sendReminderToAll()">Send To Entire League</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1718,6 +1758,9 @@ let scores = new Array(9).fill('');
 let leaderboardMode = 'gross';
 let scoringMode = 'batch';
 let leaderboardFilters = { week: '', start: '', end: '' };
+let playersCache = [];
+let paymentSettingsCache = null;
+let editingPlayerEmail = null;
 
 const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
 
@@ -1947,6 +1990,23 @@ function showPage(id) {
   if (id === 'profile') {
     loadMyProfile();
   }
+  if (id === 'payments') {
+    loadMyPayments();
+  }
+  if (id === 'manage-payments') {
+    loadPaymentSettings();
+    hydratePaymentsAdminUI();
+    buildPaymentTable();
+  }
+  if (id === 'manage-players') {
+    loadPlayers().then(() => {
+      buildPlayerRoster();
+      hydratePlayerSelectors();
+    });
+  }
+  if (id === 'user-roles') {
+    buildRoleList();
+  }
   // close mobile sidebar only
   if (window.innerWidth <= 768) {
     document.getElementById('sidebar').classList.remove('open');
@@ -1969,17 +2029,158 @@ function closeSidebar() {
 // ═══════════════════════════════
 function initData() {
   buildScoreGrid();
-  hydrateScoreEntryUI();
+  loadPlayers().then(() => {
+    hydratePlayerSelectors();
+    hydrateScoreEntryUI();
+    hydrateScorecardUI();
+    buildPlayerRoster();
+    buildRoleList();
+    buildLeaderboard();
+  }).catch(() => {
+    hydrateScoreEntryUI();
+    hydrateScorecardUI();
+    buildPlayerRoster();
+    buildRoleList();
+  });
   hydrateLeaderboardFiltersUI();
-  hydrateScorecardUI();
   hydrateFinalizeWeekUI();
   loadScoringMode();
   setLeaderboardMode('gross');
   buildLeaderboard();
   buildSchedule();
-  buildPlayerRoster();
+  loadPaymentSettings();
   buildPaymentTable();
-  buildRoleList();
+  loadMyPayments();
+}
+
+async function loadPlayers(includeRoles) {
+  try {
+    const url = '/api/players' + (includeRoles ? '?includeRoles=1' : '');
+    const res = await fetchJson(url);
+    playersCache = Array.isArray(res && res.players) ? res.players : [];
+  } catch (e) {
+    playersCache = [...PLAYERS_DATA].map(p => ({
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      handicap: p.hdcp
+    }));
+  }
+  return playersCache;
+}
+
+function hydratePlayerSelectors() {
+  const names = playersCache && playersCache.length ? playersCache : PLAYERS_DATA;
+
+  const scorePlayer = document.getElementById('score-player');
+  if (scorePlayer) {
+    const cur = scorePlayer.value;
+    scorePlayer.innerHTML = '<option value="">Select player...</option>' +
+      names.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+    if (cur) scorePlayer.value = cur;
+  }
+
+  const scPlayer = document.getElementById('sc-player');
+  if (scPlayer) {
+    const cur = scPlayer.value;
+    scPlayer.innerHTML = '<option value="">Select player...</option>' +
+      names.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+    if (cur) scPlayer.value = cur;
+  }
+
+  const payPlayer = document.getElementById('pay-player');
+  if (payPlayer) {
+    const cur = payPlayer.value;
+    payPlayer.innerHTML = '<option value="">Select player...</option>' +
+      names.map(p => `<option value="${p.email}">${p.name}</option>`).join('');
+    if (cur) payPlayer.value = cur;
+  }
+}
+
+function clearPlayerForm() {
+  const nameEl = document.getElementById('pm-name');
+  const emailEl = document.getElementById('pm-email');
+  const phoneEl = document.getElementById('pm-phone');
+  const hcEl = document.getElementById('pm-handicap');
+  const cancel = document.getElementById('pm-cancel');
+  if (nameEl) nameEl.value = '';
+  if (emailEl) emailEl.value = '';
+  if (phoneEl) phoneEl.value = '';
+  if (hcEl) hcEl.value = '';
+  if (emailEl) emailEl.disabled = false;
+  if (cancel) cancel.style.display = 'none';
+  editingPlayerEmail = null;
+}
+
+async function savePlayerFromForm() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const nameEl = document.getElementById('pm-name');
+  const emailEl = document.getElementById('pm-email');
+  const phoneEl = document.getElementById('pm-phone');
+  const hcEl = document.getElementById('pm-handicap');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const email = emailEl ? emailEl.value.trim() : '';
+  const phone = phoneEl ? phoneEl.value.trim() : '';
+  const handicap = hcEl ? hcEl.value : '';
+
+  if (!name || !email) {
+    showToast('Name and email required');
+    return;
+  }
+
+  try {
+    await fetchJson('/api/players', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, handicap })
+    });
+    await loadPlayers();
+    buildPlayerRoster();
+    hydratePlayerSelectors();
+    clearPlayerForm();
+    showToast('Player saved');
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+function editPlayer(email) {
+  const p = (playersCache || []).find(x => String(x.email).toLowerCase() === String(email).toLowerCase());
+  if (!p) return;
+  const nameEl = document.getElementById('pm-name');
+  const emailEl = document.getElementById('pm-email');
+  const phoneEl = document.getElementById('pm-phone');
+  const hcEl = document.getElementById('pm-handicap');
+  const cancel = document.getElementById('pm-cancel');
+  if (nameEl) nameEl.value = p.name || '';
+  if (emailEl) {
+    emailEl.value = p.email || '';
+    emailEl.disabled = true;
+  }
+  if (phoneEl) phoneEl.value = p.phone || '';
+  if (hcEl) hcEl.value = (p.handicap !== null && p.handicap !== undefined) ? p.handicap : '';
+  if (cancel) cancel.style.display = '';
+  editingPlayerEmail = p.email;
+}
+
+async function deletePlayer(email) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  if (!confirm('Delete player ' + email + '?')) return;
+  try {
+    await fetchJson('/api/players?email=' + encodeURIComponent(email), { method: 'DELETE' });
+    await loadPlayers();
+    buildPlayerRoster();
+    hydratePlayerSelectors();
+    showToast('Player deleted');
+  } catch (e) {
+    showToast('Delete failed');
+  }
 }
 
 function setLeaderboardMode(mode) {
@@ -2043,10 +2244,12 @@ async function buildLeaderboard() {
     const name = s.player;
     const gross = typeof s.grossTotal === 'number' ? s.grossTotal : (Array.isArray(s.holes) ? s.holes.reduce((a,b)=>a+(parseInt(b)||0),0) : null);
     if (gross === null || isNaN(gross)) continue;
-    const player = PLAYERS_DATA.find(p => String(p.name).toLowerCase() === String(name).toLowerCase()) || { name, hdcp: 0 };
-    const net = calcNetScore(gross, player.hdcp);
+    const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+    const player = pool.find(p => String(p.name).toLowerCase() === String(name).toLowerCase()) || { name, handicap: 0, hdcp: 0 };
+    const h = (player && player.hdcp !== undefined) ? player.hdcp : (player && player.handicap !== undefined ? player.handicap : 0);
+    const net = calcNetScore(gross, h);
     const val = leaderboardMode === 'net' ? net : gross;
-    if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: player.hdcp, values: [] });
+    if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: h, values: [] });
     byPlayer.get(name).values.push(val);
   }
 
@@ -2114,8 +2317,9 @@ function hydrateScorecardUI() {
       Array.from({ length: 20 }).map((_, i) => `<option value="${i + 1}">Week ${i + 1}</option>`).join('');
   }
   if (playerEl && playerEl.options.length === 0) {
+    const names = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
     playerEl.innerHTML = '<option value="">Select player...</option>' +
-      PLAYERS_DATA.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+      names.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
   }
   if (dateEl && !dateEl.value) {
     const d = new Date();
@@ -2212,8 +2416,9 @@ async function generateScorecardPreview() {
     return;
   }
 
-  const player = PLAYERS_DATA.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
-  const hi = player ? player.hdcp : 0;
+  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
+  const hi = player ? (player.hdcp !== undefined ? player.hdcp : player.handicap) : 0;
   const strokes = getStrokesForNine(hi);
   const dots = allocateStrokeDots(strokes);
 
@@ -2453,8 +2658,9 @@ function hydrateScoreEntryUI() {
       Array.from({ length: 10 }).map((_,i) => `<option value="${i+1}">Week ${i+1}</option>`).join('');
   }
   if (playerEl && playerEl.options.length <= 1) {
+    const names = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
     playerEl.innerHTML = '<option value="">Select player...</option>' +
-      PLAYERS_DATA.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+      names.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
   }
   if (dateEl && !dateEl.value) {
     const d = new Date();
@@ -2536,49 +2742,283 @@ async function saveMyProfile() {
 
 function buildPlayerRoster() {
   const tbody = document.getElementById('player-roster');
-  tbody.innerHTML = PLAYERS_DATA.map(p => `
-    <tr>
-      <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
-      <td>${p.email}</td>
-      <td>${p.phone}</td>
-      <td>${p.hdcp}</td>
-      <td><button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="showToast('Edit player')">Edit</button></td>
-    </tr>
-  `).join('');
+  const rows = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA.map(p => ({ name: p.name, email: p.email, phone: p.phone, handicap: p.hdcp }));
+  tbody.innerHTML = rows.map(p => {
+    const hc = (p.handicap !== undefined && p.handicap !== null) ? p.handicap : (p.hdcp !== undefined ? p.hdcp : '');
+    return `
+      <tr>
+        <td style="font-weight:600;color:#1a1a1a">${p.name || ''}</td>
+        <td>${p.email || ''}</td>
+        <td>${p.phone || ''}</td>
+        <td>${(hc === null || hc === undefined || hc === '') ? '—' : hc}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="editPlayer('${p.email}')">Edit</button>
+            <button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="deletePlayer('${p.email}')">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-function buildPaymentTable() {
+async function buildPaymentTable() {
   const tbody = document.getElementById('payment-table');
-  tbody.innerHTML = PAYMENT_DATA.map(p => {
-    const bal = p.due - p.paid;
-    const color = p.status === 'Paid' ? '#4CAF50' : p.status === 'Partial' ? 'var(--gold)' : '#f66';
-    return `<tr>
-      <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
-      <td>$${p.due}</td>
-      <td style="color:#4CAF50">$${p.paid}</td>
-      <td style="color:${bal > 0 ? '#f66' : '#4CAF50'}">$${bal}</td>
-      <td style="color:${color};font-weight:700">${p.status}</td>
-      <td><button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="showToast('Payment reminder sent!')">Remind</button></td>
-    </tr>`;
-  }).join('');
+  if (!tbody) return;
+  try {
+    const res = await fetchJson('/api/payments');
+    const sums = Array.isArray(res && res.summaries) ? res.summaries : [];
+    tbody.innerHTML = sums.map(s => {
+      const bal = s.totals.balance;
+      const status = bal <= 0 ? 'Paid' : (s.totals.paid > 0 ? 'Partial' : 'Unpaid');
+      const color = status === 'Paid' ? '#4CAF50' : status === 'Partial' ? 'var(--gold)' : '#f66';
+      return `<tr>
+        <td style="font-weight:600;color:#1a1a1a">${s.player}</td>
+        <td>$${s.totals.due}</td>
+        <td style="color:#4CAF50">$${s.totals.paid}</td>
+        <td style="color:${bal > 0 ? '#f66' : '#4CAF50'}">$${bal}</td>
+        <td style="color:${color};font-weight:700">${status}</td>
+        <td><button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="sendReminderToPlayer('${s.email}')">Remind</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" style="padding:18px;color:#666;text-align:center">No payment data</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:18px;color:#666;text-align:center">Unable to load payments</td></tr>';
+  }
 }
 
-function buildRoleList() {
+async function buildRoleList() {
   const list = document.getElementById('role-list');
-  list.innerHTML = PLAYERS_DATA.map((p,i) => {
-    const roles = ['admin','scorer','player'];
-    const cur = i === 0 ? 'admin' : i === 1 ? 'scorer' : 'player';
-    return `<div class="role-row">
-      <div class="role-avatar">${p.name.split(' ').map(n=>n[0]).join('')}</div>
-      <div class="role-user-info">
-        <div class="role-user-name">${p.name}</div>
-        <div class="role-user-email">${p.email}</div>
-      </div>
-      <select class="role-select" onchange="setRoleForUser('${p.email}', this.value.toLowerCase())">
-        ${roles.map(r => `<option value="${r}" ${r===cur?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
-      </select>
-    </div>`;
-  }).join('');
+  if (!list) return;
+  const roles = ['admin','scorer','player'];
+  try {
+    await loadPlayers(true);
+    const rows = (playersCache && playersCache.length) ? playersCache : [];
+    list.innerHTML = rows.map((p) => {
+      const cur = p.role || 'player';
+      const initials = String(p.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      return `<div class="role-row">
+        <div class="role-avatar">${initials || '?'}</div>
+        <div class="role-user-info">
+          <div class="role-user-name">${p.name || p.email}</div>
+          <div class="role-user-email">${p.email}</div>
+        </div>
+        <select class="role-select" onchange="setRoleForUser('${p.email}', this.value.toLowerCase());setTimeout(()=>buildRoleList(), 300);">
+          ${roles.map(r => `<option value="${r}" ${r===cur?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
+        </select>
+      </div>`;
+    }).join('') || '<div style="padding:12px;color:#666">No players found</div>';
+  } catch (e) {
+    list.innerHTML = '<div style="padding:12px;color:#666">Unable to load roles</div>';
+  }
+}
+
+async function loadPaymentSettings() {
+  try {
+    const res = await fetchJson('/api/payment-settings');
+    paymentSettingsCache = res && res.settings ? res.settings : null;
+  } catch (e) {
+    paymentSettingsCache = null;
+  }
+  hydratePaymentsAdminUI();
+}
+
+function hydratePaymentsAdminUI() {
+  const wrap = document.getElementById('pay-categories-admin');
+  const catSel = document.getElementById('pay-category');
+  if (!wrap && !catSel) return;
+  const settings = paymentSettingsCache;
+  const cats = settings && Array.isArray(settings.categories) ? settings.categories : [];
+  const active = cats.filter(c => c && c.active);
+
+  if (wrap) {
+    wrap.innerHTML = cats.map(c => {
+      const checked = c.active ? 'checked' : '';
+      return `
+        <div style="display:flex;gap:10px;align-items:center;padding:10px;border:1px solid rgba(212,175,55,0.25);border-radius:8px;margin-bottom:10px;background:rgba(212,175,55,0.06)">
+          <input type="checkbox" data-cat-id="${c.id}" data-field="active" ${checked} />
+          <div style="flex:1">
+            <div style="font-weight:800;color:var(--gold-dark)">${c.name}</div>
+            <div style="font-size:12px;color:#666">ID: ${c.id}</div>
+          </div>
+          <div style="min-width:160px" class="form-field">
+            <label style="margin:0 0 6px">Amount</label>
+            <input type="number" step="0.01" data-cat-id="${c.id}" data-field="amount" value="${Number(c.amount) || 0}" />
+          </div>
+        </div>
+      `;
+    }).join('') || '<div style="color:#666">No categories configured</div>';
+  }
+
+  if (catSel) {
+    const cur = catSel.value;
+    catSel.innerHTML = '<option value="">Select category...</option>' +
+      active.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (cur) catSel.value = cur;
+  }
+}
+
+async function savePaymentSettingsFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const settings = paymentSettingsCache;
+  const cats = settings && Array.isArray(settings.categories) ? settings.categories : [];
+  const updated = cats.map(c => ({ ...c }));
+  for (const c of updated) {
+    const activeEl = document.querySelector(`input[type="checkbox"][data-cat-id="${c.id}"][data-field="active"]`);
+    const amountEl = document.querySelector(`input[data-cat-id="${c.id}"][data-field="amount"]`);
+    c.active = !!(activeEl && activeEl.checked);
+    c.amount = amountEl ? Number(amountEl.value) : Number(c.amount) || 0;
+  }
+  try {
+    const res = await fetchJson('/api/payment-settings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ categories: updated })
+    });
+    paymentSettingsCache = res && res.settings ? res.settings : paymentSettingsCache;
+    hydratePaymentsAdminUI();
+    buildPaymentTable();
+    showToast('Categories saved');
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function recordPaymentFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const playerEl = document.getElementById('pay-player');
+  const catEl = document.getElementById('pay-category');
+  const amtEl = document.getElementById('pay-amount');
+  const methodEl = document.getElementById('pay-method');
+  const noteEl = document.getElementById('pay-note');
+
+  const email = playerEl ? playerEl.value : '';
+  const categoryId = catEl ? catEl.value : '';
+  const amount = amtEl ? amtEl.value : '';
+  const method = methodEl ? methodEl.value : '';
+  const note = noteEl ? noteEl.value.trim() : '';
+
+  if (!email || !categoryId || String(amount).trim() === '') {
+    showToast('Player, category, and amount required');
+    return;
+  }
+
+  try {
+    await fetchJson('/api/payments', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, categoryId, amount: Number(amount), method, note, recordedBy: currentUser.email })
+    });
+    if (amtEl) amtEl.value = '';
+    if (noteEl) noteEl.value = '';
+    showToast('Payment recorded');
+    buildPaymentTable();
+  } catch (e) {
+    showToast('Record failed');
+  }
+}
+
+async function loadMyPayments() {
+  if (!currentUser) return;
+  const dueEl = document.getElementById('my-pay-due');
+  const paidEl = document.getElementById('my-pay-paid');
+  const balEl = document.getElementById('my-pay-balance');
+  const catsBody = document.getElementById('my-pay-categories');
+  const histBody = document.getElementById('my-pay-history');
+  if (!catsBody || !histBody) return;
+
+  try {
+    const res = await fetchJson('/api/payments?email=' + encodeURIComponent(currentUser.email) + '&summary=1');
+    const summary = res && res.summary ? res.summary : null;
+    if (summary) {
+      if (dueEl) dueEl.textContent = '$' + summary.totals.due;
+      if (paidEl) paidEl.textContent = '$' + summary.totals.paid;
+      if (balEl) balEl.textContent = '$' + summary.totals.balance;
+      catsBody.innerHTML = (summary.categories || []).map(c => {
+        const color = c.status === 'Paid' ? '#4CAF50' : c.status === 'Partial' ? 'var(--gold)' : '#f66';
+        return `<tr>
+          <td style="font-weight:700;color:#1a1a1a">${c.name}</td>
+          <td>$${c.due}</td>
+          <td style="color:#4CAF50">$${c.paid}</td>
+          <td style="color:${c.balance > 0 ? '#f66' : '#4CAF50'}">$${c.balance}</td>
+          <td style="color:${color};font-weight:800">${c.status}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">No categories active</td></tr>';
+    }
+  } catch (e) {
+    if (dueEl) dueEl.textContent = '—';
+    if (paidEl) paidEl.textContent = '—';
+    if (balEl) balEl.textContent = '—';
+    catsBody.innerHTML = '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">Unable to load payment status</td></tr>';
+  }
+
+  try {
+    const res2 = await fetchJson('/api/payments?email=' + encodeURIComponent(currentUser.email));
+    const txns = Array.isArray(res2 && res2.transactions) ? res2.transactions : [];
+    const cats = Array.isArray(res2 && res2.categories) ? res2.categories : [];
+    const nameById = new Map(cats.map(c => [c.id, c.name]));
+    histBody.innerHTML = txns.map(t => {
+      const dt = t.createdAt ? new Date(t.createdAt) : null;
+      const dateText = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString('en-US') : '—';
+      const cat = nameById.get(t.categoryId) || t.categoryId;
+      return `<tr>
+        <td>${dateText}</td>
+        <td>${cat}</td>
+        <td style="font-weight:800;color:var(--gold-dark)">$${t.amount}</td>
+        <td>${t.method || '—'}</td>
+        <td>${t.note || ''}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">No payments recorded</td></tr>';
+  } catch (e) {
+    histBody.innerHTML = '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">Unable to load history</td></tr>';
+  }
+}
+
+async function sendReminderToPlayer(email) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    const msgEl = document.getElementById('reminder-message');
+    const message = msgEl ? msgEl.value.trim() : '';
+    await fetchJson('/api/payment-reminders', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ toEmail: email, scope: 'individual', message: message || null, sentBy: currentUser.email })
+    });
+    showToast('Reminder logged');
+  } catch (e) {
+    showToast('Reminder failed');
+  }
+}
+
+async function sendReminderToAll() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    await loadPlayers();
+    const msgEl = document.getElementById('reminder-message');
+    const message = msgEl ? msgEl.value.trim() : '';
+    for (const p of (playersCache || [])) {
+      if (!p.email) continue;
+      await fetchJson('/api/payment-reminders', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ toEmail: p.email, scope: 'league', message: message || null, sentBy: currentUser.email })
+      });
+    }
+    showToast('Reminders logged');
+  } catch (e) {
+    showToast('Send failed');
+  }
 }
 
 // Netlify Identity: keep session + role on refresh
