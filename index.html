@@ -1997,6 +1997,10 @@
                     <button class="btn-sm" style="width:100%" onclick="createLeagueFromUI()">Create League</button>
                   </div>
                 </div>
+                <div id="sample-seed-wrap" style="display:none">
+                  <div style="font-size:12px;color:#666;margin:6px 0 10px">Testing tool: create/reset a Sample League with players, schedule, scores, payments, and chat.</div>
+                  <button class="btn-sm btn-green" onclick="seedSampleLeagueFromUI()">Create Sample League (Seed Data)</button>
+                </div>
                 <div style="font-size:12px;color:#333">Current: <b id="league-active-label">Default</b></div>
               </div>
             </div>
@@ -3301,6 +3305,10 @@ function toggleCustomFormulaUI() {
 async function loadLeagueSettings() {
   if (!currentUser || currentUser.role !== 'admin') return;
   await hydrateLeagueSelectorUI();
+
+  const seedWrap = document.getElementById('sample-seed-wrap');
+  if (seedWrap) seedWrap.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+
   try {
     const res = await fetchJson('/api/league-settings');
     const s = res && res.settings ? res.settings : null;
@@ -3339,6 +3347,27 @@ async function loadLeagueSettings() {
     if (bonus) bonus.value = f.bonus || 'none';
   } catch (e) {
     // ignore
+  }
+}
+
+async function seedSampleLeagueFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    showToast('Seeding sample league…');
+    await fetchJson('/api/seed-sample-league', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ reset: true })
+    });
+    localStorage.setItem('fc_league_id', 'sample-league');
+    await hydrateLeagueSelectorUI();
+    await initData();
+    showToast('Sample League ready');
+  } catch (e) {
+    showToast('Seed failed');
   }
 }
 
