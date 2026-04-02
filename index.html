@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fairway Command — The Ultimate League System</title>
+<meta name="theme-color" content="#1A4A2E" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="fairwaycommandshortcut.png" />
+<link rel="apple-touch-icon" href="fairwaycommandshortcut.png" />
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   /* Font fallbacks if Google Fonts blocked */
@@ -44,7 +50,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--black);
+    background: #1A4A2E;
     position: relative;
     overflow: hidden;
   }
@@ -53,18 +59,13 @@
     content: '';
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,122,60,0.25) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(212,175,55,0.12) 0%, transparent 60%);
+    background: none;
   }
 
   .login-grid-bg {
     position: absolute;
     inset: 0;
-    background-image:
-      linear-gradient(rgba(212,175,55,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(212,175,55,0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
+    display: none;
   }
 
   .login-box {
@@ -72,8 +73,8 @@
     width: 100%;
     max-width: 420px;
     margin: 20px;
-    background: rgba(22, 32, 25, 0.95);
-    border: 1px solid rgba(212,175,55,0.3);
+    background: rgba(10, 25, 16, 0.92);
+    border: 1px solid rgba(212, 175, 55, 0.4);
     border-radius: 4px;
     padding: 48px 40px;
     box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.05);
@@ -88,6 +89,14 @@
   .login-logo {
     text-align: center;
     margin-bottom: 36px;
+  }
+
+  .login-card-logo {
+    width: 250px;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto 18px;
   }
 
   .fc-badge {
@@ -113,13 +122,13 @@
     font-family: 'Bebas Neue', sans-serif;
     font-size: 28px;
     letter-spacing: 3px;
-    color: var(--gold);
+    color: #D4AF37;
     line-height: 1;
   }
 
   .login-logo p {
     font-size: 11px;
-    color: var(--gray);
+    color: #D4AF37;
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-top: 6px;
@@ -164,14 +173,14 @@
     font-weight: 600;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--gray);
+    color: #D4AF37;
     margin-bottom: 8px;
   }
 
   .form-group input {
     width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(212,175,55,0.2);
+    background: #0F2A1A;
+    border: 1px solid rgba(212, 175, 55, 0.3);
     border-radius: 3px;
     padding: 12px 14px;
     color: var(--white);
@@ -182,20 +191,20 @@
   }
 
   .form-group input:focus {
-    border-color: var(--gold);
-    background: rgba(212,175,55,0.05);
+    border-color: #D4AF37;
+    background: #0F2A1A;
   }
 
   .btn-primary {
     width: 100%;
-    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    background: #D4AF37;
     border: none;
     border-radius: 3px;
     padding: 14px;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 18px;
     letter-spacing: 3px;
-    color: var(--black);
+    color: #0A0A0A;
     cursor: pointer;
     margin-top: 8px;
     transition: all 0.2s;
@@ -203,7 +212,7 @@
   }
 
   .btn-primary:hover {
-    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    background: #F0D060;
     box-shadow: 0 6px 24px rgba(212,175,55,0.4);
     transform: translateY(-1px);
   }
@@ -228,11 +237,20 @@
 
   .demo-logins p {
     font-size: 11px;
-    color: var(--gray);
+    color: #D4AF37;
     letter-spacing: 1px;
     text-transform: uppercase;
     text-align: center;
     margin-bottom: 10px;
+  }
+
+  #login-screen a {
+    color: #D4AF37;
+    text-decoration: none;
+  }
+
+  #login-screen a:hover {
+    text-decoration: underline;
   }
 
   .demo-pills {
@@ -394,12 +412,27 @@
   /* SIDEBAR */
   .sidebar {
     width: 220px;
-    background: rgba(10,10,10,0.95);
+    background: #1A4A2E;
     border-right: 1px solid rgba(212,175,55,0.12);
-    padding: 16px 0;
+    padding: 14px;
     flex-shrink: 0;
     transition: transform 0.3s ease;
     overflow-y: auto;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 16px;
+    padding-bottom: 12px;
+    background: #1A4A2E;
+  }
+
+  .sidebar-brand img {
+    height: 70px;
+    width: auto;
+    display: block;
   }
 
   .sidebar-close {
@@ -1059,7 +1092,7 @@
   <div class="login-grid-bg"></div>
   <div class="login-box">
     <div class="login-logo">
-      <div class="fc-badge"><span>FC</span></div>
+      <img class="login-card-logo" src="FairwayCommand_logo_transparent.png" alt="Fairway Command" />
       <h1>Fairway Command</h1>
       <p>The Ultimate League System</p>
     </div>
@@ -1139,6 +1172,10 @@
     <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
       <div class="sidebar-close" onclick="closeSidebar()" title="Close sidebar">&times;</div>
+
+      <div class="sidebar-brand">
+        <img src="FairwayCommand_FC_logo_HD.png" alt="Fairway Command" />
+      </div>
 
       <!-- Player sections (all roles) -->
       <div class="sidebar-section" id="nav-player">
