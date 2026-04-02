@@ -60,12 +60,14 @@
     position: absolute;
     inset: 0;
     background: none;
+    pointer-events: none;
   }
 
   .login-grid-bg {
     position: absolute;
     inset: 0;
     display: none;
+    pointer-events: none;
   }
 
   .login-box {
@@ -2427,29 +2429,36 @@ function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-password').value;
   const ident = getIdentity();
+
+  const localLogin = () => {
+    let user = Object.values(USERS).find(u => u.email === email && u.password === pass);
+    if (!user) {
+      const stored = localStorage.getItem('fc_user_' + email);
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.password === pass) user = u;
+      }
+    }
+    if (!user) {
+      document.getElementById('login-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('login-error').style.display = 'none';
+    loginSuccess(user);
+  };
+
   if (ident) {
     document.getElementById('login-error').style.display = 'none';
     identityPasswordLogin(email, pass).then(async (u) => {
       const role = await resolveUserRole(u);
       loginSuccess({ name: (u.user_metadata && u.user_metadata.full_name) ? u.user_metadata.full_name : (u.email || email), email: u.email || email, role });
     }).catch(() => {
-      document.getElementById('login-error').style.display = 'block';
+      localLogin();
     });
     return;
   }
 
-  // Fallback demo/local mode
-  let user = Object.values(USERS).find(u => u.email === email && u.password === pass);
-  if (!user) {
-    const stored = localStorage.getItem('fc_user_' + email);
-    if (stored) {
-      const u = JSON.parse(stored);
-      if (u.password === pass) user = u;
-    }
-  }
-  if (!user) { document.getElementById('login-error').style.display = 'block'; return; }
-  document.getElementById('login-error').style.display = 'none';
-  loginSuccess(user);
+  localLogin();
 }
 
 function doSignup() {
