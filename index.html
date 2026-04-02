@@ -1602,12 +1602,22 @@
       <div class="page" id="page-chat">
         <div class="page-header"><h2>League Chat</h2><p>Real-time league messaging</p></div>
         <div class="card">
+          <div class="card-body" id="chat-pinned" style="display:none;margin-bottom:14px;padding:12px 14px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);border-radius:10px"></div>
           <div class="card-body" id="chat-messages" style="min-height:300px;max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
             <div style="color:#999;font-size:13px;text-align:center;padding:20px">Chat messages will appear here</div>
           </div>
           <div style="display:flex;gap:8px;padding:0 0 4px">
             <input id="chat-input" placeholder="Type a message..." style="flex:1;background:#fff;border:1px solid #ccc;border-radius:3px;padding:10px 14px;color:#1a1a1a;font-family:'Barlow',sans-serif;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')sendChat()" />
             <button class="btn-sm" onclick="sendChat()">Send</button>
+          </div>
+
+          <div class="card-body" id="chat-admin" style="display:none;padding-top:12px">
+            <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;font-weight:900;margin-bottom:8px">Admin: Pin Announcement</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <input id="chat-pin-text" placeholder="Pinned message shown at top of chat" style="flex:1;min-width:220px;background:#fff;border:1px solid #ccc;border-radius:3px;padding:10px 14px;color:#1a1a1a;font-family:'Barlow',sans-serif;font-size:14px;outline:none;" />
+              <button class="btn-sm btn-green" onclick="pinChatFromUI()">Pin</button>
+              <button class="btn-sm" onclick="unpinChatFromUI()">Unpin</button>
+            </div>
           </div>
         </div>
       </div>
@@ -3328,6 +3338,9 @@ function showPage(id) {
   }
   if (id === 'user-roles') {
     buildRoleList();
+  }
+  if (id === 'chat') {
+    loadChat();
   }
   // close mobile sidebar only
   if (window.innerWidth <= 768) {
@@ -5663,38 +5676,145 @@ async function sendReminderToAll() {
 // ═══════════════════════════════
 // CHAT
 // ═══════════════════════════════
-const chatMsgs = [
-  { user: 'Ronald McCoy', msg: 'Tee times confirmed for Jun 24 — 5:30 PM sharp', time: '2:14 PM' },
-  { user: 'Mike Johnson', msg: 'Got it. Will have scorecards ready.', time: '2:22 PM' },
-  { user: 'Dave Wilson', msg: 'Can we move to 5:45? Running late from work.', time: '3:01 PM' },
-];
+let chatCache = [];
+let chatPinnedCache = null;
+
+function formatChatTime(iso) {
+  const d = iso ? new Date(iso) : null;
+  if (!d || isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderPinnedChat() {
+  const box = document.getElementById('chat-pinned');
+  const admin = document.getElementById('chat-admin');
+  if (admin) admin.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+
+  if (!box) return;
+  if (!chatPinnedCache || !chatPinnedCache.text) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    const pinInput = document.getElementById('chat-pin-text');
+    if (pinInput) pinInput.value = '';
+    return;
+  }
+
+  box.style.display = '';
+  const by = chatPinnedCache.pinnedBy ? String(chatPinnedCache.pinnedBy) : 'Admin';
+  const at = chatPinnedCache.pinnedAt ? new Date(chatPinnedCache.pinnedAt) : null;
+  const when = at && !isNaN(at.getTime()) ? at.toLocaleString() : '';
+  box.innerHTML = `
+    <div style="display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:20px;line-height:1">📌</div>
+      <div style="flex:1">
+        <div style="font-size:12px;color:#666;margin-bottom:4px"><b>Pinned</b> by ${escapeHtml(by)}${when ? ' · ' + escapeHtml(when) : ''}</div>
+        <div style="font-size:14px;color:#1a1a1a">${escapeHtml(chatPinnedCache.text)}</div>
+      </div>
+    </div>
+  `;
+  const pinInput = document.getElementById('chat-pin-text');
+  if (pinInput) pinInput.value = chatPinnedCache.text;
+}
 
 function renderChat() {
   const box = document.getElementById('chat-messages');
-  box.innerHTML = chatMsgs.map(m => `
-    <div style="display:flex;flex-direction:column;gap:2px">
-      <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:13px;font-weight:700;color:var(--gold-dark)">${m.user}</span>
-        <span style="font-size:11px;color:#999">${m.time}</span>
+  if (!box) return;
+  const msgs = Array.isArray(chatCache) ? chatCache : [];
+
+  if (!msgs.length) {
+    box.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:20px">No messages yet</div>';
+    return;
+  }
+
+  box.innerHTML = msgs.map(m => {
+    const user = m && m.user ? String(m.user) : 'User';
+    const time = formatChatTime(m && m.createdAt);
+    const msg = m && m.msg ? String(m.msg) : '';
+    return `
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="display:flex;gap:8px;align-items:baseline">
+          <span style="font-size:13px;font-weight:700;color:var(--gold-dark)">${escapeHtml(user)}</span>
+          <span style="font-size:11px;color:#999">${escapeHtml(time)}</span>
+        </div>
+        <div style="font-size:14px;color:#333">${escapeHtml(msg)}</div>
       </div>
-      <div style="font-size:14px;color:#333">${m.msg}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
   box.scrollTop = box.scrollHeight;
 }
 
-function sendChat() {
-  const input = document.getElementById('chat-input');
-  const msg = input.value.trim();
-  if (!msg) return;
-  const now = new Date();
-  chatMsgs.push({ user: currentUser.name, msg, time: now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0') });
-  input.value = '';
+async function loadChat() {
+  try {
+    const res = await fetchJson('/api/chat?limit=200');
+    chatCache = Array.isArray(res && res.messages) ? res.messages : [];
+    chatPinnedCache = res && res.pinned ? res.pinned : null;
+  } catch (e) {
+    chatCache = [];
+    chatPinnedCache = null;
+  }
+  renderPinnedChat();
   renderChat();
 }
 
-// Render chat when that page is shown
-const origShowPage = showPage;
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input ? input.value.trim() : '';
+  if (!msg) return;
+  if (!currentUser) {
+    showToast('Please log in');
+    return;
+  }
+
+  if (input) input.value = '';
+  try {
+    await fetchJson('/api/chat?action=send', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ user: currentUser.name || 'User', email: currentUser.email || null, msg })
+    });
+    await loadChat();
+  } catch (e) {
+    showToast('Send failed');
+  }
+}
+
+async function pinChatFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const input = document.getElementById('chat-pin-text');
+  const text = input ? input.value.trim() : '';
+  if (!text) {
+    showToast('Enter pinned message');
+    return;
+  }
+  try {
+    await fetchJson('/api/chat?action=pin', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text, pinnedBy: currentUser.email || currentUser.name || 'Admin' })
+    });
+    showToast('Pinned');
+    await loadChat();
+  } catch (e) {
+    showToast('Pin failed');
+  }
+}
+
+async function unpinChatFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    await fetchJson('/api/chat?action=unpin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    showToast('Unpinned');
+    await loadChat();
+  } catch (e) {
+    showToast('Unpin failed');
+  }
+}
 
 // ═══════════════════════════════
 // TOAST
