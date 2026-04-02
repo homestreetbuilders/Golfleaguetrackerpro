@@ -1544,6 +1544,7 @@
               <div class="form-field"><label>Player</label><select id="sc-player"></select></div>
               <div class="form-field"><label>Course</label><select id="sc-course"><option value="Mud Run Golf Club">Mud Run Golf Club</option></select></div>
               <div class="form-field"><label>Tee</label><select id="sc-tee"><option value="White">White</option><option value="Blue">Blue</option><option value="Red">Red</option></select></div>
+              <div class="form-field"><label>Side</label><select id="sc-side"><option value="front">Front 9</option><option value="back">Back 9</option></select></div>
             </div>
 
             <div class="card" id="sub-card" style="margin:0 0 16px;display:none">
@@ -1688,20 +1689,42 @@
       <div class="page" id="page-courses">
         <div class="page-header"><h2>Course Management</h2><p>Configure courses, tees, and hole details</p></div>
         <div class="card">
-          <div class="card-header"><div class="card-title">Mud Run Golf Club</div><button class="btn-sm">+ Add Course</button></div>
+          <div class="card-header"><div class="card-title">Courses</div></div>
           <div class="card-body">
-            <div style="margin-bottom:16px">
-              <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:10px">Hole Configuration</p>
-              <table class="data-table">
-                <thead><tr><th>Hole</th><th>Par</th><th>Handicap Index</th><th>White Yds</th><th>Blue Yds</th><th>Red Yds</th></tr></thead>
-                <tbody>
-                  <tr><td>1</td><td><input type="number" value="4" style="width:48px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:4px;color:#1a1a1a;text-align:center"></td><td>5</td><td>380</td><td>355</td><td>310</td></tr>
-                  <tr><td>2</td><td><input type="number" value="3" style="width:48px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:4px;color:#1a1a1a;text-align:center"></td><td>9</td><td>165</td><td>148</td><td>120</td></tr>
-                  <tr><td>3</td><td><input type="number" value="5" style="width:48px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:4px;color:#1a1a1a;text-align:center"></td><td>1</td><td>520</td><td>500</td><td>460</td></tr>
-                </tbody>
-              </table>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field"><label>Select Course</label><select id="cm-course" onchange="loadCourseIntoEditor()"></select></div>
+              <div class="form-field"><label>Course Name</label><input id="cm-name" placeholder="Mud Run Golf Club" /></div>
             </div>
-            <button class="btn-sm btn-green" onclick="showToast('Course saved!')">Save Course</button>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field"><label>Tee 1 Name</label><input id="cm-tee-1" placeholder="White" /></div>
+              <div class="form-field"><label>Tee 2 Name</label><input id="cm-tee-2" placeholder="Blue" /></div>
+              <div class="form-field"><label>Tee 3 Name</label><input id="cm-tee-3" placeholder="Red" /></div>
+              <div class="form-field"><label>Tee 4 Name</label><input id="cm-tee-4" placeholder="(optional)" /></div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn-sm btn-green" onclick="saveCourseFromUI()">Save Course</button>
+              <button class="btn-sm" onclick="newCourseEditor()">New Course</button>
+              <button class="btn-sm" onclick="deleteCourseFromUI()">Delete Course</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Hole / Par / HCP Index / Yards (18 holes)</div></div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Hole</th>
+                  <th>Par</th>
+                  <th>HCP</th>
+                  <th id="cm-yard-h1">Yds 1</th>
+                  <th id="cm-yard-h2">Yds 2</th>
+                  <th id="cm-yard-h3">Yds 3</th>
+                  <th id="cm-yard-h4">Yds 4</th>
+                </tr>
+              </thead>
+              <tbody id="cm-holes"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1895,6 +1918,8 @@ const SCHEDULE_DATA = [
 
 const PARS = [4, 3, 5, 4, 3, 4, 4, 3, 4];
 const PAR_TOTAL = PARS.reduce((a,b) => a+b, 0);
+let activeParsCache = PARS.slice();
+let activeHcpIdxCache = HOLE_HCP_INDEX.slice();
 
 const PAYMENT_DATA = [
   { name: 'Ronald McCoy', due: 120, paid: 120, status: 'Paid' },
@@ -1919,8 +1944,36 @@ let editingPlayerEmail = null;
 let scheduleCache = [];
 let scrambleEventsCache = [];
 let activeScrambleEvent = null;
+let coursesCache = [];
 
 const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
+
+function getCourseByName(name) {
+  const n = String(name || '').trim().toLowerCase();
+  return (coursesCache || []).find(c => String(c.name || '').trim().toLowerCase() === n) || null;
+}
+
+function getTeeByName(course, teeName) {
+  if (!course) return null;
+  const n = String(teeName || '').trim().toLowerCase();
+  return (course.tees || []).find(t => String(t.name || '').trim().toLowerCase() === n) || null;
+}
+
+function getNineSlice(side) {
+  return side === 'back' ? { start: 9, end: 18 } : { start: 0, end: 9 };
+}
+
+function getActiveNineCourseData(courseName, teeName, side) {
+  const course = getCourseByName(courseName);
+  const tee = getTeeByName(course, teeName);
+  const holes = course && Array.isArray(course.holes) ? course.holes : [];
+  const slice = getNineSlice(side);
+  const nineHoles = holes.slice(slice.start, slice.end);
+  const pars = nineHoles.map(h => Number(h.par) || 4);
+  const hcpIdx = nineHoles.map(h => Number(h.hcpIndex) || 1);
+  const yards = tee && Array.isArray(tee.yards) ? tee.yards.slice(slice.start, slice.end).map(y => Number(y) || 0) : new Array(9).fill(0);
+  return { pars, hcpIdx, yards };
+}
 
 // ═══════════════════════════════
 // AUTH
@@ -2275,6 +2328,9 @@ function showPage(id) {
       hydratePlayerSelectors();
     });
   }
+  if (id === 'courses') {
+    hydrateCoursesAdminUI();
+  }
   if (id === 'rainouts') {
     buildSchedule();
   }
@@ -2339,6 +2395,9 @@ function initData() {
   loadMyPayments();
   loadSeasonOverview();
   hydrateScrambleAdminUI();
+  loadCourses().then(() => {
+    hydrateCourseSelectors();
+  });
 }
 
 async function loadSeasonOverview() {
@@ -3116,8 +3175,9 @@ function getStrokesForNine(hi) {
   return Math.max(0, Math.round(h / 2));
 }
 
-function allocateStrokeDots(strokes) {
-  const order = Array.from({ length: 9 }).map((_, i) => ({ hole: i + 1, idx: HOLE_HCP_INDEX[i] }))
+function allocateStrokeDots(strokes, hcpIdxArr) {
+  const base = Array.isArray(hcpIdxArr) && hcpIdxArr.length === 9 ? hcpIdxArr : HOLE_HCP_INDEX;
+  const order = Array.from({ length: 9 }).map((_, i) => ({ hole: i + 1, idx: base[i] }))
     .sort((a, b) => a.idx - b.idx);
   const dots = new Array(9).fill(0);
   for (let s = 0; s < strokes; s++) {
@@ -3185,6 +3245,8 @@ async function generateScorecardPreview() {
   const playerName = playerEl ? playerEl.value : '';
   const course = courseEl ? courseEl.value : '';
   const tee = teeEl ? teeEl.value : '';
+  const scSideEl = document.getElementById('sc-side');
+  const side = scSideEl ? scSideEl.value : 'front';
 
   if (!week || !playerName) {
     showToast('Select week and player');
@@ -3211,7 +3273,9 @@ async function generateScorecardPreview() {
     }
   }
   const strokes = getStrokesForNine(hi);
-  const dots = allocateStrokeDots(strokes);
+  const nine = (coursesCache && coursesCache.length && course) ? getActiveNineCourseData(course, tee, side) : null;
+  const hcpIdx = nine && Array.isArray(nine.hcpIdx) && nine.hcpIdx.length === 9 ? nine.hcpIdx : HOLE_HCP_INDEX;
+  const dots = allocateStrokeDots(strokes, hcpIdx);
 
   let holes = null;
   try {
@@ -3358,7 +3422,15 @@ async function buildSchedule() {
 
 function buildScoreGrid() {
   const grid = document.getElementById('score-grid');
-  grid.innerHTML = PARS.map((par, i) => `
+
+  const { course, tee, side } = getScoreEntryValues();
+  const nine = (coursesCache && coursesCache.length && course) ? getActiveNineCourseData(course, tee, side) : null;
+  const pars = nine && Array.isArray(nine.pars) && nine.pars.length === 9 ? nine.pars : PARS;
+  const hcpIdx = nine && Array.isArray(nine.hcpIdx) && nine.hcpIdx.length === 9 ? nine.hcpIdx : HOLE_HCP_INDEX;
+  activeParsCache = pars.slice();
+  activeHcpIdxCache = hcpIdx.slice();
+
+  grid.innerHTML = pars.map((par, i) => `
     <div class="hole-input-wrap">
       <div class="hole-num">H${i+1}</div>
       <div class="hole-par">Par ${par}</div>
@@ -3415,11 +3487,12 @@ function updateScore(idx, val) {
   scores[idx] = val ? parseInt(val) : '';
   const filled = scores.filter(s => s !== '');
   const total = filled.reduce((a,b) => a+b, 0);
-  const partPar = PARS.slice(0, filled.length).reduce((a,b) => a+b, 0);
+  const partPar = (activeParsCache || PARS).slice(0, filled.length).reduce((a,b) => a+b, 0);
   document.getElementById('score-total').textContent = filled.length === 9 ? total : total + ' (' + filled.length + '/9)';
   if (filled.length === 9) {
-    const diff = total - PAR_TOTAL;
-    document.getElementById('score-diff').textContent = (diff > 0 ? '+' : '') + diff + ' vs par ' + PAR_TOTAL;
+    const parTot = (activeParsCache || PARS).reduce((a,b) => a+b, 0);
+    const diff = total - parTot;
+    document.getElementById('score-diff').textContent = (diff > 0 ? '+' : '') + diff + ' vs par ' + parTot;
   }
 }
 
@@ -3565,6 +3638,8 @@ function hydrateScoreEntryUI() {
   const playerEl = document.getElementById('score-player');
   const dateEl = document.getElementById('score-date');
   const sideEl = document.getElementById('score-side');
+  const courseEl = document.getElementById('score-course');
+  const teeEl = document.getElementById('score-tee');
   if (weekEl && weekEl.options.length === 0) {
     weekEl.innerHTML = '<option value="">Select week...</option>' +
       Array.from({ length: 10 }).map((_,i) => `<option value="${i+1}">Week ${i+1}</option>`).join('');
@@ -3581,8 +3656,256 @@ function hydrateScoreEntryUI() {
 
   if (weekEl) weekEl.addEventListener('change', refreshScorecardLockStatus);
   if (playerEl) playerEl.addEventListener('change', refreshScorecardLockStatus);
+  if (courseEl) courseEl.addEventListener('change', () => { hydrateCourseTeeForScoreEntry(); buildScoreGrid(); });
+  if (teeEl) teeEl.addEventListener('change', () => { buildScoreGrid(); });
   if (sideEl && !sideEl.value) sideEl.value = 'front';
+  if (sideEl) sideEl.addEventListener('change', () => { buildScoreGrid(); });
   buildScoreStatsGrid();
+}
+
+async function loadCourses() {
+  try {
+    const res = await fetchJson('/api/courses');
+    coursesCache = Array.isArray(res && res.courses) ? res.courses : [];
+  } catch (e) {
+    coursesCache = [];
+  }
+  return coursesCache;
+}
+
+function hydrateCourseSelectors() {
+  hydrateCourseSelectorForScoreEntry();
+  hydrateCourseSelectorForScorecards();
+}
+
+function hydrateCourseSelectorForScoreEntry() {
+  const courseEl = document.getElementById('score-course');
+  if (!courseEl) return;
+  const cur = courseEl.value;
+  courseEl.innerHTML = '<option value="">Select course...</option>' + (coursesCache || []).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  if (cur) courseEl.value = cur;
+  if (!courseEl.value && coursesCache && coursesCache.length) courseEl.value = coursesCache[0].name;
+  hydrateCourseTeeForScoreEntry();
+}
+
+function hydrateCourseTeeForScoreEntry() {
+  const courseEl = document.getElementById('score-course');
+  const teeEl = document.getElementById('score-tee');
+  if (!courseEl || !teeEl) return;
+  const course = getCourseByName(courseEl.value);
+  const tees = course && Array.isArray(course.tees) ? course.tees : [];
+  const cur = teeEl.value;
+  teeEl.innerHTML = tees.map(t => `<option value="${t.name}">${t.name}</option>`).join('') || '<option value="">—</option>';
+  if (cur) teeEl.value = cur;
+  if (!teeEl.value && tees.length) teeEl.value = tees[0].name;
+}
+
+function hydrateCourseSelectorForScorecards() {
+  const courseEl = document.getElementById('sc-course');
+  const teeEl = document.getElementById('sc-tee');
+  const sideEl = document.getElementById('sc-side');
+  if (!courseEl || !teeEl) return;
+  const curC = courseEl.value;
+  courseEl.innerHTML = '<option value="">Select course...</option>' + (coursesCache || []).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  if (curC) courseEl.value = curC;
+  if (!courseEl.value && coursesCache && coursesCache.length) courseEl.value = coursesCache[0].name;
+  const course = getCourseByName(courseEl.value);
+  const tees = course && Array.isArray(course.tees) ? course.tees : [];
+  const curT = teeEl.value;
+  teeEl.innerHTML = tees.map(t => `<option value="${t.name}">${t.name}</option>`).join('') || '<option value="">—</option>';
+  if (curT) teeEl.value = curT;
+  if (!teeEl.value && tees.length) teeEl.value = tees[0].name;
+
+  courseEl.addEventListener('change', () => {
+    const c2 = getCourseByName(courseEl.value);
+    const tees2 = c2 && Array.isArray(c2.tees) ? c2.tees : [];
+    teeEl.innerHTML = tees2.map(t => `<option value="${t.name}">${t.name}</option>`).join('') || '<option value="">—</option>';
+    if (tees2.length) teeEl.value = tees2[0].name;
+    generateScorecardPreview();
+  });
+  teeEl.addEventListener('change', () => generateScorecardPreview());
+  if (sideEl) sideEl.addEventListener('change', () => generateScorecardPreview());
+}
+
+async function hydrateCoursesAdminUI() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  await loadCourses();
+
+  const sel = document.getElementById('cm-course');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Select course...</option>' + (coursesCache || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (cur) sel.value = cur;
+    if (!sel.value && coursesCache.length) sel.value = coursesCache[0].id;
+  }
+
+  if (sel && sel.value) {
+    loadCourseIntoEditor();
+  } else {
+    newCourseEditor();
+  }
+}
+
+function buildEmptyCourseHoles() {
+  return Array.from({ length: 18 }).map((_, i) => ({ hole: i + 1, par: 4, hcpIndex: i + 1 }));
+}
+
+function buildCourseHolesTable(tees) {
+  const tbody = document.getElementById('cm-holes');
+  if (!tbody) return;
+  const teeNames = (tees || []).map(t => t.name).concat(['', '', '', '']).slice(0, 4);
+  const ths = ['cm-yard-h1','cm-yard-h2','cm-yard-h3','cm-yard-h4'];
+  ths.forEach((id, i) => {
+    const th = document.getElementById(id);
+    if (th) th.textContent = teeNames[i] ? teeNames[i] + ' Yds' : `Yds ${i + 1}`;
+  });
+
+  tbody.innerHTML = Array.from({ length: 18 }).map((_, i) => {
+    return `
+      <tr>
+        <td style="font-weight:800;color:#1a1a1a">${i + 1}</td>
+        <td><input type="number" min="3" max="6" data-hole="${i}" data-field="par" style="width:64px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:6px;color:#1a1a1a;text-align:center" /></td>
+        <td><input type="number" min="1" max="18" data-hole="${i}" data-field="hcp" style="width:64px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:6px;color:#1a1a1a;text-align:center" /></td>
+        <td><input type="number" min="0" max="999" data-hole="${i}" data-field="y0" style="width:80px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:6px;color:#1a1a1a;text-align:center" /></td>
+        <td><input type="number" min="0" max="999" data-hole="${i}" data-field="y1" style="width:80px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:6px;color:#1a1a1a;text-align:center" /></td>
+        <td><input type="number" min="0" max="999" data-hole="${i}" data-field="y2" style="width:80px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:6px;color:#1a1a1a;text-align:center" /></td>
+        <td><input type="number" min="0" max="999" data-hole="${i}" data-field="y3" style="width:80px;background:#fff;border:1px solid #ccc;border-radius:2px;padding:6px;color:#1a1a1a;text-align:center" /></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function loadCourseIntoEditor() {
+  const sel = document.getElementById('cm-course');
+  const id = sel ? sel.value : '';
+  const course = (coursesCache || []).find(c => String(c.id) === String(id)) || null;
+  const nameEl = document.getElementById('cm-name');
+  const t1 = document.getElementById('cm-tee-1');
+  const t2 = document.getElementById('cm-tee-2');
+  const t3 = document.getElementById('cm-tee-3');
+  const t4 = document.getElementById('cm-tee-4');
+
+  if (nameEl) nameEl.value = course ? (course.name || '') : '';
+  const tees = course && Array.isArray(course.tees) ? course.tees : [];
+  if (t1) t1.value = tees[0] ? tees[0].name : '';
+  if (t2) t2.value = tees[1] ? tees[1].name : '';
+  if (t3) t3.value = tees[2] ? tees[2].name : '';
+  if (t4) t4.value = tees[3] ? tees[3].name : '';
+
+  buildCourseHolesTable(tees);
+
+  const holes = course && Array.isArray(course.holes) ? course.holes : buildEmptyCourseHoles();
+  for (let i = 0; i < 18; i++) {
+    const h = holes[i] || { par: 4, hcpIndex: i + 1 };
+    const parEl = document.querySelector(`input[data-hole="${i}"][data-field="par"]`);
+    const hcpEl = document.querySelector(`input[data-hole="${i}"][data-field="hcp"]`);
+    if (parEl) parEl.value = String(Number(h.par) || 4);
+    if (hcpEl) hcpEl.value = String(Number(h.hcpIndex) || (i + 1));
+  }
+  for (let ti = 0; ti < 4; ti++) {
+    const tee = tees[ti];
+    const yards = tee && Array.isArray(tee.yards) ? tee.yards : [];
+    for (let i = 0; i < 18; i++) {
+      const yEl = document.querySelector(`input[data-hole="${i}"][data-field="y${ti}"]`);
+      if (yEl) yEl.value = String(Number(yards[i]) || 0);
+    }
+  }
+}
+
+function newCourseEditor() {
+  const sel = document.getElementById('cm-course');
+  if (sel) sel.value = '';
+  const nameEl = document.getElementById('cm-name');
+  const t1 = document.getElementById('cm-tee-1');
+  const t2 = document.getElementById('cm-tee-2');
+  const t3 = document.getElementById('cm-tee-3');
+  const t4 = document.getElementById('cm-tee-4');
+  if (nameEl) nameEl.value = '';
+  if (t1) t1.value = 'White';
+  if (t2) t2.value = 'Blue';
+  if (t3) t3.value = 'Red';
+  if (t4) t4.value = '';
+  buildCourseHolesTable([{ name: 'White' }, { name: 'Blue' }, { name: 'Red' }]);
+  for (let i = 0; i < 18; i++) {
+    const parEl = document.querySelector(`input[data-hole="${i}"][data-field="par"]`);
+    const hcpEl = document.querySelector(`input[data-hole="${i}"][data-field="hcp"]`);
+    if (parEl) parEl.value = '4';
+    if (hcpEl) hcpEl.value = String(i + 1);
+    for (let ti = 0; ti < 4; ti++) {
+      const yEl = document.querySelector(`input[data-hole="${i}"][data-field="y${ti}"]`);
+      if (yEl) yEl.value = '0';
+    }
+  }
+}
+
+async function saveCourseFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const sel = document.getElementById('cm-course');
+  const nameEl = document.getElementById('cm-name');
+  const name = nameEl ? nameEl.value.trim() : '';
+  if (!name) {
+    showToast('Course name required');
+    return;
+  }
+  const id = sel && sel.value ? sel.value : null;
+  const t1 = document.getElementById('cm-tee-1');
+  const t2 = document.getElementById('cm-tee-2');
+  const t3 = document.getElementById('cm-tee-3');
+  const t4 = document.getElementById('cm-tee-4');
+  const teeNames = [t1, t2, t3, t4].map(e => e ? e.value.trim() : '').filter(Boolean);
+  const tees = teeNames.map((n, idx) => ({ name: n, yards: new Array(18).fill(0).map((_, i) => {
+    const yEl = document.querySelector(`input[data-hole="${i}"][data-field="y${idx}"]`);
+    return yEl ? Number(yEl.value) : 0;
+  }) }));
+  const holes = new Array(18).fill(null).map((_, i) => {
+    const parEl = document.querySelector(`input[data-hole="${i}"][data-field="par"]`);
+    const hcpEl = document.querySelector(`input[data-hole="${i}"][data-field="hcp"]`);
+    return {
+      hole: i + 1,
+      par: parEl ? Number(parEl.value) : 4,
+      hcpIndex: hcpEl ? Number(hcpEl.value) : (i + 1)
+    };
+  });
+  try {
+    const res = await fetchJson('/api/courses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id, name, tees, holes })
+    });
+    showToast('Course saved');
+    await loadCourses();
+    hydrateCourseSelectors();
+    await hydrateCoursesAdminUI();
+    if (res && res.course && res.course.id && sel) sel.value = res.course.id;
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function deleteCourseFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const sel = document.getElementById('cm-course');
+  const id = sel ? sel.value : '';
+  if (!id) {
+    showToast('Select a course');
+    return;
+  }
+  if (!confirm('Delete this course?')) return;
+  try {
+    await fetchJson('/api/courses?id=' + encodeURIComponent(id), { method: 'DELETE' });
+    showToast('Course deleted');
+    await loadCourses();
+    hydrateCourseSelectors();
+    await hydrateCoursesAdminUI();
+  } catch (e) {
+    showToast('Delete failed');
+  }
 }
 
 async function buildMyAnalytics() {
