@@ -1710,6 +1710,44 @@
             </table>
           </div>
         </div>
+
+        <div class="card" id="handicap-admin-card" style="display:none">
+          <div class="card-header"><div class="card-title">Handicap Override &amp; History (Admin)</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field" style="grid-column:1/-1">
+                <label>Player</label>
+                <select id="hcp-player"></select>
+              </div>
+            </div>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field">
+                <label>Override Handicap</label>
+                <input id="hcp-override-value" type="number" step="0.1" placeholder="e.g. 12.4" />
+              </div>
+              <div class="form-field">
+                <label>Note</label>
+                <input id="hcp-override-note" placeholder="Reason for override" />
+              </div>
+              <div class="form-field" style="display:flex;align-items:flex-end">
+                <button class="btn-sm btn-green" style="width:100%" onclick="saveHandicapOverrideFromUI()">Save Override</button>
+              </div>
+              <div class="form-field" style="display:flex;align-items:flex-end">
+                <button class="btn-sm" style="width:100%" onclick="clearHandicapOverrideFromUI()">Clear Override</button>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0">
+              <div class="card-header"><div class="card-title">History</div></div>
+              <div class="card-body" style="padding:0">
+                <table class="data-table">
+                  <thead><tr><th>When</th><th>Value</th><th>Source</th><th>Week</th><th>Note</th></tr></thead>
+                  <tbody id="hcp-history-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── MANAGE PAYMENTS (Scorer+) ── -->
@@ -2155,6 +2193,129 @@ function escapeHtml(s) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function hydrateHandicapAdminUI() {
+  const card = document.getElementById('handicap-admin-card');
+  if (!card) return;
+  if (!currentUser || currentUser.role !== 'admin') {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  const sel = document.getElementById('hcp-player');
+  if (!sel) return;
+  const cur = sel.value;
+  const names = (playersCache && playersCache.length) ? playersCache : [];
+  sel.innerHTML = '<option value="">Select player...</option>' +
+    names.map(p => `<option value="${p.email}">${p.name} (${p.email})</option>`).join('');
+  if (cur) sel.value = cur;
+  sel.onchange = () => loadHandicapOverrideAndHistory();
+
+  loadHandicapOverrideAndHistory();
+}
+
+async function loadHandicapOverrideAndHistory() {
+  const sel = document.getElementById('hcp-player');
+  const valEl = document.getElementById('hcp-override-value');
+  const noteEl = document.getElementById('hcp-override-note');
+  const body = document.getElementById('hcp-history-body');
+  if (!sel || !body) return;
+  const email = sel.value;
+  if (!email) {
+    if (valEl) valEl.value = '';
+    if (noteEl) noteEl.value = '';
+    body.innerHTML = '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">Select a player</td></tr>';
+    return;
+  }
+
+  body.innerHTML = '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">Loading…</td></tr>';
+
+  try {
+    const ovRes = await fetchJson('/api/handicap-overrides?email=' + encodeURIComponent(email));
+    const ov = ovRes && ovRes.override ? ovRes.override : null;
+    if (valEl) valEl.value = ov && ov.value !== undefined && ov.value !== null ? String(ov.value) : '';
+    if (noteEl) noteEl.value = ov && ov.note ? String(ov.note) : '';
+  } catch (e) {
+    if (valEl) valEl.value = '';
+    if (noteEl) noteEl.value = '';
+  }
+
+  try {
+    const histRes = await fetchJson('/api/handicap-history?email=' + encodeURIComponent(email) + '&limit=100');
+    const hist = Array.isArray(histRes && histRes.history) ? histRes.history : [];
+    body.innerHTML = hist.map(h => {
+      const when = h.at ? new Date(h.at).toLocaleString() : '—';
+      const src = h.source || 'system';
+      const wk = h.week ? String(h.week) : '—';
+      const note = h.note ? String(h.note) : '';
+      return `<tr>
+        <td>${escapeHtml(when)}</td>
+        <td style="font-weight:900;color:var(--gold-dark)">${escapeHtml(h.value)}</td>
+        <td>${escapeHtml(src)}</td>
+        <td>${escapeHtml(wk)}</td>
+        <td>${escapeHtml(note)}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">No history</td></tr>';
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="5" style="padding:18px;color:#666;text-align:center">History unavailable</td></tr>';
+  }
+}
+
+async function saveHandicapOverrideFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const sel = document.getElementById('hcp-player');
+  const valEl = document.getElementById('hcp-override-value');
+  const noteEl = document.getElementById('hcp-override-note');
+  const email = sel ? sel.value : '';
+  const value = valEl ? valEl.value : '';
+  const note = noteEl ? noteEl.value.trim() : '';
+  if (!email || String(value).trim() === '') {
+    showToast('Player and value required');
+    return;
+  }
+  try {
+    await fetchJson('/api/handicap-overrides', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, value: Number(value), note, setBy: currentUser.email || currentUser.name || null })
+    });
+    showToast('Override saved');
+    await loadPlayers();
+    buildPlayerRoster();
+    hydratePlayerSelectors();
+    loadHandicapOverrideAndHistory();
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function clearHandicapOverrideFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const sel = document.getElementById('hcp-player');
+  const email = sel ? sel.value : '';
+  if (!email) {
+    showToast('Select a player');
+    return;
+  }
+  try {
+    await fetchJson('/api/handicap-overrides', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'clear', email })
+    });
+    showToast('Override cleared');
+    loadHandicapOverrideAndHistory();
+  } catch (e) {
+    showToast('Clear failed');
+  }
 }
 
 function getNextScheduledWeek(weeks) {
@@ -2904,6 +3065,7 @@ function showPage(id) {
     loadPlayers().then(() => {
       buildPlayerRoster();
       hydratePlayerSelectors();
+      hydrateHandicapAdminUI();
     });
   }
   if (id === 'courses') {
