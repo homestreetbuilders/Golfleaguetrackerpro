@@ -1253,6 +1253,9 @@
         <div class="nav-item" onclick="showPage('tournaments')">
           <span class="nav-icon">🏆</span> Tournaments
         </div>
+        <div class="nav-item" onclick="showPage('brackets')">
+          <span class="nav-icon">🧩</span> Brackets
+        </div>
         <div class="nav-item" onclick="showPage('rainouts')">
           <span class="nav-icon">🌧️</span> Rainout Mgmt
         </div>
@@ -2114,6 +2117,32 @@
         </div>
       </div>
 
+      <!-- ── BRACKETS (Admin) ── -->
+      <div class="page" id="page-brackets">
+        <div class="page-header"><h2>Brackets</h2><p>Playoff / tournament brackets (scaffold)</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Create / Generate</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Name</label><input id="br-name" placeholder="Season Playoffs" /></div>
+              <div class="form-field"><label>Type</label><select id="br-type"><option value="single_elim">Single Elimination</option></select></div>
+              <div class="form-field" style="display:flex;align-items:flex-end"><button class="btn-sm" style="width:100%" onclick="generateBracketFromPlayers()">Generate From Players</button></div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn-sm btn-green" onclick="saveBracketFromUI()">Save Bracket</button>
+              <button class="btn-sm" onclick="loadBrackets()">Reload</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Brackets</div></div>
+          <div class="card-body">
+            <select id="br-select" onchange="loadSelectedBracket()"></select>
+          </div>
+          <div class="card-body" id="br-view"></div>
+        </div>
+      </div>
+
       <!-- ── TEAM SCORECARD ── -->
       <div class="page" id="page-team-scorecard">
         <div class="page-header"><h2>Team Scorecard</h2><p>Scramble results</p></div>
@@ -2229,6 +2258,8 @@ let scrambleEventsCache = [];
 let activeScrambleEvent = null;
 let tournamentEventsCache = [];
 let activeTournamentEvent = null;
+let bracketsCache = [];
+let activeBracket = null;
 let coursesCache = [];
 
 function getCourseByName(name) {
@@ -3246,7 +3277,7 @@ function applyRoleAccess(role) {
   if (activePage) {
     const pid = activePage.id || '';
     const scorerPages = ['page-enter-scores', 'page-scorecards'];
-    const adminPages = ['page-user-roles', 'page-courses', 'page-league-settings', 'page-scramble', 'page-tournaments', 'page-rainouts', 'page-manage-players', 'page-manage-payments'];
+    const adminPages = ['page-user-roles', 'page-courses', 'page-league-settings', 'page-scramble', 'page-tournaments', 'page-brackets', 'page-rainouts', 'page-manage-players', 'page-manage-payments'];
     const scorerOnly = scorerPages.indexOf(pid) !== -1;
     const adminOnly = adminPages.indexOf(pid) !== -1;
     if ((scorerOnly && !isScorer) || (adminOnly && !isAdmin)) {
@@ -3462,6 +3493,9 @@ function showPage(id) {
   if (id === 'tournaments') {
     hydrateTournamentsAdminUI();
   }
+  if (id === 'brackets') {
+    hydrateBracketsAdminUI();
+  }
   if (id === 'team-scorecard') {
     hydrateTeamScorecardUI();
   }
@@ -3600,6 +3634,180 @@ async function loadTournamentEvents() {
     tournamentEventsCache = [];
   }
   return tournamentEventsCache;
+}
+
+async function loadBrackets() {
+  try {
+    const res = await fetchJson('/api/brackets');
+    bracketsCache = Array.isArray(res && res.brackets) ? res.brackets : [];
+  } catch (e) {
+    bracketsCache = [];
+  }
+  hydrateBracketSelector();
+  return bracketsCache;
+}
+
+function hydrateBracketSelector() {
+  const sel = document.getElementById('br-select');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select bracket...</option>' +
+    (bracketsCache || []).map(b => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name || b.id)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+async function hydrateBracketsAdminUI() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  await loadPlayers();
+  await loadBrackets();
+  if (document.getElementById('br-view')) {
+    const sel = document.getElementById('br-select');
+    if (sel && sel.value) {
+      await loadSelectedBracket();
+    } else {
+      document.getElementById('br-view').innerHTML = '<div style="padding:10px 0;color:#666">Select a bracket or generate one.</div>';
+    }
+  }
+}
+
+function nextPow2(n) {
+  let p = 1;
+  while (p < n) p *= 2;
+  return p;
+}
+
+function generateSingleElimRounds(players) {
+  const list = Array.isArray(players) ? players.slice() : [];
+  const size = nextPow2(list.length);
+  while (list.length < size) list.push(null);
+
+  const rounds = [];
+  let roundPlayers = list;
+  let roundIndex = 0;
+  while (roundPlayers.length > 1) {
+    const matches = [];
+    for (let i = 0; i < roundPlayers.length; i += 2) {
+      const p1 = roundPlayers[i];
+      const p2 = roundPlayers[i + 1];
+      matches.push({
+        id: `r${roundIndex}-m${i / 2}`,
+        p1: p1 ? { name: p1.name, email: p1.email } : null,
+        p2: p2 ? { name: p2.name, email: p2.email } : null,
+        winner: null
+      });
+    }
+    rounds.push({ name: roundPlayers.length === 2 ? 'Final' : `Round ${roundIndex + 1}`, matches });
+    roundPlayers = new Array(matches.length).fill(null);
+    roundIndex++;
+  }
+  return rounds;
+}
+
+function renderBracket(bracket) {
+  const box = document.getElementById('br-view');
+  if (!box) return;
+  if (!bracket) {
+    box.innerHTML = '<div style="padding:10px 0;color:#666">No bracket selected</div>';
+    return;
+  }
+
+  const rounds = Array.isArray(bracket.rounds) ? bracket.rounds : [];
+  if (!rounds.length) {
+    box.innerHTML = '<div style="padding:10px 0;color:#666">Bracket has no rounds</div>';
+    return;
+  }
+
+  box.innerHTML = `
+    <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:6px">
+      ${rounds.map(r => {
+        const ms = Array.isArray(r.matches) ? r.matches : [];
+        return `
+          <div style="min-width:220px;border:1px solid rgba(212,175,55,0.18);border-radius:10px;background:rgba(212,175,55,0.06);padding:10px">
+            <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900;margin-bottom:8px">${escapeHtml(r.name || 'Round')}</div>
+            ${ms.map(m => {
+              const p1 = m.p1 ? m.p1.name : 'BYE';
+              const p2 = m.p2 ? m.p2.name : 'BYE';
+              return `
+                <div style="border:1px solid rgba(0,0,0,0.08);border-radius:8px;background:#fff;padding:8px 10px;margin-bottom:8px">
+                  <div style="font-weight:800;color:#1a1a1a">${escapeHtml(p1)}</div>
+                  <div style="color:#999;font-size:12px;margin:2px 0">vs</div>
+                  <div style="font-weight:800;color:#1a1a1a">${escapeHtml(p2)}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+async function loadSelectedBracket() {
+  const sel = document.getElementById('br-select');
+  if (!sel || !sel.value) {
+    activeBracket = null;
+    renderBracket(null);
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/brackets?id=' + encodeURIComponent(sel.value));
+    activeBracket = res && res.bracket ? res.bracket : null;
+  } catch (e) {
+    activeBracket = null;
+  }
+  renderBracket(activeBracket);
+}
+
+function generateBracketFromPlayers() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const nameEl = document.getElementById('br-name');
+  const typeEl = document.getElementById('br-type');
+  const name = nameEl ? nameEl.value.trim() : 'Playoffs';
+  const type = typeEl ? typeEl.value : 'single_elim';
+  const players = (playersCache || []).slice().filter(p => p && p.email && p.name);
+  if (players.length < 2) {
+    showToast('Need at least 2 players');
+    return;
+  }
+  players.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const rounds = type === 'single_elim' ? generateSingleElimRounds(players) : [];
+  activeBracket = { id: '', name, type, rounds };
+  renderBracket(activeBracket);
+}
+
+async function saveBracketFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const nameEl = document.getElementById('br-name');
+  const typeEl = document.getElementById('br-type');
+  const name = nameEl ? nameEl.value.trim() : 'Playoffs';
+  const type = typeEl ? typeEl.value : 'single_elim';
+  const rounds = activeBracket && Array.isArray(activeBracket.rounds) ? activeBracket.rounds : [];
+  if (!rounds.length) {
+    showToast('Generate a bracket first');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/brackets', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name, type, rounds })
+    });
+    showToast('Bracket saved');
+    await loadBrackets();
+    const sel = document.getElementById('br-select');
+    if (sel && res && res.bracket && res.bracket.id) {
+      sel.value = res.bracket.id;
+      await loadSelectedBracket();
+    }
+  } catch (e) {
+    showToast('Save failed');
+  }
 }
 
 async function hydrateTournamentsAdminUI() {
