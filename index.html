@@ -47,6 +47,7 @@
   ═══════════════════════════════ */
   #login-screen {
     min-height: 100vh;
+    min-height: 100svh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -76,12 +77,12 @@
     position: relative;
     width: 100%;
     max-width: 420px;
-    margin: 20px;
-    background: rgba(10, 25, 16, 0.92);
+    margin: 12px;
+    background: #1A4A2E;
     border: 1px solid rgba(212, 175, 55, 0.4);
     border-radius: 4px;
-    padding: 48px 40px;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.05);
+    padding: 22px 18px;
+    box-shadow: 0 18px 44px rgba(18, 52, 31, 0.55), 0 0 0 1px rgba(212,175,55,0.06);
     animation: loginFadeIn 0.6s ease forwards;
     z-index: 1;
   }
@@ -93,15 +94,16 @@
 
   .login-logo {
     text-align: center;
-    margin-bottom: 36px;
+    margin-bottom: 14px;
   }
 
   .login-card-logo {
     width: 500px;
     max-width: 100%;
+    max-height: 120px;
     height: auto;
     display: block;
-    margin: 0 auto 18px;
+    margin: 0 auto 10px;
   }
 
   .fc-badge {
@@ -125,7 +127,7 @@
 
   .login-logo h1 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
+    font-size: 24px;
     letter-spacing: 3px;
     color: #D4AF37;
     line-height: 1;
@@ -136,13 +138,13 @@
     color: #D4AF37;
     letter-spacing: 2px;
     text-transform: uppercase;
-    margin-top: 6px;
+    margin-top: 4px;
   }
 
   .tab-row {
     display: flex;
     gap: 0;
-    margin-bottom: 28px;
+    margin-bottom: 14px;
     border-bottom: 1px solid rgba(212,175,55,0.2);
   }
 
@@ -169,7 +171,7 @@
   }
 
   .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
 
   .form-group label {
@@ -179,15 +181,15 @@
     letter-spacing: 1.5px;
     text-transform: uppercase;
     color: #D4AF37;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .form-group input {
     width: 100%;
-    background: #0F2A1A;
+    background: #1A4A2E;
     border: 1px solid rgba(212, 175, 55, 0.3);
     border-radius: 3px;
-    padding: 12px 14px;
+    padding: 10px 12px;
     color: var(--white);
     font-family: 'Barlow', sans-serif;
     font-size: 15px;
@@ -197,7 +199,7 @@
 
   .form-group input:focus {
     border-color: #D4AF37;
-    background: #0F2A1A;
+    background: #1A4A2E;
   }
 
   .btn-primary {
@@ -205,7 +207,7 @@
     background: #D4AF37;
     border: none;
     border-radius: 3px;
-    padding: 14px;
+    padding: 12px;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 18px;
     letter-spacing: 3px;
@@ -235,8 +237,8 @@
 
   /* Demo login pills */
   .demo-logins {
-    margin-top: 24px;
-    padding-top: 20px;
+    margin-top: 14px;
+    padding-top: 12px;
     border-top: 1px solid rgba(212,175,55,0.1);
   }
 
