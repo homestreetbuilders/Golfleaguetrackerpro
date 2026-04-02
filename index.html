@@ -1330,6 +1330,45 @@
             </div>
           </div>
         </div>
+
+        <div class="card" style="animation-delay:0.45s">
+          <div class="card-header">
+            <div class="card-title">Announcements</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn-sm" onclick="loadAnnouncements()">Refresh</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="ann-pinned" style="display:none;margin-bottom:14px;padding:12px 14px;border:1px solid rgba(212,175,55,0.25);border-radius:4px;background:rgba(212,175,55,0.08)"></div>
+
+            <div id="ann-admin" style="display:none;margin-bottom:14px">
+              <div class="form-grid" style="margin-bottom:10px">
+                <div class="form-field" style="grid-column:1/-1">
+                  <label>Post Announcement (Admin)</label>
+                  <input id="ann-message" placeholder="Type an announcement..." />
+                </div>
+                <div class="form-field">
+                  <label>Audience</label>
+                  <select id="ann-scope">
+                    <option value="all">All</option>
+                    <option value="players">Players</option>
+                    <option value="scorers">Scorers</option>
+                    <option value="admins">Admins</option>
+                  </select>
+                </div>
+                <div class="form-field" style="display:flex;align-items:flex-end">
+                  <button class="btn-sm btn-green" style="width:100%" onclick="postAnnouncementFromUI()">Post</button>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn-sm" onclick="pinLatestAnnouncement()">Pin Latest</button>
+                <button class="btn-sm" onclick="unpinAnnouncement()">Unpin</button>
+              </div>
+            </div>
+
+            <div id="ann-list" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+        </div>
       </div>
 
       <!-- ── LEADERBOARD ── -->
@@ -1344,7 +1383,7 @@
             <div style="display:flex;gap:8px;align-items:center">
               <button class="btn-sm" id="lb-mode-gross" onclick="setLeaderboardMode('gross')">Gross</button>
               <button class="btn-sm" id="lb-mode-net" onclick="setLeaderboardMode('net')">Net</button>
-              <button class="btn-sm" onclick="showToast('Export coming soon')">Export</button>
+              <button class="btn-sm" onclick="printLeaderboard()">Print</button>
             </div>
           </div>
           <div class="card-body" style="padding:16px 20px 0">
@@ -2092,6 +2131,167 @@ async function fetchJson(url, options) {
   return await res.json();
 }
 
+function escapeHtml(s) {
+  return String(s || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function canSeeAnnouncement(scope) {
+  const s = String(scope || 'all').toLowerCase();
+  if (s === 'all') return true;
+  const role = currentUser && currentUser.role ? String(currentUser.role).toLowerCase() : 'player';
+  if (s === 'players') return role === 'player';
+  if (s === 'scorers') return role === 'scorer' || role === 'admin';
+  if (s === 'admins') return role === 'admin';
+  return true;
+}
+
+async function loadAnnouncements() {
+  const list = document.getElementById('ann-list');
+  const pinned = document.getElementById('ann-pinned');
+  const admin = document.getElementById('ann-admin');
+  if (!list || !pinned || !admin) return;
+
+  admin.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+
+  let res = null;
+  try {
+    res = await fetchJson('/api/announcements?limit=30&includePinned=1');
+  } catch (e) {
+    list.innerHTML = '<div style="padding:12px 0;color:#666">Announcements unavailable</div>';
+    pinned.style.display = 'none';
+    return;
+  }
+
+  const pinnedItem = res && res.pinned ? res.pinned : null;
+  if (pinnedItem && canSeeAnnouncement(pinnedItem.scope)) {
+    pinned.style.display = '';
+    pinned.innerHTML = `<div style="font-weight:900;color:var(--gold-dark);margin-bottom:4px">Pinned</div>
+      <div style="white-space:pre-wrap;color:#1a1a1a">${escapeHtml(String(pinnedItem.message || ''))}</div>
+      <div style="margin-top:6px;font-size:12px;color:#666">${pinnedItem.createdAt ? new Date(pinnedItem.createdAt).toLocaleString() : ''}</div>`;
+  } else {
+    pinned.style.display = 'none';
+    pinned.innerHTML = '';
+  }
+
+  const items = Array.isArray(res && res.announcements) ? res.announcements : [];
+  const filtered = items.filter(a => a && canSeeAnnouncement(a.scope));
+
+  list.innerHTML = filtered.map((a) => {
+    const when = a.createdAt ? new Date(a.createdAt).toLocaleString() : '';
+    const by = a.createdBy ? String(a.createdBy) : '';
+    const meta = [when, by].filter(Boolean).join(' · ');
+    return `<div style="border:1px solid rgba(212,175,55,0.18);border-radius:4px;padding:12px 14px;background:#fff">
+      <div style="white-space:pre-wrap;color:#1a1a1a">${escapeHtml(String(a.message || ''))}</div>
+      <div style="margin-top:6px;font-size:12px;color:#666">${escapeHtml(meta)}</div>
+    </div>`;
+  }).join('') || '<div style="padding:12px 0;color:#666">No announcements</div>';
+}
+
+async function postAnnouncementFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const msgEl = document.getElementById('ann-message');
+  const scopeEl = document.getElementById('ann-scope');
+  const message = msgEl ? msgEl.value.trim() : '';
+  const scope = scopeEl ? scopeEl.value : 'all';
+  if (!message) {
+    showToast('Enter a message');
+    return;
+  }
+  try {
+    await fetchJson('/api/announcements', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        scope,
+        createdBy: currentUser.email || currentUser.name || null,
+        createdByRole: currentUser.role
+      })
+    });
+    if (msgEl) msgEl.value = '';
+    showToast('Announcement posted');
+    loadAnnouncements();
+  } catch (e) {
+    showToast('Post failed');
+  }
+}
+
+async function pinLatestAnnouncement() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  let res = null;
+  try {
+    res = await fetchJson('/api/announcements?limit=1&includePinned=0');
+  } catch (e) {
+    showToast('Load failed');
+    return;
+  }
+  const items = Array.isArray(res && res.announcements) ? res.announcements : [];
+  const latest = items[0];
+  if (!latest) {
+    showToast('No announcements to pin');
+    return;
+  }
+  try {
+    await fetchJson('/api/announcements', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'pin', item: latest })
+    });
+    showToast('Pinned');
+    loadAnnouncements();
+  } catch (e) {
+    showToast('Pin failed');
+  }
+}
+
+async function unpinAnnouncement() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  try {
+    await fetchJson('/api/announcements', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'unpin' })
+    });
+    showToast('Unpinned');
+    loadAnnouncements();
+  } catch (e) {
+    showToast('Unpin failed');
+  }
+}
+
+function printLeaderboard() {
+  const root = document.getElementById('print-root');
+  if (!root) return;
+
+  const title = 'Leaderboard';
+  const mode = leaderboardMode === 'net' ? 'Net' : 'Gross';
+  const table = document.querySelector('#page-leaderboard table.data-table');
+  const html = table ? table.outerHTML : '';
+
+  root.innerHTML = `
+    <div style="padding:16px">
+      <div style="font-family:'Bebas Neue', sans-serif;font-size:28px;letter-spacing:2px;color:#1a1a1a">${escapeHtml(title)} — ${escapeHtml(mode)}</div>
+      <div style="margin:6px 0 14px;color:#444;font-size:12px">Printed ${new Date().toLocaleString()}</div>
+      ${html}
+    </div>
+  `;
+  setTimeout(() => window.print(), 50);
+}
+
 async function resolveUserRole(user) {
   try {
     const email = user && user.email;
@@ -2590,6 +2790,9 @@ function showPage(id) {
   if (page) page.classList.add('active');
   const navItem = document.querySelector(`.nav-item[onclick="showPage('${id}')"]`);
   if (navItem) navItem.classList.add('active');
+  if (id === 'dashboard') {
+    loadAnnouncements();
+  }
   if (id === 'profile') {
     loadMyProfile();
   }
@@ -2676,6 +2879,7 @@ function initData() {
   setLeaderboardMode('gross');
   buildLeaderboard();
   buildSchedule();
+  loadAnnouncements();
   loadPaymentSettings();
   buildPaymentTable();
   loadMyPayments();
