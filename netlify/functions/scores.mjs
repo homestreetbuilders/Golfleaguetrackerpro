@@ -28,6 +28,13 @@ export default async (req) => {
     const tee = body.tee || null
     const course = body.course || null
 
+    const side = body.side === 'back' ? 'back' : 'front'
+    const handicapSnapshot = typeof body.handicapSnapshot === 'number' ? body.handicapSnapshot : null
+    const stats = body && typeof body.stats === 'object' && body.stats ? body.stats : null
+
+    const perHole = stats && Array.isArray(stats.perHole) ? stats.perHole : null
+    const round = stats && typeof stats.round === 'object' && stats.round ? stats.round : null
+
     const key = `week-${week}-${String(player).toLowerCase()}-${Date.now()}`
     await store.setJSON(key, {
       player,
@@ -36,8 +43,11 @@ export default async (req) => {
       date,
       course,
       tee,
+      side,
       holes,
       grossTotal,
+      handicapSnapshot,
+      stats: stats ? { perHole: perHole || null, round: round || null } : null,
       status,
       submittedBy: body.submittedBy || null,
       submittedAt: new Date().toISOString()

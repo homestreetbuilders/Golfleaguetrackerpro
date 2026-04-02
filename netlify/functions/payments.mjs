@@ -85,9 +85,46 @@ export default async (req) => {
     const url = new URL(req.url)
     const email = normalizeEmail(url.searchParams.get('email'))
     const summary = url.searchParams.get('summary') === '1'
+    const analytics = url.searchParams.get('analytics') === '1'
+    const categoryIdFilter = normalizeCategoryId(url.searchParams.get('categoryId'))
 
     const { categories } = await getSettings()
     const activeCategories = categories.filter(c => c && c.active)
+
+    if (analytics) {
+      if (!categoryIdFilter) {
+        return new Response('Missing categoryId', { status: 400 })
+      }
+
+      const { blobs } = await store.list().catch(() => ({ blobs: [] }))
+      const totals = {}
+      for (const blob of blobs || []) {
+        const data = await store.get(blob.key, { type: 'json' }).catch(() => null)
+        if (!data) continue
+        if (normalizeCategoryId(data.categoryId) !== categoryIdFilter) continue
+        const e = normalizeEmail(data.email)
+        const amt = Number(data.amount)
+        if (!e || !Number.isFinite(amt)) continue
+        totals[e] = (totals[e] || 0) + amt
+      }
+
+      const playerStore = getStore('players')
+      const { blobs: playerBlobs } = await playerStore.list().catch(() => ({ blobs: [] }))
+      const players = {}
+      for (const blob of playerBlobs || []) {
+        const p = await playerStore.get(blob.key, { type: 'json' }).catch(() => null)
+        if (p && p.email) players[normalizeEmail(p.email)] = p.name || p.email
+      }
+
+      const ranking = Object.keys(totals).map(e => ({
+        email: e,
+        player: players[e] || e,
+        totalPaid: totals[e]
+      }))
+        .sort((a, b) => (Number(b.totalPaid) || 0) - (Number(a.totalPaid) || 0))
+
+      return Response.json({ categoryId: categoryIdFilter, ranking })
+    }
 
     if (email) {
       const prefix = `payment-${email}-`

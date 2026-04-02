@@ -1403,31 +1403,19 @@
           <h2>My Analytics</h2>
           <p>Personal performance stats</p>
         </div>
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-label">Rounds Played</div><div class="stat-value">7</div></div>
-          <div class="stat-card"><div class="stat-label">Scoring Avg</div><div class="stat-value">42.3</div></div>
-          <div class="stat-card"><div class="stat-label">Putts / Round</div><div class="stat-value">15.6</div></div>
-          <div class="stat-card"><div class="stat-label">Best Round</div><div class="stat-value">38</div></div>
+        <div class="stats-grid" id="my-analytics-stats"></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Handicap Trend</div></div>
+          <div class="card-body">
+            <div id="hcp-trend" style="width:100%;height:160px;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.25);border-radius:10px"></div>
+          </div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">Hole-by-Hole Averages</div>
-            <button class="btn-sm" onclick="window.print()">🖨️ Print</button>
-          </div>
-          <div class="card-body">
+          <div class="card-header"><div class="card-title">Round Stats (Totals)</div></div>
+          <div class="card-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>Hole</th><th>Par</th><th>Your Avg</th><th>+/-</th></tr></thead>
-              <tbody>
-                <tr><td>1</td><td>4</td><td>4.7</td><td style="color:#f66">+0.7</td></tr>
-                <tr><td>2</td><td>3</td><td>3.3</td><td style="color:#f66">+0.3</td></tr>
-                <tr><td>3</td><td>5</td><td>6.1</td><td style="color:#f66">+1.1</td></tr>
-                <tr><td>4</td><td>4</td><td>4.4</td><td style="color:#f66">+0.4</td></tr>
-                <tr><td>5</td><td>3</td><td>3.0</td><td style="color:#4CAF50">E</td></tr>
-                <tr><td>6</td><td>4</td><td>4.9</td><td style="color:#f66">+0.9</td></tr>
-                <tr><td>7</td><td>4</td><td>5.1</td><td style="color:#f66">+1.1</td></tr>
-                <tr><td>8</td><td>3</td><td>3.4</td><td style="color:#f66">+0.4</td></tr>
-                <tr><td>9</td><td>4</td><td>4.4</td><td style="color:#f66">+0.4</td></tr>
-              </tbody>
+              <thead><tr><th>Date</th><th>Week</th><th>Side</th><th>Course</th><th>Tee</th><th>Score</th><th>FW</th><th>GIR</th><th>Scramble-Par</th><th>Pen</th></tr></thead>
+              <tbody id="my-analytics-rounds"></tbody>
             </table>
           </div>
         </div>
@@ -1629,6 +1617,31 @@
             </div>
           </div>
         </div>
+
+        <div class="card" id="pay-analytics-card" style="display:none">
+          <div class="card-header"><div class="card-title">Payment Analytics (Optional Pots)</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field">
+                <label>Pot Category</label>
+                <select id="pay-analytics-category" onchange="loadPaymentAnalytics()">
+                  <option value="">Select category...</option>
+                  <option value="50/50">50/50</option>
+                  <option value="skins">Skins</option>
+                  <option value="gross skins">Gross Skins</option>
+                </select>
+              </div>
+            </div>
+            <div style="font-size:12px;color:#666;margin-bottom:10px">Ranks players by total paid into the selected pot (most to least).</div>
+            <div style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>#</th><th>Player</th><th>Total Paid</th></tr></thead>
+                <tbody id="pay-analytics-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header"><div class="card-title">Record Payment</div></div>
           <div class="card-body">
@@ -1896,6 +1909,7 @@ const PAYMENT_DATA = [
 // ═══════════════════════════════
 let currentUser = null;
 let scores = new Array(9).fill('');
+let scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
 let leaderboardMode = 'gross';
 let scoringMode = 'batch';
 let leaderboardFilters = { week: '', start: '', end: '' };
@@ -2253,6 +2267,7 @@ function showPage(id) {
     loadPaymentSettings();
     hydratePaymentsAdminUI();
     buildPaymentTable();
+    hydratePaymentAnalyticsUI();
   }
   if (id === 'manage-players') {
     loadPlayers().then(() => {
@@ -2271,6 +2286,9 @@ function showPage(id) {
   }
   if (id === 'team-scorecard') {
     hydrateTeamScorecardUI();
+  }
+  if (id === 'analytics') {
+    buildMyAnalytics();
   }
   if (id === 'user-roles') {
     buildRoleList();
@@ -3348,6 +3366,49 @@ function buildScoreGrid() {
         oninput="updateScore(${i}, this.value)" />
     </div>
   `).join('');
+
+  buildScoreStatsGrid();
+}
+
+function buildScoreStatsGrid() {
+  const box = document.getElementById('score-stats-grid');
+  if (!box) return;
+  box.innerHTML = Array.from({ length: 9 }).map((_, i) => {
+    const s = scoreStatsPerHole[i] || { fw: false, gir: false, scramblePar: false };
+    return `
+      <div style="border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:8px;background:rgba(212,175,55,0.06)">
+        <div style="font-size:11px;font-weight:900;color:var(--gold-dark);margin-bottom:6px">H${i + 1}</div>
+        <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#1a1a1a;margin-bottom:6px;cursor:pointer">
+          <input type="checkbox" data-hole="${i}" data-field="fw" ${s.fw ? 'checked' : ''} onchange="toggleHoleStat(this)" /> FW
+        </label>
+        <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#1a1a1a;margin-bottom:6px;cursor:pointer">
+          <input type="checkbox" data-hole="${i}" data-field="gir" ${s.gir ? 'checked' : ''} onchange="toggleHoleStat(this)" /> GIR
+        </label>
+        <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#1a1a1a;cursor:pointer">
+          <input type="checkbox" data-hole="${i}" data-field="scramblePar" ${s.scramblePar ? 'checked' : ''} onchange="toggleHoleStat(this)" /> Scr
+        </label>
+      </div>
+    `;
+  }).join('');
+  updateRoundStatTotals();
+}
+
+function toggleHoleStat(el) {
+  const hole = el ? parseInt(el.getAttribute('data-hole') || '', 10) : null;
+  const field = el ? el.getAttribute('data-field') : null;
+  if (!Number.isFinite(hole) || hole < 0 || hole > 8 || !field) return;
+  if (!scoreStatsPerHole[hole]) scoreStatsPerHole[hole] = { fw: false, gir: false, scramblePar: false };
+  scoreStatsPerHole[hole][field] = !!el.checked;
+  updateRoundStatTotals();
+}
+
+function updateRoundStatTotals() {
+  const fwTotalEl = document.getElementById('score-fw-total');
+  const girTotalEl = document.getElementById('score-gir-total');
+  const fw = scoreStatsPerHole.reduce((a, s) => a + (s && s.fw ? 1 : 0), 0);
+  const gir = scoreStatsPerHole.reduce((a, s) => a + (s && s.gir ? 1 : 0), 0);
+  if (fwTotalEl) fwTotalEl.value = String(fw);
+  if (girTotalEl) girTotalEl.value = String(gir);
 }
 
 function updateScore(idx, val) {
@@ -3368,12 +3429,14 @@ function getScoreEntryValues() {
   const courseEl = document.getElementById('score-course');
   const playerEl = document.getElementById('score-player');
   const teeEl = document.getElementById('score-tee');
+  const sideEl = document.getElementById('score-side');
   return {
     week: weekEl ? parseInt(weekEl.value, 10) : null,
     date: dateEl ? dateEl.value : null,
     course: courseEl ? courseEl.value : null,
     player: playerEl ? playerEl.value : null,
-    tee: teeEl ? teeEl.value : null
+    tee: teeEl ? teeEl.value : null,
+    side: sideEl ? sideEl.value : 'front'
   };
 }
 
@@ -3421,7 +3484,7 @@ async function unlockScorecard() {
 }
 
 async function saveScore(status) {
-  const { week, date, course, player, tee } = getScoreEntryValues();
+  const { week, date, course, player, tee, side } = getScoreEntryValues();
   if (!week || !date || !course || !player) {
     showToast('Select week, date, course, and player');
     return;
@@ -3432,6 +3495,17 @@ async function saveScore(status) {
     return;
   }
   const grossTotal = filled.reduce((a,b) => a + b, 0);
+
+  const penEl = document.getElementById('score-penalties');
+  const penaltyStrokes = penEl ? Number(penEl.value) : 0;
+  const roundFw = scoreStatsPerHole.reduce((a, s) => a + (s && s.fw ? 1 : 0), 0);
+  const roundGir = scoreStatsPerHole.reduce((a, s) => a + (s && s.gir ? 1 : 0), 0);
+  const roundScr = scoreStatsPerHole.reduce((a, s) => a + (s && s.scramblePar ? 1 : 0), 0);
+
+  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const p = pool.find(x => String(x.name).toLowerCase() === String(player).toLowerCase());
+  const handicapSnapshot = p ? Number(p.hdcp !== undefined ? p.hdcp : p.handicap) : null;
+
   try {
     await fetchJson('/api/scores', {
       method: 'POST',
@@ -3443,8 +3517,23 @@ async function saveScore(status) {
         date,
         course,
         tee,
+        side: side === 'back' ? 'back' : 'front',
         holes: scores,
         grossTotal,
+        handicapSnapshot: Number.isFinite(handicapSnapshot) ? handicapSnapshot : null,
+        stats: {
+          perHole: scoreStatsPerHole.map(s => ({
+            fairwayHit: !!(s && s.fw),
+            gir: !!(s && s.gir),
+            scramblePar: !!(s && s.scramblePar)
+          })),
+          round: {
+            fairwaysHit: roundFw,
+            gir: roundGir,
+            scramblesMadePar: roundScr,
+            penaltyStrokes: Number.isFinite(penaltyStrokes) ? penaltyStrokes : 0
+          }
+        },
         status: status === 'final' ? 'final' : 'draft',
         submittedBy: currentUser ? currentUser.email : null
       })
@@ -3457,6 +3546,9 @@ async function saveScore(status) {
       buildLeaderboard();
     }
     scores = new Array(9).fill('');
+    scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
+    const penEl2 = document.getElementById('score-penalties');
+    if (penEl2) penEl2.value = '0';
     buildScoreGrid();
   } catch (e) {
     if (String(e && e.message || '').toLowerCase().includes('locked')) {
@@ -3472,6 +3564,7 @@ function hydrateScoreEntryUI() {
   const weekEl = document.getElementById('score-week');
   const playerEl = document.getElementById('score-player');
   const dateEl = document.getElementById('score-date');
+  const sideEl = document.getElementById('score-side');
   if (weekEl && weekEl.options.length === 0) {
     weekEl.innerHTML = '<option value="">Select week...</option>' +
       Array.from({ length: 10 }).map((_,i) => `<option value="${i+1}">Week ${i+1}</option>`).join('');
@@ -3488,6 +3581,110 @@ function hydrateScoreEntryUI() {
 
   if (weekEl) weekEl.addEventListener('change', refreshScorecardLockStatus);
   if (playerEl) playerEl.addEventListener('change', refreshScorecardLockStatus);
+  if (sideEl && !sideEl.value) sideEl.value = 'front';
+  buildScoreStatsGrid();
+}
+
+async function buildMyAnalytics() {
+  if (!currentUser || !currentUser.email) return;
+  const statsGrid = document.getElementById('my-analytics-stats');
+  const roundsBody = document.getElementById('my-analytics-rounds');
+  const trendBox = document.getElementById('hcp-trend');
+
+  if (statsGrid) statsGrid.innerHTML = '';
+  if (roundsBody) roundsBody.innerHTML = '<tr><td colspan="10" style="padding:18px;color:#666;text-align:center">Loading…</td></tr>';
+  if (trendBox) trendBox.innerHTML = '';
+
+  try {
+    const res = await fetchJson('/api/scores?player=' + encodeURIComponent(currentUser.name || '') + '&includeDraft=0');
+    const rows = Array.isArray(res && res.scores) ? res.scores : [];
+    rows.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+
+    const rounds = rows.map(r => {
+      const round = r && r.stats && r.stats.round ? r.stats.round : null;
+      const perHole = r && r.stats && Array.isArray(r.stats.perHole) ? r.stats.perHole : null;
+      const fw = round && Number.isFinite(Number(round.fairwaysHit)) ? Number(round.fairwaysHit) : (perHole ? perHole.reduce((a, h) => a + (h && h.fairwayHit ? 1 : 0), 0) : 0);
+      const gir = round && Number.isFinite(Number(round.gir)) ? Number(round.gir) : (perHole ? perHole.reduce((a, h) => a + (h && h.gir ? 1 : 0), 0) : 0);
+      const scr = round && Number.isFinite(Number(round.scramblesMadePar)) ? Number(round.scramblesMadePar) : (perHole ? perHole.reduce((a, h) => a + (h && h.scramblePar ? 1 : 0), 0) : 0);
+      const pen = round && Number.isFinite(Number(round.penaltyStrokes)) ? Number(round.penaltyStrokes) : 0;
+      return {
+        date: r.date,
+        week: r.week,
+        side: r.side || 'front',
+        course: r.course || '—',
+        tee: r.tee || '—',
+        score: Number(r.grossTotal) || 0,
+        fw,
+        gir,
+        scr,
+        pen,
+        hcp: (r.handicapSnapshot !== null && r.handicapSnapshot !== undefined) ? Number(r.handicapSnapshot) : null
+      };
+    });
+
+    const roundsPlayed = rounds.length;
+    const avg = roundsPlayed ? (rounds.reduce((a, b) => a + (Number(b.score) || 0), 0) / roundsPlayed) : 0;
+    const best = roundsPlayed ? Math.min(...rounds.map(r => Number(r.score) || 999)) : 0;
+    const fwAvg = roundsPlayed ? (rounds.reduce((a, b) => a + (Number(b.fw) || 0), 0) / roundsPlayed) : 0;
+    const girAvg = roundsPlayed ? (rounds.reduce((a, b) => a + (Number(b.gir) || 0), 0) / roundsPlayed) : 0;
+    const scrAvg = roundsPlayed ? (rounds.reduce((a, b) => a + (Number(b.scr) || 0), 0) / roundsPlayed) : 0;
+    const penAvg = roundsPlayed ? (rounds.reduce((a, b) => a + (Number(b.pen) || 0), 0) / roundsPlayed) : 0;
+
+    if (statsGrid) {
+      statsGrid.innerHTML = `
+        <div class="stat-card"><div class="stat-label">Rounds</div><div class="stat-value">${roundsPlayed}</div></div>
+        <div class="stat-card"><div class="stat-label">Avg Score</div><div class="stat-value">${roundsPlayed ? avg.toFixed(1) : '—'}</div></div>
+        <div class="stat-card"><div class="stat-label">Best</div><div class="stat-value">${roundsPlayed ? best : '—'}</div></div>
+        <div class="stat-card"><div class="stat-label">FW / 9</div><div class="stat-value">${roundsPlayed ? fwAvg.toFixed(1) : '—'}</div></div>
+        <div class="stat-card"><div class="stat-label">GIR / 9</div><div class="stat-value">${roundsPlayed ? girAvg.toFixed(1) : '—'}</div></div>
+        <div class="stat-card"><div class="stat-label">Scr / 9</div><div class="stat-value">${roundsPlayed ? scrAvg.toFixed(1) : '—'}</div></div>
+        <div class="stat-card"><div class="stat-label">Pen / 9</div><div class="stat-value">${roundsPlayed ? penAvg.toFixed(1) : '—'}</div></div>
+      `;
+    }
+
+    if (roundsBody) {
+      roundsBody.innerHTML = rounds.slice().reverse().map(r => `
+        <tr>
+          <td>${r.date || '—'}</td>
+          <td>${r.week || '—'}</td>
+          <td style="font-weight:900;color:var(--gold-dark)">${r.side === 'back' ? 'Back' : 'Front'}</td>
+          <td>${r.course}</td>
+          <td>${r.tee}</td>
+          <td style="font-weight:900;color:var(--green)">${r.score}</td>
+          <td>${r.fw}</td>
+          <td>${r.gir}</td>
+          <td>${r.scr}</td>
+          <td>${r.pen}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="10" style="padding:18px;color:#666;text-align:center">No rounds yet</td></tr>';
+    }
+
+    if (trendBox) {
+      const points = rounds.filter(r => r.hcp !== null && Number.isFinite(Number(r.hcp)));
+      if (points.length < 2) {
+        trendBox.innerHTML = '<div style="padding:16px;color:#666;font-size:13px">Not enough handicap snapshots yet.</div>';
+      } else {
+        const w = trendBox.clientWidth || 600;
+        const h = trendBox.clientHeight || 160;
+        const pad = 16;
+        const vals = points.map(p => Number(p.hcp));
+        const min = Math.min(...vals);
+        const max = Math.max(...vals);
+        const span = Math.max(1, max - min);
+        const xs = points.map((_, i) => pad + (i * (w - pad * 2) / (points.length - 1)));
+        const ys = points.map(p => pad + ((max - Number(p.hcp)) * (h - pad * 2) / span));
+        const d = xs.map((x, i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${ys[i].toFixed(1)}`).join(' ');
+        trendBox.innerHTML = `
+          <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+            <path d="${d}" fill="none" stroke="var(--gold)" stroke-width="3" />
+            ${xs.map((x,i) => `<circle cx="${x.toFixed(1)}" cy="${ys[i].toFixed(1)}" r="4" fill="var(--green)" />`).join('')}
+          </svg>
+        `;
+      }
+    }
+  } catch (e) {
+    if (roundsBody) roundsBody.innerHTML = '<tr><td colspan="10" style="padding:18px;color:#666;text-align:center">Failed to load</td></tr>';
+  }
 }
 
 async function loadScoringMode() {
@@ -3647,11 +3844,10 @@ function hydratePaymentsAdminUI() {
   if (!wrap && !catSel) return;
   const settings = paymentSettingsCache;
   const cats = settings && Array.isArray(settings.categories) ? settings.categories : [];
-  const active = cats.filter(c => c && c.active);
 
   if (wrap) {
     wrap.innerHTML = cats.map(c => {
-      const checked = c.active ? 'checked' : '';
+      const checked = c && c.active ? 'checked' : '';
       return `
         <div style="display:flex;gap:10px;align-items:center;padding:10px;border:1px solid rgba(212,175,55,0.25);border-radius:8px;margin-bottom:10px;background:rgba(212,175,55,0.06)">
           <input type="checkbox" data-cat-id="${c.id}" data-field="active" ${checked} />
@@ -3665,14 +3861,12 @@ function hydratePaymentsAdminUI() {
           </div>
         </div>
       `;
-    }).join('') || '<div style="color:#666">No categories configured</div>';
+    }).join('') || '<div style="padding:12px;color:#666">No categories</div>';
   }
 
   if (catSel) {
-    const cur = catSel.value;
     catSel.innerHTML = '<option value="">Select category...</option>' +
-      active.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    if (cur) catSel.value = cur;
+      cats.filter(c => c && c.active).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   }
 }
 
@@ -3702,6 +3896,43 @@ async function savePaymentSettingsFromUI() {
     showToast('Categories saved');
   } catch (e) {
     showToast('Save failed');
+  }
+}
+
+function hydratePaymentAnalyticsUI() {
+  const card = document.getElementById('pay-analytics-card');
+  if (!card) return;
+  card.style.display = (currentUser && currentUser.role === 'admin') ? '' : 'none';
+  if (currentUser && currentUser.role === 'admin') {
+    loadPaymentAnalytics();
+  }
+}
+
+async function loadPaymentAnalytics() {
+  const body = document.getElementById('pay-analytics-body');
+  const sel = document.getElementById('pay-analytics-category');
+  if (!body || !sel) return;
+  const val = sel.value;
+  if (!val) {
+    body.innerHTML = '<tr><td colspan="3" style="padding:18px;color:#666;text-align:center">Select a category</td></tr>';
+    return;
+  }
+
+  const categoryId = val;
+
+  body.innerHTML = '<tr><td colspan="3" style="padding:18px;color:#666;text-align:center">Loading…</td></tr>';
+  try {
+    const res = await fetchJson('/api/payments?analytics=1&categoryId=' + encodeURIComponent(categoryId));
+    const ranking = Array.isArray(res && res.ranking) ? res.ranking : [];
+    body.innerHTML = ranking.map((r, i) => `
+      <tr>
+        <td style="font-weight:900;color:var(--gold-dark)">${i + 1}</td>
+        <td>${r.player || r.email || '—'}</td>
+        <td style="font-weight:900;color:var(--green)">$${Number(r.totalPaid || 0).toFixed(2)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="3" style="padding:18px;color:#666;text-align:center">No payments found</td></tr>';
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="3" style="padding:18px;color:#666;text-align:center">Failed to load</td></tr>';
   }
 }
 
@@ -3911,5 +4142,3 @@ function showToast(msg) {
 </script>
 </body>
 </html>
-
- 
