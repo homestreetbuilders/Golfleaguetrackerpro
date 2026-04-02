@@ -10,14 +10,14 @@
   "theme_color": "#3DA06B",
   "icons": [
     {
-      "src": "pwa-icon-192.svg",
+      "src": "fairwaycommandshortcut.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png"
     },
     {
-      "src": "pwa-icon-512.svg",
+      "src": "fairwaycommandshortcut.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ]
 }
