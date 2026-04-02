@@ -1750,10 +1750,10 @@
           <div class="card-header"><div class="card-title">General Settings</div></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom:20px">
-              <div class="form-field"><label>League Name</label><input value="Fairway Command League 2026" /></div>
-              <div class="form-field"><label>Season Start</label><input type="date" value="2026-04-07" /></div>
-              <div class="form-field"><label>Season End</label><input type="date" value="2026-09-22" /></div>
-              <div class="form-field"><label>Tee Placements (count)</label><input type="number" value="3" /></div>
+              <div class="form-field"><label>League Name</label><input id="ls-league-name" placeholder="Fairway Command League" /></div>
+              <div class="form-field"><label>Season Start</label><input id="ls-season-start" type="date" /></div>
+              <div class="form-field"><label>Season End</label><input id="ls-season-end" type="date" /></div>
+              <div class="form-field"><label>Tee Placements (count)</label><input id="ls-tee-count" type="number" min="1" max="4" value="3" /></div>
             </div>
             <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Scoring Mode</p>
             <div class="form-grid" style="margin-bottom:20px">
@@ -1766,13 +1766,28 @@
               </div>
             </div>
             <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Handicap Formula</p>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field">
+                <label>Handicap Mode</label>
+                <select id="ls-handicap-mode" onchange="toggleCustomFormulaUI()">
+                  <option value="usga">USGA</option>
+                  <option value="stableford">Stableford</option>
+                  <option value="match_play">Match Play</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+              <div class="form-field" id="ls-custom-wrap" style="display:none">
+                <label>Custom Formula (notes)</label>
+                <textarea id="ls-custom-formula" style="width:100%;min-height:44px;background:#fff;border:1px solid #ccc;border-radius:3px;padding:10px 14px;color:#1a1a1a;font-family:'Barlow',sans-serif;font-size:14px;outline:none;"></textarea>
+              </div>
+            </div>
             <div class="form-grid" style="margin-bottom:20px">
-              <div class="form-field"><label>Best N Rounds</label><input type="number" value="8" /></div>
-              <div class="form-field"><label>Last N Rounds</label><input type="number" value="20" /></div>
-              <div class="form-field"><label>Multiplier</label><input type="number" value="0.96" step="0.01" /></div>
-              <div class="form-field"><label>Max Handicap</label><input type="number" value="36" /></div>
-              <div class="form-field"><label>Min Handicap</label><input type="number" value="0" /></div>
-              <div class="form-field"><label>Bonus Strokes</label><input type="number" value="0" /></div>
+              <div class="form-field"><label>Best N Rounds</label><input id="hcp-best-n" type="number" value="8" /></div>
+              <div class="form-field"><label>Last N Rounds</label><input id="hcp-last-n" type="number" value="20" /></div>
+              <div class="form-field"><label>Multiplier</label><input id="hcp-multiplier" type="number" value="0.96" step="0.01" /></div>
+              <div class="form-field"><label>Max Handicap</label><input id="hcp-max" type="number" value="36" /></div>
+              <div class="form-field"><label>Min Rounds</label><input id="hcp-min-rounds" type="number" value="3" /></div>
+              <div class="form-field"><label>Bonus</label><select id="hcp-bonus"><option value="none">None</option><option value="low">Low</option><option value="high">High</option></select></div>
             </div>
             <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Batch Finalize Week</p>
             <div class="form-grid" style="margin-bottom:16px">
@@ -1784,7 +1799,7 @@
                 <button class="btn-sm btn-green" style="width:100%" onclick="finalizeSelectedWeek()">Finalize &amp; Lock All</button>
               </div>
             </div>
-            <button class="btn-sm btn-green" onclick="showToast('Settings saved!')">Save Settings</button>
+            <button class="btn-sm btn-green" onclick="saveLeagueSettingsFromUI()">Save Settings</button>
           </div>
         </div>
       </div>
@@ -2119,6 +2134,116 @@ Payments
   bodyEl.textContent = g.body;
 }
 
+function toggleCustomFormulaUI() {
+  const modeEl = document.getElementById('ls-handicap-mode');
+  const wrap = document.getElementById('ls-custom-wrap');
+  if (!modeEl || !wrap) return;
+  wrap.style.display = modeEl.value === 'custom' ? '' : 'none';
+}
+
+async function loadLeagueSettings() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  try {
+    const res = await fetchJson('/api/league-settings');
+    const s = res && res.settings ? res.settings : null;
+    const nameEl = document.getElementById('ls-league-name');
+    const startEl = document.getElementById('ls-season-start');
+    const endEl = document.getElementById('ls-season-end');
+    const teeCountEl = document.getElementById('ls-tee-count');
+    const modeEl = document.getElementById('ls-handicap-mode');
+    const customEl = document.getElementById('ls-custom-formula');
+    if (s) {
+      if (nameEl) nameEl.value = s.leagueName || '';
+      if (startEl) startEl.value = s.seasonStart || '';
+      if (endEl) endEl.value = s.seasonEnd || '';
+      if (teeCountEl) teeCountEl.value = s.teePlacementsCount || 3;
+      if (modeEl) modeEl.value = s.handicapMode || 'usga';
+      if (customEl) customEl.value = s.customFormulaText || '';
+      toggleCustomFormulaUI();
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    const f = await fetchJson('/api/handicap-formula');
+    const bestN = document.getElementById('hcp-best-n');
+    const lastN = document.getElementById('hcp-last-n');
+    const mult = document.getElementById('hcp-multiplier');
+    const maxH = document.getElementById('hcp-max');
+    const minR = document.getElementById('hcp-min-rounds');
+    const bonus = document.getElementById('hcp-bonus');
+    if (bestN) bestN.value = f.bestN;
+    if (lastN) lastN.value = f.lastN;
+    if (mult) mult.value = f.multiplier;
+    if (maxH) maxH.value = f.maxHcp;
+    if (minR) minR.value = f.minRounds;
+    if (bonus) bonus.value = f.bonus || 'none';
+  } catch (e) {
+    // ignore
+  }
+}
+
+async function saveLeagueSettingsFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const nameEl = document.getElementById('ls-league-name');
+  const startEl = document.getElementById('ls-season-start');
+  const endEl = document.getElementById('ls-season-end');
+  const teeCountEl = document.getElementById('ls-tee-count');
+  const modeEl = document.getElementById('ls-handicap-mode');
+  const customEl = document.getElementById('ls-custom-formula');
+
+  const payload = {
+    leagueName: nameEl ? nameEl.value.trim() : '',
+    seasonStart: startEl ? startEl.value : null,
+    seasonEnd: endEl ? endEl.value : null,
+    teePlacementsCount: teeCountEl ? Number(teeCountEl.value) : 3,
+    handicapMode: modeEl ? modeEl.value : 'usga',
+    customFormulaText: customEl ? customEl.value : ''
+  };
+
+  try {
+    await fetchJson('/api/league-settings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    showToast('Save failed');
+    return;
+  }
+
+  const bestN = document.getElementById('hcp-best-n');
+  const lastN = document.getElementById('hcp-last-n');
+  const mult = document.getElementById('hcp-multiplier');
+  const maxH = document.getElementById('hcp-max');
+  const minR = document.getElementById('hcp-min-rounds');
+  const bonus = document.getElementById('hcp-bonus');
+
+  try {
+    await fetchJson('/api/handicap-formula', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        bestN: bestN ? Number(bestN.value) : 8,
+        lastN: lastN ? Number(lastN.value) : 20,
+        multiplier: mult ? Number(mult.value) : 0.96,
+        maxHcp: maxH ? Number(maxH.value) : 36,
+        minRounds: minR ? Number(minR.value) : 3,
+        bonus: bonus ? String(bonus.value) : 'none'
+      })
+    });
+  } catch (e) {
+    showToast('Saved league settings, but formula save failed');
+    return;
+  }
+
+  showToast('Settings saved');
+}
+
 async function saveScheduleWeekFromUI() {
   if (!currentUser || currentUser.role !== 'admin') {
     showToast('Access denied');
@@ -2425,6 +2550,9 @@ function showPage(id) {
   }
   if (id === 'season-overview') {
     loadSeasonOverview();
+  }
+  if (id === 'league-settings') {
+    loadLeagueSettings();
   }
   if (id === 'scramble') {
     hydrateScrambleAdminUI();
