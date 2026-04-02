@@ -1554,6 +1554,12 @@
           <h2>Payments</h2>
           <p>Your payment status</p>
         </div>
+        <div class="card" id="stripe-status-card" style="display:none">
+          <div class="card-header"><div class="card-title">Online Payments (Scaffold)</div></div>
+          <div class="card-body">
+            <div id="stripe-status-text" style="font-size:13px;color:#333"></div>
+          </div>
+        </div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-label">Total Due</div><div class="stat-value" id="my-pay-due" style="font-size:28px">—</div></div>
           <div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value" id="my-pay-paid" style="color:#4CAF50;font-size:28px">—</div></div>
@@ -5780,6 +5786,23 @@ async function recordPaymentFromUI() {
 
 async function loadMyPayments() {
   if (!currentUser) return;
+  try {
+    const sCard = document.getElementById('stripe-status-card');
+    const sText = document.getElementById('stripe-status-text');
+    const st = await fetchJson('/api/stripe-status');
+    if (sCard && sText) {
+      sCard.style.display = '';
+      if (st && st.configured) {
+        sText.innerHTML = '<b>Configured.</b> Checkout flow is still scaffold-only (no session creation wired).';
+      } else {
+        sText.innerHTML = '<b>Not configured.</b> Set Netlify env vars <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_PUBLISHABLE_KEY</code> to enable online payments in a future step.';
+      }
+    }
+  } catch (e) {
+    const sCard = document.getElementById('stripe-status-card');
+    if (sCard) sCard.style.display = 'none';
+  }
+
   const dueEl = document.getElementById('my-pay-due');
   const paidEl = document.getElementById('my-pay-paid');
   const balEl = document.getElementById('my-pay-balance');
