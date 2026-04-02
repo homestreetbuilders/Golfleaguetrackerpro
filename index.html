@@ -810,6 +810,7 @@
 
   .type-match { background: rgba(26,122,60,0.2); color: var(--green-light); }
   .type-scramble { background: rgba(212,175,55,0.15); color: var(--gold); }
+  .type-tournament { background: rgba(255,102,102,0.12); color: #f66; }
 
   /* PRINT SCORECARD */
   .scorecard-preview-wrap {
@@ -1249,6 +1250,9 @@
         <div class="nav-item" onclick="showPage('scramble')">
           <span class="nav-icon">🔀</span> Scramble Events
         </div>
+        <div class="nav-item" onclick="showPage('tournaments')">
+          <span class="nav-icon">🏆</span> Tournaments
+        </div>
         <div class="nav-item" onclick="showPage('rainouts')">
           <span class="nav-icon">🌧️</span> Rainout Mgmt
         </div>
@@ -1446,7 +1450,7 @@
               <div class="form-field"><label>Course</label><input id="sch-course" placeholder="Mud Run GC" /></div>
               <div class="form-field"><label>Tee Time</label><input id="sch-tee" placeholder="5:30 PM" /></div>
               <div class="form-field"><label>Type</label>
-                <select id="sch-type"><option value="match">Match</option><option value="scramble">Scramble</option></select>
+                <select id="sch-type"><option value="match">Match</option><option value="scramble">Scramble</option><option value="tournament">Tournament</option></select>
               </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -2014,6 +2018,53 @@
         </div>
       </div>
 
+      <!-- ── TOURNAMENTS (Admin) ── -->
+      <div class="page" id="page-tournaments">
+        <div class="page-header"><h2>Tournaments</h2><p>Create and manage tournament events</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Create Tournament</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Schedule Week (Tournament)</label><select id="trn-week"></select></div>
+              <div class="form-field"><label>Event Name</label><input id="trn-name" placeholder="Club Championship" /></div>
+              <div class="form-field"><label>Date</label><input id="trn-date" type="date" /></div>
+              <div class="form-field"><label>Scoring Type</label><select id="trn-scoring"><option value="stroke_gross">Stroke Play (Gross)</option><option value="stroke_net">Stroke Play (Net)</option><option value="stableford">Stableford</option><option value="best_ball">Best Ball</option></select></div>
+            </div>
+            <button class="btn-sm btn-green" onclick="createTournamentFromUI()">Create Tournament</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Manage Tournament</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:16px">
+              <div class="form-field"><label>Event</label><select id="trn-event" onchange="loadSelectedTournamentEvent()"></select></div>
+              <div class="form-field"><label>Player</label><select id="trn-player" onchange="hydrateTournamentScoreInputs()"></select></div>
+            </div>
+
+            <div class="card" style="margin:0 0 16px">
+              <div class="card-header"><div class="card-title">Score Entry (18 holes)</div></div>
+              <div class="card-body">
+                <div id="trn-score-grid" style="display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:10px"></div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+                  <button class="btn-sm btn-green" onclick="submitTournamentScoreFromUI()">Submit Player Score</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0">
+              <div class="card-header"><div class="card-title">Leaderboard</div></div>
+              <div class="card-body" style="padding:0">
+                <table class="data-table">
+                  <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Submitted</th></tr></thead>
+                  <tbody id="trn-leaderboard"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ── TEAM SCORECARD ── -->
       <div class="page" id="page-team-scorecard">
         <div class="page-header"><h2>Team Scorecard</h2><p>Scramble results</p></div>
@@ -2127,6 +2178,8 @@ let editingPlayerEmail = null;
 let scheduleCache = [];
 let scrambleEventsCache = [];
 let activeScrambleEvent = null;
+let tournamentEventsCache = [];
+let activeTournamentEvent = null;
 let coursesCache = [];
 
 function getCourseByName(name) {
@@ -3051,7 +3104,7 @@ function applyRoleAccess(role) {
   if (activePage) {
     const pid = activePage.id || '';
     const scorerPages = ['page-enter-scores', 'page-scorecards'];
-    const adminPages = ['page-user-roles', 'page-courses', 'page-league-settings', 'page-scramble', 'page-rainouts', 'page-manage-players', 'page-manage-payments'];
+    const adminPages = ['page-user-roles', 'page-courses', 'page-league-settings', 'page-scramble', 'page-tournaments', 'page-rainouts', 'page-manage-players', 'page-manage-payments'];
     const scorerOnly = scorerPages.indexOf(pid) !== -1;
     const adminOnly = adminPages.indexOf(pid) !== -1;
     if ((scorerOnly && !isScorer) || (adminOnly && !isAdmin)) {
@@ -3264,6 +3317,9 @@ function showPage(id) {
   if (id === 'scramble') {
     hydrateScrambleAdminUI();
   }
+  if (id === 'tournaments') {
+    hydrateTournamentsAdminUI();
+  }
   if (id === 'team-scorecard') {
     hydrateTeamScorecardUI();
   }
@@ -3389,6 +3445,207 @@ async function loadScrambleEvents() {
     scrambleEventsCache = [];
   }
   return scrambleEventsCache;
+}
+
+async function loadTournamentEvents() {
+  try {
+    const res = await fetchJson('/api/tournaments');
+    tournamentEventsCache = Array.isArray(res && res.events) ? res.events : [];
+  } catch (e) {
+    tournamentEventsCache = [];
+  }
+  return tournamentEventsCache;
+}
+
+async function hydrateTournamentsAdminUI() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  await loadPlayers();
+  await loadScheduleCache();
+  await loadTournamentEvents();
+
+  const weekSel = document.getElementById('trn-week');
+  if (weekSel) {
+    const cur = weekSel.value;
+    const trnWeeks = (scheduleCache || []).filter(w => (w.type || 'match') === 'tournament');
+    weekSel.innerHTML = '<option value="">Select week...</option>' + trnWeeks.map(w => `<option value="${w.week}">Week ${w.week} — ${w.title || 'Tournament'}</option>`).join('');
+    if (cur) weekSel.value = cur;
+  }
+
+  const eventSel = document.getElementById('trn-event');
+  if (eventSel) {
+    const cur = eventSel.value;
+    eventSel.innerHTML = '<option value="">Select event...</option>' + (tournamentEventsCache || []).map(e => `<option value="${e.id}">${e.name} — ${e.date}</option>`).join('');
+    if (cur) eventSel.value = cur;
+  }
+
+  const playerSel = document.getElementById('trn-player');
+  if (playerSel) {
+    const cur = playerSel.value;
+    playerSel.innerHTML = '<option value="">Select player...</option>' + (playersCache || []).map(p => `<option value="${p.email}">${p.name}</option>`).join('');
+    if (cur) playerSel.value = cur;
+  }
+
+  if (eventSel && eventSel.value) {
+    await loadSelectedTournamentEvent();
+  } else {
+    const board = document.getElementById('trn-leaderboard');
+    if (board) board.innerHTML = '<tr><td colspan="4" style="padding:18px;color:#666;text-align:center">Select an event</td></tr>';
+  }
+}
+
+async function createTournamentFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('trn-week');
+  const nameEl = document.getElementById('trn-name');
+  const dateEl = document.getElementById('trn-date');
+  const scoringEl = document.getElementById('trn-scoring');
+  const week = weekEl && weekEl.value ? parseInt(weekEl.value, 10) : null;
+  const name = nameEl ? nameEl.value.trim() : '';
+  const date = dateEl ? dateEl.value : '';
+  const scoringType = scoringEl ? scoringEl.value : 'stroke_gross';
+
+  if (!date || !name) {
+    showToast('Name and date required');
+    return;
+  }
+
+  let course = '';
+  let teeTime = '';
+  if (week && scheduleCache && scheduleCache.length) {
+    const w = scheduleCache.find(x => (x.week || 0) === week);
+    course = w && w.course ? w.course : '';
+    teeTime = w && w.teeTime ? w.teeTime : '';
+  }
+
+  try {
+    const res = await fetchJson('/api/tournaments?action=create', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week, name, date, course, teeTime, scoringType })
+    });
+    showToast('Tournament created');
+    await loadTournamentEvents();
+    await hydrateTournamentsAdminUI();
+    const sel = document.getElementById('trn-event');
+    if (sel && res && res.event && res.event.id) {
+      sel.value = res.event.id;
+      await loadSelectedTournamentEvent();
+    }
+  } catch (e) {
+    showToast('Create failed');
+  }
+}
+
+async function loadSelectedTournamentEvent() {
+  const sel = document.getElementById('trn-event');
+  if (!sel || !sel.value) return;
+  try {
+    const res = await fetchJson('/api/tournaments?id=' + encodeURIComponent(sel.value));
+    activeTournamentEvent = res && res.event ? res.event : null;
+    hydrateTournamentScoreInputs();
+    buildTournamentLeaderboard();
+  } catch (e) {
+    activeTournamentEvent = null;
+  }
+}
+
+function hydrateTournamentScoreInputs() {
+  const grid = document.getElementById('trn-score-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (!activeTournamentEvent) return;
+  const playerSel = document.getElementById('trn-player');
+  const playerEmail = playerSel ? playerSel.value : '';
+  if (!playerEmail) return;
+  const existing = activeTournamentEvent.scores && activeTournamentEvent.scores[playerEmail] ? activeTournamentEvent.scores[playerEmail] : null;
+  const holes = existing && Array.isArray(existing.holes) ? existing.holes : new Array(18).fill('');
+  grid.innerHTML = Array.from({ length: 18 }).map((_, i) => {
+    const val = holes[i] === null || holes[i] === undefined ? '' : holes[i];
+    return `<div class="form-field"><label>H${i + 1}</label><input type="number" min="0" max="15" value="${val}" data-hole="${i}" /></div>`;
+  }).join('');
+}
+
+async function submitTournamentScoreFromUI() {
+  if (!currentUser || currentUser.role !== 'admin' || !activeTournamentEvent) {
+    showToast('Access denied');
+    return;
+  }
+  const playerSel = document.getElementById('trn-player');
+  const playerEmail = playerSel ? playerSel.value : '';
+  const grid = document.getElementById('trn-score-grid');
+  if (!playerEmail || !grid) {
+    showToast('Select a player');
+    return;
+  }
+  const holes = new Array(18).fill(null).map((_, i) => {
+    const el = grid.querySelector(`input[data-hole="${i}"]`);
+    return el ? (el.value === '' ? null : Number(el.value)) : null;
+  });
+  if (holes.some(v => v === null || !Number.isFinite(v))) {
+    showToast('Enter all 18 holes');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/tournaments?action=submit_score', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: activeTournamentEvent.id, playerEmail, holes })
+    });
+    activeTournamentEvent = res && res.event ? res.event : activeTournamentEvent;
+    showToast('Score submitted');
+    buildTournamentLeaderboard();
+  } catch (e) {
+    showToast('Submit failed');
+  }
+}
+
+function computeTournamentScore(event, playerEmail) {
+  const score = event && event.scores && event.scores[playerEmail] ? event.scores[playerEmail] : null;
+  const holes = score && Array.isArray(score.holes) ? score.holes : null;
+  if (!holes || holes.length !== 18) return null;
+
+  const scoringType = event && event.scoringType ? String(event.scoringType) : 'stroke_gross';
+  const sum = holes.reduce((a, b) => a + (Number(b) || 0), 0);
+
+  if (scoringType === 'stableford') {
+    // Treat inputs as per-hole points (higher is better)
+    return sum;
+  }
+
+  if (scoringType === 'stroke_net') {
+    const p = (playersCache || []).find(x => String(x.email || '').toLowerCase() === String(playerEmail || '').toLowerCase());
+    const h = p ? (p.handicap !== undefined ? p.handicap : p.hdcp) : 0;
+    const netAdj = Math.max(0, Math.round(Number(h) || 0));
+    return sum - netAdj;
+  }
+
+  // stroke_gross / best_ball: lower is better
+  return sum;
+}
+
+function buildTournamentLeaderboard() {
+  const body = document.getElementById('trn-leaderboard');
+  if (!body || !activeTournamentEvent) return;
+
+  const scoresObj = activeTournamentEvent.scores && typeof activeTournamentEvent.scores === 'object' ? activeTournamentEvent.scores : {};
+  const scoringType = activeTournamentEvent.scoringType ? String(activeTournamentEvent.scoringType) : 'stroke_gross';
+
+  const rows = Object.keys(scoresObj).map(email => {
+    const total = computeTournamentScore(activeTournamentEvent, email);
+    const submittedAt = scoresObj[email] ? scoresObj[email].submittedAt : null;
+    const p = (playersCache || []).find(x => String(x.email || '').toLowerCase() === String(email).toLowerCase());
+    return { email, name: p ? p.name : email, total, submittedAt };
+  }).filter(r => r.total !== null)
+    .sort((a, b) => scoringType === 'stableford' ? (b.total - a.total) : (a.total - b.total));
+
+  body.innerHTML = rows.map((r, i) => {
+    const dt = r.submittedAt ? new Date(r.submittedAt) : null;
+    const submitted = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('en-US') : '—';
+    return `<tr><td style="font-weight:900;color:var(--gold-dark)">${i + 1}</td><td>${escapeHtml(r.name)}</td><td style="font-weight:900;color:var(--green)">${escapeHtml(r.total)}</td><td>${escapeHtml(submitted)}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" style="padding:18px;color:#666;text-align:center">No scores submitted</td></tr>';
 }
 
 async function hydrateScrambleAdminUI() {
@@ -4366,7 +4623,7 @@ async function buildSchedule() {
             <div class="match-course">${courseLine}</div>
             ${pairsHtml}
           </div>
-          <span class="match-type type-${type}">${type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
+          <span class="match-type type-${type}">${type === 'scramble' ? '🔀 Scramble' : (type === 'tournament' ? '🏆 Tournament' : '⛳ Match')}</span>
         </div>
       `;
     }).join('');
@@ -4382,7 +4639,7 @@ async function buildSchedule() {
           <div class="match-title">${m.title}</div>
           <div class="match-course">${m.course}</div>
         </div>
-        <span class="match-type type-${m.type}">${m.type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
+        <span class="match-type type-${m.type}">${m.type === 'scramble' ? '🔀 Scramble' : (m.type === 'tournament' ? '🏆 Tournament' : '⛳ Match')}</span>
       </div>
     `).join('');
   }
