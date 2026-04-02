@@ -61,6 +61,7 @@
     inset: 0;
     background: none;
     pointer-events: none;
+    z-index: 0;
   }
 
   .login-grid-bg {
@@ -68,6 +69,7 @@
     inset: 0;
     display: none;
     pointer-events: none;
+    z-index: 0;
   }
 
   .login-box {
@@ -81,6 +83,7 @@
     padding: 48px 40px;
     box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,175,55,0.05);
     animation: loginFadeIn 0.6s ease forwards;
+    z-index: 1;
   }
 
   @keyframes loginFadeIn {
@@ -1140,9 +1143,9 @@
     <div class="demo-logins">
       <p>Quick Demo Login</p>
       <div class="demo-pills">
-        <div class="demo-pill" onclick="demoLogin('admin')">Admin</div>
-        <div class="demo-pill" onclick="demoLogin('scorer')">Scorer</div>
-        <div class="demo-pill" onclick="demoLogin('player')">Player</div>
+        <div class="demo-pill" id="demo-login-admin" onclick="demoLogin('admin')">Admin</div>
+        <div class="demo-pill" id="demo-login-scorer" onclick="demoLogin('scorer')">Scorer</div>
+        <div class="demo-pill" id="demo-login-player" onclick="demoLogin('player')">Player</div>
       </div>
     </div>
   </div>
@@ -1984,6 +1987,8 @@ const SCHEDULE_DATA = [
   { day: '15', month: 'Jul', title: 'Summer Scramble', course: 'Mud Run GC · 8:00 AM', type: 'scramble' },
 ];
 
+const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
+
 const PARS = [4, 3, 5, 4, 3, 4, 4, 3, 4];
 const PAR_TOTAL = PARS.reduce((a,b) => a+b, 0);
 let activeParsCache = PARS.slice();
@@ -2013,8 +2018,6 @@ let scheduleCache = [];
 let scrambleEventsCache = [];
 let activeScrambleEvent = null;
 let coursesCache = [];
-
-const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
 
 function getCourseByName(name) {
   const n = String(name || '').trim().toLowerCase();
@@ -2508,7 +2511,14 @@ function doSignup() {
 }
 
 function demoLogin(key) {
-  loginSuccess(USERS[key]);
+  const u = USERS && USERS[key] ? { ...USERS[key] } : null;
+  if (!u) return;
+  try {
+    localStorage.setItem('fc_demo_user', JSON.stringify({ ...u, demo: true, loggedInAt: new Date().toISOString() }));
+  } catch (e) {
+    // ignore
+  }
+  loginSuccess(u);
 }
 
 function loginSuccess(user) {
@@ -2523,7 +2533,11 @@ function loginSuccess(user) {
 
   applyRoleAccess(user.role);
 
-  initData();
+  try {
+    initData();
+  } catch (e) {
+    // keep login working even if a later feature throws
+  }
   showPage('dashboard');
 }
 
@@ -2539,6 +2553,15 @@ function doLogout() {
     ident.logout();
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const a = document.getElementById('demo-login-admin');
+  const s = document.getElementById('demo-login-scorer');
+  const p = document.getElementById('demo-login-player');
+  if (a) a.addEventListener('click', () => demoLogin('admin'));
+  if (s) s.addEventListener('click', () => demoLogin('scorer'));
+  if (p) p.addEventListener('click', () => demoLogin('player'));
+});
 
 async function setRoleForUser(email, role) {
   if (!currentUser || currentUser.role !== 'admin') {
