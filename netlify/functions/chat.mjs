@@ -5,6 +5,15 @@ function asInt(v) {
   return Number.isFinite(n) ? n : null
 }
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function normalizeEmail(v) {
   return String(v || '').trim().toLowerCase()
 }
@@ -28,8 +37,9 @@ async function listMessages(store, limit) {
 }
 
 export default async (req) => {
-  const store = getStore('chat')
   const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('chat', leagueId))
   const action = (url.searchParams.get('action') || '').toLowerCase()
 
   if (req.method === 'GET') {

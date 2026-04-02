@@ -1,5 +1,14 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function asInt(v) {
   const n = parseInt(v, 10)
   return Number.isFinite(n) ? n : null
@@ -68,10 +77,10 @@ function autoPair(players) {
 }
 
 export default async (req) => {
-  const store = getStore('pairings')
-  const playerStore = getStore('players')
-
   const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('pairings', leagueId))
+  const playerStore = getStore(leagueStoreName('players', leagueId))
   const week = asInt(url.searchParams.get('week'))
 
   if (req.method === 'GET') {

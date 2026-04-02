@@ -1,5 +1,14 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function normalizeId(v) {
   return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
 }
@@ -44,10 +53,11 @@ function sanitizeTees(tees) {
 }
 
 export default async (req) => {
-  const store = getStore('courses')
+  const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('courses', leagueId))
 
   if (req.method === 'GET') {
-    const url = new URL(req.url)
     const id = normalizeId(url.searchParams.get('id'))
     if (id) {
       const course = await store.get(`course-${id}`, { type: 'json' }).catch(() => null)
@@ -92,7 +102,6 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
-    const url = new URL(req.url)
     const id = normalizeId(url.searchParams.get('id'))
     if (!id) return new Response('Missing id', { status: 400 })
     await store.delete(`course-${id}`).catch(() => null)

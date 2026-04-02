@@ -1915,6 +1915,27 @@
         <div class="card">
           <div class="card-header"><div class="card-title">General Settings</div></div>
           <div class="card-body">
+            <div class="card" style="margin:0 0 16px">
+              <div class="card-header"><div class="card-title">League (Multi-League)</div></div>
+              <div class="card-body">
+                <div style="font-size:12px;color:#666;margin-bottom:10px">Active league affects players, schedule, scores, chat, announcements, payments, and events.</div>
+                <div class="form-grid" style="margin-bottom:12px">
+                  <div class="form-field">
+                    <label>Active League</label>
+                    <select id="league-select" onchange="setActiveLeagueFromUI()"></select>
+                  </div>
+                  <div class="form-field">
+                    <label>New League Name</label>
+                    <input id="league-new-name" placeholder="e.g. Thursday Night League" />
+                  </div>
+                  <div class="form-field" style="display:flex;align-items:flex-end">
+                    <button class="btn-sm" style="width:100%" onclick="createLeagueFromUI()">Create League</button>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:#333">Current: <b id="league-active-label">Default</b></div>
+              </div>
+            </div>
+
             <div class="form-grid" style="margin-bottom:20px">
               <div class="form-field"><label>League Name</label><input id="ls-league-name" placeholder="Fairway Command League" /></div>
               <div class="form-field"><label>Season Start</label><input id="ls-season-start" type="date" /></div>
@@ -2257,12 +2278,104 @@ async function identitySignup(email, pass, meta) {
 }
 
 async function fetchJson(url, options) {
-  const res = await fetch(url, options);
+  const leagueId = getActiveLeagueId();
+  const finalUrl = attachLeagueIdToUrl(url, leagueId);
+  const res = await fetch(finalUrl, options);
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(text || ('Request failed: ' + res.status));
   }
   return await res.json();
+}
+
+function getActiveLeagueId() {
+  const v = localStorage.getItem('fc_league_id');
+  const s = String(v || '').trim();
+  return s || null;
+}
+
+function attachLeagueIdToUrl(url, leagueId) {
+  if (!leagueId) return url;
+  const u = String(url || '');
+  if (!u.startsWith('/api/')) return url;
+  if (u.includes('leagueId=')) return url;
+  const sep = u.includes('?') ? '&' : '?';
+  return u + sep + 'leagueId=' + encodeURIComponent(leagueId);
+}
+
+async function hydrateLeagueSelectorUI() {
+  const sel = document.getElementById('league-select');
+  const label = document.getElementById('league-active-label');
+  if (!sel || !label) return;
+
+  let leagues = [];
+  try {
+    const res = await fetchJson('/api/leagues');
+    leagues = Array.isArray(res && res.leagues) ? res.leagues : [];
+  } catch (e) {
+    leagues = [];
+  }
+
+  const active = getActiveLeagueId();
+  const cur = sel.value;
+
+  const opts = ['<option value="">Default (legacy)</option>'];
+  for (const l of leagues) {
+    if (!l || !l.id) continue;
+    opts.push(`<option value="${escapeHtml(l.id)}">${escapeHtml(l.name || l.id)}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+
+  // prefer active league, else preserve current
+  if (active !== null) sel.value = active;
+  else if (cur) sel.value = cur;
+
+  const activeObj = leagues.find(l => String(l.id) === String(sel.value)) || null;
+  label.textContent = sel.value ? (activeObj && activeObj.name ? activeObj.name : sel.value) : 'Default';
+}
+
+async function setActiveLeagueFromUI() {
+  const sel = document.getElementById('league-select');
+  if (!sel) return;
+  const v = String(sel.value || '').trim();
+  if (!v) localStorage.removeItem('fc_league_id');
+  else localStorage.setItem('fc_league_id', v);
+
+  await hydrateLeagueSelectorUI();
+
+  // Reload key data caches for the selected league
+  await initData();
+  showToast('League switched');
+}
+
+async function createLeagueFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const input = document.getElementById('league-new-name');
+  const name = input ? input.value.trim() : '';
+  if (!name) {
+    showToast('Enter league name');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/leagues', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    if (input) input.value = '';
+    const league = res && res.league ? res.league : null;
+    if (league && league.id) {
+      localStorage.setItem('fc_league_id', league.id);
+    }
+    await hydrateLeagueSelectorUI();
+    await initData();
+    showToast('League created');
+  } catch (e) {
+    showToast('Create failed');
+  }
 }
 
 function escapeHtml(s) {
@@ -2881,6 +2994,7 @@ function toggleCustomFormulaUI() {
 
 async function loadLeagueSettings() {
   if (!currentUser || currentUser.role !== 'admin') return;
+  await hydrateLeagueSelectorUI();
   try {
     const res = await fetchJson('/api/league-settings');
     const s = res && res.settings ? res.settings : null;

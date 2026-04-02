@@ -1,5 +1,14 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
@@ -10,8 +19,9 @@ function asInt(v) {
 }
 
 export default async (req) => {
-  const store = getStore('handicap-history')
   const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('handicap-history', leagueId))
 
   if (req.method === 'GET') {
     const email = normalizeEmail(url.searchParams.get('email'))

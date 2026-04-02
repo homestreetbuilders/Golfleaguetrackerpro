@@ -1,5 +1,14 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function asInt(v) {
   const n = parseInt(v, 10)
   return Number.isFinite(n) ? n : null
@@ -18,8 +27,9 @@ function normalizeScope(v) {
 }
 
 export default async (req) => {
-  const store = getStore('announcements')
   const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('announcements', leagueId))
 
   if (req.method === 'GET') {
     const limit = asInt(url.searchParams.get('limit')) || 20

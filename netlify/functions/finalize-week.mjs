@@ -1,5 +1,14 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
@@ -65,12 +74,14 @@ function computeHandicapFromScores(scores, formula) {
 }
 
 export default async (req) => {
-  const store = getStore('scores')
-  const lockStore = getStore('scorecard-locks')
-  const playerStore = getStore('players')
-  const formulaStore = getStore('handicap-config')
-  const overrideStore = getStore('handicap-overrides')
-  const histStore = getStore('handicap-history')
+  const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('scores', leagueId))
+  const lockStore = getStore(leagueStoreName('scorecard-locks', leagueId))
+  const playerStore = getStore(leagueStoreName('players', leagueId))
+  const formulaStore = getStore(leagueStoreName('handicap-config', leagueId))
+  const overrideStore = getStore(leagueStoreName('handicap-overrides', leagueId))
+  const histStore = getStore(leagueStoreName('handicap-history', leagueId))
 
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 })

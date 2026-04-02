@@ -1,5 +1,14 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function asInt(v) {
   const n = parseInt(v, 10)
   return Number.isFinite(n) ? n : null
@@ -33,11 +42,12 @@ async function listWeeks(store) {
 }
 
 export default async (req) => {
-  const store = getStore('schedule')
-  const rainoutStore = getStore('rainouts')
-  const proposalStore = getStore('schedule-proposals')
-
   const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('schedule', leagueId))
+  const rainoutStore = getStore(leagueStoreName('rainouts', leagueId))
+  const proposalStore = getStore(leagueStoreName('schedule-proposals', leagueId))
+
   const action = (url.searchParams.get('action') || '').toLowerCase()
 
   if (req.method === 'POST') {

@@ -1,5 +1,14 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
@@ -8,8 +17,8 @@ function normalizeCategoryId(id) {
   return String(id || '').trim()
 }
 
-async function getSettings() {
-  const settingsStore = getStore('payment-settings')
+async function getSettings(leagueId) {
+  const settingsStore = getStore(leagueStoreName('payment-settings', leagueId))
   const settings = await settingsStore.get('settings', { type: 'json' }).catch(() => null)
   const categories = Array.isArray(settings && settings.categories) ? settings.categories : []
   return { settings: settings || null, categories }
@@ -51,7 +60,9 @@ function computeSummaryForPlayer(player, categories, txns) {
 }
 
 export default async (req) => {
-  const store = getStore('payments')
+  const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('payments', leagueId))
 
   if (req.method === 'POST') {
     const body = await req.json().catch(() => null)
@@ -82,13 +93,12 @@ export default async (req) => {
   }
 
   if (req.method === 'GET') {
-    const url = new URL(req.url)
     const email = normalizeEmail(url.searchParams.get('email'))
     const summary = url.searchParams.get('summary') === '1'
     const analytics = url.searchParams.get('analytics') === '1'
     const categoryIdFilter = normalizeCategoryId(url.searchParams.get('categoryId'))
 
-    const { categories } = await getSettings()
+    const { categories } = await getSettings(leagueId)
     const activeCategories = categories.filter(c => c && c.active)
 
     if (analytics) {
@@ -108,7 +118,7 @@ export default async (req) => {
         totals[e] = (totals[e] || 0) + amt
       }
 
-      const playerStore = getStore('players')
+      const playerStore = getStore(leagueStoreName('players', leagueId))
       const { blobs: playerBlobs } = await playerStore.list().catch(() => ({ blobs: [] }))
       const players = {}
       for (const blob of playerBlobs || []) {
@@ -140,7 +150,7 @@ export default async (req) => {
         return Response.json({ categories: activeCategories, transactions: txns })
       }
 
-      const playerStore = getStore('players')
+      const playerStore = getStore(leagueStoreName('players', leagueId))
       const player = await playerStore.get(`player-${email}`, { type: 'json' }).catch(() => null)
       const p = {
         name: (player && player.name) || email,
@@ -150,7 +160,7 @@ export default async (req) => {
       return Response.json({ summary: s })
     }
 
-    const playerStore = getStore('players')
+    const playerStore = getStore(leagueStoreName('players', leagueId))
     const { blobs: playerBlobs } = await playerStore.list().catch(() => ({ blobs: [] }))
     const players = []
     for (const blob of playerBlobs || []) {

@@ -1,8 +1,19 @@
 import { getStore } from '@netlify/blobs'
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 export default async (req) => {
-  const store = getStore('scores')
-  const lockStore = getStore('scorecard-locks')
+  const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('scores', leagueId))
+  const lockStore = getStore(leagueStoreName('scorecard-locks', leagueId))
 
   if (req.method === 'POST') {
     const body = await req.json()
@@ -65,7 +76,6 @@ export default async (req) => {
   }
 
   if (req.method === 'GET') {
-    const url = new URL(req.url)
     const player = url.searchParams.get('player')
     const week = url.searchParams.get('week')
     const includeDraft = url.searchParams.get('includeDraft') === '1'

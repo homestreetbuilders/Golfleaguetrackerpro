@@ -5,15 +5,25 @@ function asInt(v) {
   return Number.isFinite(n) ? n : null
 }
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
 
 export default async (req) => {
-  const store = getStore('substitutes')
+  const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('substitutes', leagueId))
 
   if (req.method === 'GET') {
-    const url = new URL(req.url)
     const week = asInt(url.searchParams.get('week'))
     const playerEmail = normalizeEmail(url.searchParams.get('playerEmail'))
 
@@ -59,7 +69,6 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
-    const url = new URL(req.url)
     const week = asInt(url.searchParams.get('week'))
     const playerEmail = normalizeEmail(url.searchParams.get('playerEmail'))
     if (!week || !playerEmail) {

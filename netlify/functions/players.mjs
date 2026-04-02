@@ -4,13 +4,23 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 export default async (req) => {
-  const store = getStore('players')
+  const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('players', leagueId))
 
   if (req.method === 'GET') {
-    const url = new URL(req.url)
     const includeRoles = url.searchParams.get('includeRoles') === '1'
-    const roleStore = includeRoles ? getStore('user-roles') : null
+    const roleStore = includeRoles ? getStore(leagueStoreName('user-roles', leagueId)) : null
 
     const { blobs } = await store.list().catch(() => ({ blobs: [] }))
     const players = []
@@ -70,7 +80,6 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
-    const url = new URL(req.url)
     const email = normalizeEmail(url.searchParams.get('email'))
     if (!email) {
       return new Response('Missing email', { status: 400 })
