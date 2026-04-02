@@ -2427,6 +2427,34 @@ async function createLeagueFromUI() {
   }
 }
 
+async function suggestPairingsForWeek() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekSel = document.getElementById('pair-week');
+  const week = weekSel && weekSel.value ? parseInt(weekSel.value, 10) : null;
+  if (!week) {
+    showToast('Select week');
+    return;
+  }
+
+  try {
+    const res = await fetchJson('/api/ai-pairing?action=suggest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week, createdBy: currentUser.email || currentUser.name || null })
+    });
+    const sug = res && res.suggestion ? res.suggestion : null;
+    const groups = sug && Array.isArray(sug.groups) ? sug.groups : [];
+    pairingsEditorState = { week, groups: groups.map(g => ({ id: g.id || ('g-' + Date.now()), players: Array.isArray(g.players) ? g.players : [] })) };
+    renderPairingsEditor(pairingsEditorState.groups);
+    showToast('Suggestion loaded');
+  } catch (e) {
+    showToast('Suggest failed');
+  }
+}
+
 function escapeHtml(s) {
   return String(s || '')
     .replaceAll('&', '&amp;')
@@ -6284,4 +6312,5 @@ function showToast(msg) {
 }
 </script>
 </body>
+</html>
 </html>
