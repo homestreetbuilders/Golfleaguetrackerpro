@@ -1331,6 +1331,18 @@
           </div>
         </div>
 
+        <div class="card" style="animation-delay:0.4s">
+          <div class="card-header">
+            <div class="card-title">Weather Channel</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn-sm" onclick="loadWeatherWidget()">Refresh</button>
+            </div>
+          </div>
+          <div class="card-body" id="weather-body" style="color:#333;line-height:1.5">
+            <div style="color:#666">Loading…</div>
+          </div>
+        </div>
+
         <div class="card" style="animation-delay:0.45s">
           <div class="card-header">
             <div class="card-title">Announcements</div>
@@ -1791,6 +1803,11 @@
               <div class="form-field"><label>Course Name</label><input id="cm-name" placeholder="Mud Run Golf Club" /></div>
             </div>
             <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field" style="grid-column:1/-1"><label>Address (for Weather Channel)</label><input id="cm-address" placeholder="123 Golf Rd, City, ST" /></div>
+              <div class="form-field"><label>Latitude (optional)</label><input id="cm-lat" type="number" step="0.0001" placeholder="e.g. 41.1234" /></div>
+              <div class="form-field"><label>Longitude (optional)</label><input id="cm-lon" type="number" step="0.0001" placeholder="e.g. -81.1234" /></div>
+            </div>
+            <div class="form-grid" style="margin-bottom:12px">
               <div class="form-field"><label>Tee 1 Name</label><input id="cm-tee-1" placeholder="White" /></div>
               <div class="form-field"><label>Tee 2 Name</label><input id="cm-tee-2" placeholder="Blue" /></div>
               <div class="form-field"><label>Tee 3 Name</label><input id="cm-tee-3" placeholder="Red" /></div>
@@ -2138,6 +2155,83 @@ function escapeHtml(s) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function getNextScheduledWeek(weeks) {
+  const list = Array.isArray(weeks) ? weeks : [];
+  const today = new Date();
+  const todayIso = today.toISOString().slice(0, 10);
+  const upcoming = list
+    .filter(w => w && w.date)
+    .slice()
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+  for (const w of upcoming) {
+    const d = String(w.date).slice(0, 10);
+    if (d >= todayIso) return w;
+  }
+  return upcoming.length ? upcoming[upcoming.length - 1] : null;
+}
+
+async function loadWeatherWidget() {
+  const body = document.getElementById('weather-body');
+  if (!body) return;
+  body.innerHTML = '<div style="color:#666">Loading…</div>';
+
+  let week = null;
+  try {
+    const res = await fetchJson('/api/schedule');
+    const weeks = Array.isArray(res && res.weeks) ? res.weeks : [];
+    week = getNextScheduledWeek(weeks);
+  } catch (e) {
+    week = null;
+  }
+
+  if (!week || !week.date || !week.course) {
+    body.innerHTML = '<div style="color:#666">No upcoming match to forecast.</div>';
+    return;
+  }
+
+  const course = getCourseByName(week.course);
+  const date = String(week.date).slice(0, 10);
+  const name = week.course;
+  const address = course && course.address ? course.address : '';
+  const lat = course && course.lat !== null && course.lat !== undefined ? course.lat : '';
+  const lon = course && course.lon !== null && course.lon !== undefined ? course.lon : '';
+
+  const qp = new URLSearchParams();
+  qp.set('date', date);
+  qp.set('name', name);
+  if (address) qp.set('address', address);
+  if (lat !== '') qp.set('lat', String(lat));
+  if (lon !== '') qp.set('lon', String(lon));
+
+  try {
+    const res = await fetchJson('/api/weather?' + qp.toString());
+    const w = res && res.weather ? res.weather : null;
+    if (!w) throw new Error('No weather');
+
+    const tempLine = (w.tempMaxF !== null && w.tempMinF !== null)
+      ? `${Math.round(w.tempMinF)}°–${Math.round(w.tempMaxF)}°F`
+      : '—';
+    const precipLine = (w.precipProbMax !== null && w.precipProbMax !== undefined)
+      ? `${Math.round(Number(w.precipProbMax))}% precip`
+      : '—';
+    const windLine = (w.windMaxMph !== null && w.windMaxMph !== undefined)
+      ? `${Math.round(Number(w.windMaxMph))} mph wind`
+      : '—';
+    const locationLine = address ? address : (w.latitude && w.longitude ? `${Number(w.latitude).toFixed(4)}, ${Number(w.longitude).toFixed(4)}` : '');
+
+    body.innerHTML = `
+      <div style="font-weight:900;color:var(--gold-dark);margin-bottom:6px">${escapeHtml(week.title || ('Week ' + week.week))} — ${escapeHtml(name)}</div>
+      <div style="font-size:13px;color:#444;margin-bottom:2px"><b>${escapeHtml(date)}</b> · ${escapeHtml(w.summary || '—')}</div>
+      <div style="font-size:13px;color:#444;margin-bottom:2px">${escapeHtml(tempLine)} · ${escapeHtml(precipLine)} · ${escapeHtml(windLine)}</div>
+      ${locationLine ? `<div style="font-size:12px;color:#666;margin-top:6px">${escapeHtml(locationLine)}</div>` : ''}
+      <div style="font-size:11px;color:#999;margin-top:6px">Source: Open‑Meteo</div>
+    `;
+  } catch (e) {
+    body.innerHTML = '<div style="color:#666">Weather unavailable.</div>';
+  }
 }
 
 function canSeeAnnouncement(scope) {
@@ -2792,6 +2886,7 @@ function showPage(id) {
   if (navItem) navItem.classList.add('active');
   if (id === 'dashboard') {
     loadAnnouncements();
+    loadWeatherWidget();
   }
   if (id === 'profile') {
     loadMyProfile();
@@ -2880,6 +2975,7 @@ function initData() {
   buildLeaderboard();
   buildSchedule();
   loadAnnouncements();
+  loadWeatherWidget();
   loadPaymentSettings();
   buildPaymentTable();
   loadMyPayments();
@@ -4270,12 +4366,18 @@ function loadCourseIntoEditor() {
   const id = sel ? sel.value : '';
   const course = (coursesCache || []).find(c => String(c.id) === String(id)) || null;
   const nameEl = document.getElementById('cm-name');
+  const addrEl = document.getElementById('cm-address');
+  const latEl = document.getElementById('cm-lat');
+  const lonEl = document.getElementById('cm-lon');
   const t1 = document.getElementById('cm-tee-1');
   const t2 = document.getElementById('cm-tee-2');
   const t3 = document.getElementById('cm-tee-3');
   const t4 = document.getElementById('cm-tee-4');
 
   if (nameEl) nameEl.value = course ? (course.name || '') : '';
+  if (addrEl) addrEl.value = course ? (course.address || '') : '';
+  if (latEl) latEl.value = (course && course.lat !== null && course.lat !== undefined) ? String(course.lat) : '';
+  if (lonEl) lonEl.value = (course && course.lon !== null && course.lon !== undefined) ? String(course.lon) : '';
   const tees = course && Array.isArray(course.tees) ? course.tees : [];
   if (t1) t1.value = tees[0] ? tees[0].name : '';
   if (t2) t2.value = tees[1] ? tees[1].name : '';
@@ -4306,11 +4408,17 @@ function newCourseEditor() {
   const sel = document.getElementById('cm-course');
   if (sel) sel.value = '';
   const nameEl = document.getElementById('cm-name');
+  const addrEl = document.getElementById('cm-address');
+  const latEl = document.getElementById('cm-lat');
+  const lonEl = document.getElementById('cm-lon');
   const t1 = document.getElementById('cm-tee-1');
   const t2 = document.getElementById('cm-tee-2');
   const t3 = document.getElementById('cm-tee-3');
   const t4 = document.getElementById('cm-tee-4');
   if (nameEl) nameEl.value = '';
+  if (addrEl) addrEl.value = '';
+  if (latEl) latEl.value = '';
+  if (lonEl) lonEl.value = '';
   if (t1) t1.value = 'White';
   if (t2) t2.value = 'Blue';
   if (t3) t3.value = 'Red';
@@ -4335,12 +4443,18 @@ async function saveCourseFromUI() {
   }
   const sel = document.getElementById('cm-course');
   const nameEl = document.getElementById('cm-name');
+  const addrEl = document.getElementById('cm-address');
+  const latEl = document.getElementById('cm-lat');
+  const lonEl = document.getElementById('cm-lon');
   const name = nameEl ? nameEl.value.trim() : '';
   if (!name) {
     showToast('Course name required');
     return;
   }
   const id = sel && sel.value ? sel.value : null;
+  const address = addrEl ? addrEl.value.trim() : '';
+  const lat = latEl && String(latEl.value).trim() !== '' ? Number(latEl.value) : null;
+  const lon = lonEl && String(lonEl.value).trim() !== '' ? Number(lonEl.value) : null;
   const t1 = document.getElementById('cm-tee-1');
   const t2 = document.getElementById('cm-tee-2');
   const t3 = document.getElementById('cm-tee-3');
@@ -4363,7 +4477,7 @@ async function saveCourseFromUI() {
     const res = await fetchJson('/api/courses', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id, name, tees, holes })
+      body: JSON.stringify({ id, name, address, lat, lon, tees, holes })
     });
     showToast('Course saved');
     await loadCourses();

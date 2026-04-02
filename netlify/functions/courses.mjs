@@ -74,9 +74,14 @@ export default async (req) => {
     const id = normalizeId(body && body.id ? body.id : name)
     if (!id) return new Response('Invalid id', { status: 400 })
 
+    const lat = body && body.lat !== undefined && body.lat !== null && String(body.lat).trim() !== '' ? parseFloat(body.lat) : null
+    const lon = body && body.lon !== undefined && body.lon !== null && String(body.lon).trim() !== '' ? parseFloat(body.lon) : null
     const course = {
       id,
       name,
+      address: body && body.address ? String(body.address).trim() : '',
+      lat: Number.isFinite(lat) ? lat : null,
+      lon: Number.isFinite(lon) ? lon : null,
       tees: sanitizeTees(body && body.tees),
       holes: sanitizeHoles(body && body.holes),
       updatedAt: new Date().toISOString()
