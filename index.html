@@ -2939,10 +2939,56 @@ function getNextScheduledWeek(weeks) {
   return upcoming.length ? upcoming[upcoming.length - 1] : null;
 }
 
+function weatherIconForCode(code) {
+  const c = Number(code);
+  if (!Number.isFinite(c)) return '⛅';
+  if (c === 0) return '☀️';
+  if (c === 1 || c === 2) return '⛅';
+  if (c === 3) return '☁️';
+  if (c === 45 || c === 48) return '🌫️';
+  if (c === 51 || c === 53 || c === 55 || c === 56 || c === 57) return '🌦️';
+  if (c === 61 || c === 63 || c === 65 || c === 66 || c === 67 || c === 80 || c === 81 || c === 82) return '🌧️';
+  if (c === 71 || c === 73 || c === 75 || c === 77 || c === 85 || c === 86) return '🌨️';
+  if (c === 95 || c === 96 || c === 99) return '⛈️';
+  return '⛅';
+}
+
 async function loadWeatherWidget() {
   const body = document.getElementById('weather-body');
   if (!body) return;
   body.innerHTML = '<div style="color:#666">Loading…</div>';
+
+  async function renderHourly({ label, name, address, lat, lon }) {
+    const qp = new URLSearchParams();
+    if (name) qp.set('name', name);
+    if (address) qp.set('address', address);
+    if (lat !== '' && lat !== null && lat !== undefined) qp.set('lat', String(lat));
+    if (lon !== '' && lon !== null && lon !== undefined) qp.set('lon', String(lon));
+
+    const res = await fetchJson('/api/weather-hourly?' + qp.toString());
+    const hours = Array.isArray(res && res.hours) ? res.hours : [];
+    if (!hours.length) throw new Error('No hourly');
+
+    const row = hours.slice(0, 6).map(h => {
+      const dt = h && h.time ? new Date(h.time) : null;
+      const hr = dt && !isNaN(dt.getTime()) ? dt.toLocaleString('en-US', { hour: 'numeric' }) : '—';
+      const icon = weatherIconForCode(h && h.weatherCode);
+      const t = (h && h.tempF !== null && h.tempF !== undefined) ? Math.round(Number(h.tempF)) + '°' : '—';
+      return `
+        <div style="flex:1;min-width:64px;border:1px solid rgba(212,175,55,0.18);border-radius:10px;padding:8px;background:#fff;text-align:center">
+          <div style="font-size:11px;font-weight:900;color:var(--gold-dark);margin-bottom:4px">${escapeHtml(hr)}</div>
+          <div style="font-size:18px;line-height:1">${icon}</div>
+          <div style="font-size:12px;color:#222;font-weight:800;margin-top:4px">${escapeHtml(t)}</div>
+        </div>
+      `;
+    }).join('');
+
+    body.innerHTML = `
+      <div style="font-weight:900;color:var(--gold-dark);margin-bottom:8px">${escapeHtml(label || 'Current & Next 5 Hours')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${row}</div>
+      <div style="font-size:11px;color:#999;margin-top:8px">Source: Open‑Meteo</div>
+    `;
+  }
 
   async function renderCurrent({ label, name, address, lat, lon }) {
     const qp = new URLSearchParams();
@@ -2976,7 +3022,11 @@ async function loadWeatherWidget() {
       const lat = pos && pos.coords ? pos.coords.latitude : null;
       const lon = pos && pos.coords ? pos.coords.longitude : null;
       if (lat !== null && lat !== undefined && lon !== null && lon !== undefined) {
-        await renderCurrent({ label: 'Current Weather (Your Area)', name: '', address: '', lat, lon });
+        try {
+          await renderHourly({ label: 'Current & Next 5 Hours (Your Area)', name: '', address: '', lat, lon });
+        } catch (e) {
+          await renderCurrent({ label: 'Current Weather (Your Area)', name: '', address: '', lat, lon });
+        }
         return;
       }
     }
@@ -2994,7 +3044,11 @@ async function loadWeatherWidget() {
     const address = course && course.address ? course.address : '';
     const lat = course && course.lat !== null && course.lat !== undefined ? course.lat : '';
     const lon = course && course.lon !== null && course.lon !== undefined ? course.lon : '';
-    await renderCurrent({ label: name ? ('Current Weather — ' + name) : 'Current Weather', name, address, lat, lon });
+    try {
+      await renderHourly({ label: name ? ('Current & Next 5 Hours — ' + name) : 'Current & Next 5 Hours', name, address, lat, lon });
+    } catch (e) {
+      await renderCurrent({ label: name ? ('Current Weather — ' + name) : 'Current Weather', name, address, lat, lon });
+    }
     return;
   } catch (e) {
     body.innerHTML = '<div style="color:#666">Weather unavailable.</div>';
