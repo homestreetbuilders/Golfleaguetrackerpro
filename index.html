@@ -1158,6 +1158,9 @@
         <div class="nav-item" onclick="showPage('team-scorecard')">
           <span class="nav-icon">🧾</span> Team Scorecard
         </div>
+        <div class="nav-item" onclick="showPage('guides')">
+          <span class="nav-icon">📖</span> Guides
+        </div>
         <div class="nav-item" onclick="showPage('analytics')">
           <span class="nav-icon">📈</span> My Analytics
         </div>
@@ -1393,6 +1396,17 @@
             <div class="form-field" style="margin-bottom:12px"><label>Title</label><input id="season-title-input" /></div>
             <div class="form-field" style="margin-bottom:12px"><label>Content</label><textarea id="season-content-input" style="width:100%;min-height:220px;background:#fff;border:1px solid #ccc;border-radius:3px;padding:10px 14px;color:#1a1a1a;font-family:'Barlow',sans-serif;font-size:14px;outline:none;"></textarea></div>
             <button class="btn-sm btn-green" onclick="saveSeasonOverviewFromUI()">Save Season Overview</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GUIDES ── -->
+      <div class="page" id="page-guides">
+        <div class="page-header"><h2>Guides</h2><p>Role-based instructions</p></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title" id="guides-title">Instructions</div></div>
+          <div class="card-body">
+            <div id="guides-body" style="white-space:pre-wrap;color:#333;line-height:1.55"></div>
           </div>
         </div>
       </div>
@@ -2033,6 +2047,78 @@ async function resolveUserRole(user) {
   }
 }
 
+function renderRoleGuides() {
+  const titleEl = document.getElementById('guides-title');
+  const bodyEl = document.getElementById('guides-body');
+  if (!titleEl || !bodyEl) return;
+
+  const role = currentUser && currentUser.role ? String(currentUser.role) : 'player';
+
+  const guides = {
+    admin: {
+      title: 'Admin Guide',
+      body: `
+Admin responsibilities
+- Manage schedule (create/edit weeks, approve rainout shifts)
+- Manage courses (18 holes, tee yardages, par, hole handicap indexes)
+- Manage payments (set categories + amounts, record payments, view optional pot analytics)
+- Manage users (roles, players, substitutes)
+- Configure league settings (handicap formula + season info)
+
+Weekly workflow (recommended)
+1) Update Schedule for the week (date/course/tee time/type)
+2) Ensure Course data is correct (tees + hole HCP indexes)
+3) If needed, assign substitutes before printing scorecards
+4) Print scorecards / confirm matchups
+5) After play: finalize the week (batch finalize) and review leaderboard
+
+Troubleshooting
+- If a scorecard is locked incorrectly, unlock it in Enter Scores (Admin unlock button)
+- If stroke dots look wrong, verify the course hole handicap indexes for the selected side
+      `.trim()
+    },
+    scorer: {
+      title: 'Scorer Guide',
+      body: `
+Scorer responsibilities
+- Enter scores (Front/Back side, hole-by-hole)
+- Mark optional round stats: Fairways, GIR, Scramble-Par, Penalty strokes
+- Save Draft while a round is in progress, Submit & Lock when verified
+
+Best practices
+- Select the correct Course + Tee + Side before entering scores
+- Verify totals and confirm with players before locking
+- Use the Scorecard printout to cross-check hole-by-hole entries
+
+Notes
+- If the league is in Live mode, leaderboard updates as you save
+- If in Batch mode, leaderboard updates after round finalization
+      `.trim()
+    },
+    player: {
+      title: 'Player Guide',
+      body: `
+Player overview
+- View Schedule for weekly matches and scramble events
+- Check Leaderboard and filter by week/date range
+- Use My Analytics to review your scoring trend and round stats
+- View Payments to see dues, balances, and payment history
+- Update My Profile for contact info
+
+Scramble events
+- Use Team Scorecard to view scramble results and leaderboard
+
+Payments
+- Optional pots (50/50, skins, gross skins) are tracked separately from dues
+      `.trim()
+    }
+  };
+
+  const g = guides[role] || guides.player;
+  titleEl.textContent = g.title;
+  bodyEl.textContent = g.body;
+}
+
 async function saveScheduleWeekFromUI() {
   if (!currentUser || currentUser.role !== 'admin') {
     showToast('Access denied');
@@ -2330,6 +2416,9 @@ function showPage(id) {
   }
   if (id === 'courses') {
     hydrateCoursesAdminUI();
+  }
+  if (id === 'guides') {
+    renderRoleGuides();
   }
   if (id === 'rainouts') {
     buildSchedule();
