@@ -1457,6 +1457,22 @@
           </div>
         </div>
 
+        <div class="card" id="pairings-admin-card" style="display:none">
+          <div class="card-header"><div class="card-title">Pairings (Admin)</div></div>
+          <div class="card-body">
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field"><label>Week</label><select id="pair-week" onchange="loadPairingsIntoEditor()"></select></div>
+              <div class="form-field" style="display:flex;align-items:flex-end"><button class="btn-sm" style="width:100%" onclick="autoGeneratePairingsForWeek()">Auto Generate</button></div>
+              <div class="form-field" style="display:flex;align-items:flex-end"><button class="btn-sm btn-green" style="width:100%" onclick="savePairingsFromUI()">Save Pairings</button></div>
+            </div>
+            <div id="pairings-editor"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <button class="btn-sm" onclick="addPairingGroupFromUI()">Add Group</button>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:#666">Groups are used to show who plays with whom for the selected week (2–4 players per group).</div>
+          </div>
+        </div>
+
         <div class="card" id="schedule-proposal-card" style="display:none">
           <div class="card-header"><div class="card-title">Pending Schedule Adjustment</div></div>
           <div class="card-body">
@@ -2193,6 +2209,168 @@ function escapeHtml(s) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function hydratePairingsAdminUI(weeks, pairings) {
+  const weekSel = document.getElementById('pair-week');
+  if (!weekSel) return;
+  const list = Array.isArray(weeks) ? weeks.slice().sort((a, b) => (a.week || 0) - (b.week || 0)) : [];
+  const cur = weekSel.value;
+  weekSel.innerHTML = '<option value="">Select week...</option>' +
+    list.map(w => `<option value="${w.week}">Week ${w.week} — ${escapeHtml(w.title || 'Match')}</option>`).join('');
+  if (cur) weekSel.value = cur;
+  if (!weekSel.value && list.length) weekSel.value = String(list[0].week);
+  loadPairingsIntoEditor(pairings);
+}
+
+function getPlayerOptionsHtml(selectedEmail) {
+  const players = (playersCache && playersCache.length) ? playersCache : [];
+  const se = selectedEmail ? String(selectedEmail).toLowerCase() : '';
+  const opts = ['<option value="">—</option>'];
+  for (const p of players) {
+    if (!p || !p.email) continue;
+    const em = String(p.email).toLowerCase();
+    const sel = se && em === se ? 'selected' : '';
+    opts.push(`<option value="${escapeHtml(p.email)}" ${sel}>${escapeHtml(p.name)} (${escapeHtml(p.email)})</option>`);
+  }
+  return opts.join('');
+}
+
+function renderPairingsEditor(groups) {
+  const box = document.getElementById('pairings-editor');
+  if (!box) return;
+  const gs = Array.isArray(groups) ? groups : [];
+  box.innerHTML = gs.map((g, idx) => {
+    const ps = Array.isArray(g.players) ? g.players : [];
+    const p1 = ps[0] || {};
+    const p2 = ps[1] || {};
+    const p3 = ps[2] || {};
+    const p4 = ps[3] || {};
+    return `
+      <div class="card" style="margin:0 0 12px">
+        <div class="card-header">
+          <div class="card-title">Group ${idx + 1}</div>
+          <button class="btn-sm" onclick="removePairingGroup(${idx})">Remove</button>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-field"><label>Player 1</label><select class="pair-player" data-group="${idx}" data-slot="0">${getPlayerOptionsHtml(p1.email || '')}</select></div>
+            <div class="form-field"><label>Player 2</label><select class="pair-player" data-group="${idx}" data-slot="1">${getPlayerOptionsHtml(p2.email || '')}</select></div>
+            <div class="form-field"><label>Player 3 (optional)</label><select class="pair-player" data-group="${idx}" data-slot="2">${getPlayerOptionsHtml(p3.email || '')}</select></div>
+            <div class="form-field"><label>Player 4 (optional)</label><select class="pair-player" data-group="${idx}" data-slot="3">${getPlayerOptionsHtml(p4.email || '')}</select></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') || '<div style="padding:10px 0;color:#666">No groups yet. Click Add Group.</div>';
+}
+
+let pairingsEditorState = { week: null, groups: [] };
+
+async function loadPairingsIntoEditor(prefetchedPairings) {
+  const weekSel = document.getElementById('pair-week');
+  if (!weekSel || !weekSel.value) return;
+  const week = parseInt(weekSel.value, 10);
+  if (!week) return;
+
+  let pairing = null;
+  const pool = Array.isArray(prefetchedPairings) ? prefetchedPairings : null;
+  if (pool) {
+    pairing = pool.find(p => (p.week || 0) === week) || null;
+  } else {
+    try {
+      const res = await fetchJson('/api/pairings?week=' + encodeURIComponent(week));
+      pairing = res && res.pairing ? res.pairing : null;
+    } catch (e) {
+      pairing = null;
+    }
+  }
+
+  const groups = pairing && Array.isArray(pairing.groups) ? pairing.groups : [];
+  pairingsEditorState = { week, groups: groups.map(g => ({ id: g.id || ('g-' + Date.now()), players: Array.isArray(g.players) ? g.players : [] })) };
+  renderPairingsEditor(pairingsEditorState.groups);
+}
+
+function addPairingGroupFromUI() {
+  if (!pairingsEditorState || !pairingsEditorState.week) {
+    showToast('Select week');
+    return;
+  }
+  pairingsEditorState.groups.push({ id: 'g-' + Date.now(), players: [] });
+  renderPairingsEditor(pairingsEditorState.groups);
+}
+
+function removePairingGroup(idx) {
+  if (!pairingsEditorState || !Array.isArray(pairingsEditorState.groups)) return;
+  pairingsEditorState.groups.splice(idx, 1);
+  renderPairingsEditor(pairingsEditorState.groups);
+}
+
+async function autoGeneratePairingsForWeek() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekSel = document.getElementById('pair-week');
+  const week = weekSel && weekSel.value ? parseInt(weekSel.value, 10) : null;
+  if (!week) {
+    showToast('Select week');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/pairings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'auto', week, updatedBy: currentUser.email || currentUser.name || null })
+    });
+    const pairing = res && res.pairing ? res.pairing : null;
+    pairingsEditorState = { week, groups: pairing && Array.isArray(pairing.groups) ? pairing.groups : [] };
+    renderPairingsEditor(pairingsEditorState.groups);
+    showToast('Pairings generated');
+    buildSchedule();
+  } catch (e) {
+    showToast('Auto-generate failed');
+  }
+}
+
+async function savePairingsFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekSel = document.getElementById('pair-week');
+  const week = weekSel && weekSel.value ? parseInt(weekSel.value, 10) : null;
+  if (!week) {
+    showToast('Select week');
+    return;
+  }
+  const selects = Array.from(document.querySelectorAll('select.pair-player'));
+  const groupCount = pairingsEditorState && Array.isArray(pairingsEditorState.groups) ? pairingsEditorState.groups.length : 0;
+  const groups = [];
+  for (let gi = 0; gi < groupCount; gi++) {
+    const players = [];
+    for (let si = 0; si < 4; si++) {
+      const sel = selects.find(s => parseInt(s.dataset.group, 10) === gi && parseInt(s.dataset.slot, 10) === si);
+      const email = sel ? String(sel.value || '').trim() : '';
+      if (!email) continue;
+      const p = (playersCache || []).find(x => String(x.email || '').toLowerCase() === email.toLowerCase());
+      if (p) players.push({ name: p.name, email: p.email });
+    }
+    if (players.length >= 2) {
+      groups.push({ id: (pairingsEditorState.groups[gi] && pairingsEditorState.groups[gi].id) ? pairingsEditorState.groups[gi].id : ('g-' + Date.now() + '-' + gi), players });
+    }
+  }
+  try {
+    await fetchJson('/api/pairings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week, groups, updatedBy: currentUser.email || currentUser.name || null })
+    });
+    showToast('Pairings saved');
+    buildSchedule();
+  } catch (e) {
+    showToast('Save failed');
+  }
 }
 
 function hydrateHandicapAdminUI() {
@@ -4082,9 +4260,30 @@ async function buildSchedule() {
     const rainouts = Array.isArray(res.rainouts) ? res.rainouts : [];
     const pendingProposal = res.pendingProposal || null;
 
+    let pairings = [];
+    let substitutes = [];
+    try {
+      const pr = await fetchJson('/api/pairings');
+      pairings = Array.isArray(pr && pr.pairings) ? pr.pairings : [];
+    } catch (e) {
+      pairings = [];
+    }
+    try {
+      const sr = await fetchJson('/api/substitutes');
+      substitutes = Array.isArray(sr && sr.substitutes) ? sr.substitutes : [];
+    } catch (e) {
+      substitutes = [];
+    }
+
     const isAdmin = currentUser && currentUser.role === 'admin';
     const adminCard = document.getElementById('schedule-admin-card');
     if (adminCard) adminCard.style.display = isAdmin ? '' : 'none';
+
+    const pairCard = document.getElementById('pairings-admin-card');
+    if (pairCard) pairCard.style.display = isAdmin ? '' : 'none';
+    if (isAdmin) {
+      hydratePairingsAdminUI(weeks, pairings);
+    }
 
     const propCard = document.getElementById('schedule-proposal-card');
     const propBody = document.getElementById('schedule-proposal-body');
@@ -4135,6 +4334,26 @@ async function buildSchedule() {
       const rain = rainouts.find(r => (r.week || 0) === (w.week || 0));
       const rainStatus = rain ? (rain.status || 'pending') : null;
       const badge = rain ? `<span style="margin-left:10px;font-size:11px;font-weight:900;color:${rainStatus==='approved'?'#4CAF50':rainStatus==='rejected'?'#f66':'var(--gold-dark)'};text-transform:uppercase">Rainout ${rainStatus}</span>` : '';
+
+      const pairing = (pairings || []).find(p => (p.week || 0) === (w.week || 0)) || null;
+      const groups = pairing && Array.isArray(pairing.groups) ? pairing.groups : [];
+      const pairsHtml = groups.length ? `
+        <div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(212,175,55,0.18);border-radius:4px;background:rgba(212,175,55,0.06)">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900;margin-bottom:8px">Pairings</div>
+          ${groups.map((g, gi) => {
+            const ps = Array.isArray(g.players) ? g.players : [];
+            const names = ps.map(p => {
+              const email = p && p.email ? String(p.email).toLowerCase() : '';
+              const sub = email ? (substitutes || []).find(s => (s.week || 0) === (w.week || 0) && String(s.playerEmail || '').toLowerCase() === email) : null;
+              if (sub && sub.substituteName) {
+                return `${escapeHtml(p.name)} <span style="color:#666">(Sub: ${escapeHtml(sub.substituteName)})</span>`;
+              }
+              return escapeHtml(p.name);
+            }).filter(Boolean);
+            return `<div style="font-size:13px;color:#1a1a1a;margin-bottom:${gi === groups.length - 1 ? '0' : '6px'}"><b>Group ${gi + 1}:</b> ${names.join(' vs ')}</div>`;
+          }).join('')}
+        </div>
+      ` : '';
       return `
         <div class="match-row">
           <div class="match-date">
@@ -4145,6 +4364,7 @@ async function buildSchedule() {
           <div class="match-info">
             <div class="match-title">${title}${badge}</div>
             <div class="match-course">${courseLine}</div>
+            ${pairsHtml}
           </div>
           <span class="match-type type-${type}">${type === 'scramble' ? '🔀 Scramble' : '⛳ Match'}</span>
         </div>
