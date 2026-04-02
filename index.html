@@ -2305,6 +2305,8 @@ let activeTournamentEvent = null;
 let bracketsCache = [];
 let activeBracket = null;
 let coursesCache = [];
+let featuresCache = { shotTracking: false };
+let scoreShots = new Array(9).fill('');
 
 function getCourseByName(name) {
   const n = String(name || '').trim().toLowerCase();
@@ -3733,6 +3735,9 @@ function closeSidebar() {
 // ═══════════════════════════════
 function initData() {
   buildScoreGrid();
+  loadFeatures().then(() => {
+    buildScoreGrid();
+  }).catch(() => {});
   loadPlayers().then(() => {
     hydratePlayerSelectors();
     hydrateScoreEntryUI();
@@ -3762,6 +3767,18 @@ function initData() {
   loadCourses().then(() => {
     hydrateCourseSelectors();
   });
+}
+
+async function loadFeatures() {
+  try {
+    const res = await fetchJson('/api/features');
+    featuresCache = {
+      shotTracking: !!(res && res.shotTracking)
+    };
+  } catch (e) {
+    featuresCache = { shotTracking: false };
+  }
+  return featuresCache;
 }
 
 async function loadSeasonOverview() {
@@ -5211,12 +5228,19 @@ function buildScoreGrid() {
   activeParsCache = pars.slice();
   activeHcpIdxCache = hcpIdx.slice();
 
+  const shotEnabled = !!(featuresCache && featuresCache.shotTracking);
   grid.innerHTML = pars.map((par, i) => `
     <div class="hole-input-wrap">
       <div class="hole-num">H${i+1}</div>
       <div class="hole-par">Par ${par}</div>
-      <input type="number" class="hole-score" min="1" max="15" placeholder="—"
-        oninput="updateScore(${i}, this.value)" />
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" class="hole-score" min="1" max="15" placeholder="—"
+          value="${scores[i] !== '' && scores[i] !== null && scores[i] !== undefined ? String(scores[i]) : ''}"
+          oninput="updateScore(${i}, this.value)" />
+        ${shotEnabled ? `<input type="number" class="hole-score" min="0" max="30" placeholder="Shots"
+          value="${scoreShots[i] !== '' && scoreShots[i] !== null && scoreShots[i] !== undefined ? String(scoreShots[i]) : ''}"
+          oninput="updateHoleShots(${i}, this.value)" />` : ''}
+      </div>
     </div>
   `).join('');
 
@@ -5274,6 +5298,42 @@ function updateScore(idx, val) {
     const parTot = (activeParsCache || PARS).reduce((a,b) => a+b, 0);
     const diff = total - parTot;
     document.getElementById('score-diff').textContent = (diff > 0 ? '+' : '') + diff + ' vs par ' + parTot;
+  }
+}
+
+function updateHoleShots(idx, val) {
+  scoreShots[idx] = val ? parseInt(val) : '';
+}
+
+async function loadLatestScoreIntoEntry() {
+  const { week, player } = getScoreEntryValues();
+  if (!week || !player) return;
+  try {
+    const res = await fetchJson('/api/scores?week=' + encodeURIComponent(week) + '&player=' + encodeURIComponent(player) + '&includeDraft=1');
+    const rows = Array.isArray(res && res.scores) ? res.scores : [];
+    const latest = rows.sort((a, b) => (Date.parse(b.submittedAt || '') || 0) - (Date.parse(a.submittedAt || '') || 0))[0] || null;
+
+    const holes = latest && Array.isArray(latest.holes) ? latest.holes : null;
+    scores = Array.isArray(holes) && holes.length === 9 ? holes.map(v => (v === null || v === undefined || v === '' ? '' : Number(v))) : new Array(9).fill('');
+
+    const shotEnabled = !!(featuresCache && featuresCache.shotTracking);
+    const shots = latest && Array.isArray(latest.shots) ? latest.shots : null;
+    scoreShots = (shotEnabled && Array.isArray(shots) && shots.length === 9)
+      ? shots.map(v => (v === null || v === undefined || v === '' ? '' : Number(v)))
+      : new Array(9).fill('');
+
+    scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
+    if (latest && latest.stats && Array.isArray(latest.stats.perHole) && latest.stats.perHole.length === 9) {
+      scoreStatsPerHole = latest.stats.perHole.map(s => ({
+        fw: !!(s && s.fairwayHit),
+        gir: !!(s && s.gir),
+        scramblePar: !!(s && s.scramblePar)
+      }));
+    }
+
+    buildScoreGrid();
+  } catch (e) {
+    // ignore
   }
 }
 
@@ -5349,6 +5409,8 @@ async function saveScore(status) {
     return;
   }
   const grossTotal = filled.reduce((a,b) => a + b, 0);
+  const shotEnabled = !!(featuresCache && featuresCache.shotTracking);
+  const shotsPayload = shotEnabled ? scoreShots.map(v => (v === '' ? null : Number(v))) : null;
 
   const penEl = document.getElementById('score-penalties');
   const penaltyStrokes = penEl ? Number(penEl.value) : 0;
@@ -5373,6 +5435,7 @@ async function saveScore(status) {
         tee,
         side: side === 'back' ? 'back' : 'front',
         holes: scores,
+        shots: shotsPayload,
         grossTotal,
         handicapSnapshot: Number.isFinite(handicapSnapshot) ? handicapSnapshot : null,
         stats: {
@@ -5400,6 +5463,7 @@ async function saveScore(status) {
       buildLeaderboard();
     }
     scores = new Array(9).fill('');
+    scoreShots = new Array(9).fill('');
     scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
     const penEl2 = document.getElementById('score-penalties');
     if (penEl2) penEl2.value = '0';
@@ -5435,8 +5499,8 @@ function hydrateScoreEntryUI() {
     dateEl.value = d.toISOString().slice(0, 10);
   }
 
-  if (weekEl) weekEl.addEventListener('change', refreshScorecardLockStatus);
-  if (playerEl) playerEl.addEventListener('change', refreshScorecardLockStatus);
+  if (weekEl) weekEl.addEventListener('change', async () => { await refreshScorecardLockStatus(); await loadLatestScoreIntoEntry(); });
+  if (playerEl) playerEl.addEventListener('change', async () => { await refreshScorecardLockStatus(); await loadLatestScoreIntoEntry(); });
   if (courseEl) courseEl.addEventListener('change', () => { hydrateCourseTeeForScoreEntry(); buildScoreGrid(); });
   if (teeEl) teeEl.addEventListener('change', () => { buildScoreGrid(); });
   if (sideEl && !sideEl.value) sideEl.value = 'front';

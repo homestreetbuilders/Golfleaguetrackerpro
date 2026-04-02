@@ -35,6 +35,7 @@ export default async (req) => {
 
     const status = body.status === 'final' ? 'final' : 'draft'
     const holes = Array.isArray(body.holes) ? body.holes : null
+    const shots = Array.isArray(body.shots) ? body.shots : null
     const grossTotal = typeof body.grossTotal === 'number' ? body.grossTotal : null
     const tee = body.tee || null
     const course = body.course || null
@@ -56,6 +57,7 @@ export default async (req) => {
       tee,
       side,
       holes,
+      shots,
       grossTotal,
       handicapSnapshot,
       stats: stats ? { perHole: perHole || null, round: round || null } : null,
