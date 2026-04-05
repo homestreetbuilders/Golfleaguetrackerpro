@@ -956,8 +956,10 @@
   @media print {
     @page { size: 5in 7in; margin: 0; }
     body { background: #fff; }
-    #login-screen, #app, .toast { display: none !important; }
-    .print-only { display: block !important; }
+    #login-screen, .toast { display: none !important; }
+    #app { display: block !important; }
+    #app > * { display: none !important; }
+    #app .print-only { display: block !important; }
     .print-only .scorecard-card { box-shadow: none; border-radius: 0; }
   }
 
