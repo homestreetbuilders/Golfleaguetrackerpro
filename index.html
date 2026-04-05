@@ -2841,6 +2841,7 @@ function renderScheduleMatchesEditor(matches) {
       };
       if (aEl) aEl.addEventListener('input', onUpdate);
       if (bEl) bEl.addEventListener('input', onUpdate);
+      onUpdate();
     });
   }
 }
@@ -2873,6 +2874,14 @@ async function addScheduleMatchRowFromUI() {
   try {
     await loadPlayers();
     await loadTeams();
+  } catch (e) {
+    // ignore
+  }
+
+  // Re-render any existing rows so player name hints resolve after async loads.
+  try {
+    const cur = readScheduleMatchesFromUI();
+    if (cur && cur.length) renderScheduleMatchesEditor(cur);
   } catch (e) {
     // ignore
   }
@@ -6183,10 +6192,14 @@ async function printAllScorecardsForWeek() {
   if (!html.trim()) {
     showToast('Nothing to print for that week');
     root.innerHTML = '';
+    const preview = document.getElementById('scorecard-preview');
+    if (preview) preview.innerHTML = '';
     return;
   }
 
   root.innerHTML = html;
+  const preview = document.getElementById('scorecard-preview');
+  if (preview) preview.innerHTML = html;
   setTimeout(() => window.print(), 50);
 }
 
