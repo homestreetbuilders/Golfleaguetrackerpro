@@ -2709,6 +2709,22 @@ function getActiveLeagueId() {
   return s || null;
 }
 
+function setLastSelectedWeek(week) {
+  const w = Number(week) || 0;
+  if (!w) return;
+  try { localStorage.setItem('fc_last_week', String(w)); } catch (e) {}
+}
+
+function getLastSelectedWeek() {
+  try {
+    const v = localStorage.getItem('fc_last_week');
+    const w = v ? parseInt(v, 10) : 0;
+    return w ? w : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function attachLeagueIdToUrl(url, leagueId) {
   if (!leagueId) return url;
   const u = String(url || '');
@@ -5527,6 +5543,10 @@ function hydrateScorecardUI() {
     weekEl.innerHTML = '<option value="">Select week...</option>' +
       Array.from({ length: 20 }).map((_, i) => `<option value="${i + 1}">Week ${i + 1}</option>`).join('');
   }
+  if (weekEl && !weekEl.value) {
+    const last = getLastSelectedWeek();
+    if (last) weekEl.value = String(last);
+  }
   if (playerEl && playerEl.options.length === 0) {
     const names = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
     playerEl.innerHTML = '<option value="">Select player...</option>' +
@@ -5543,6 +5563,10 @@ function hydrateScorecardUI() {
   }
 
   if (weekEl && playerEl) {
+    weekEl.addEventListener('change', () => {
+      const w = parseInt(weekEl.value || '0', 10);
+      if (w) setLastSelectedWeek(w);
+    });
     weekEl.addEventListener('change', loadSubForSelectedScorecard);
     playerEl.addEventListener('change', loadSubForSelectedScorecard);
   }
@@ -5990,11 +6014,31 @@ async function printAllScorecardsForWeek() {
   const courseEl = document.getElementById('sc-course');
   const teeEl = document.getElementById('sc-tee');
   const sideEl = document.getElementById('sc-side');
-  const week = weekEl ? parseInt(weekEl.value || '', 10) : null;
+  let week = weekEl ? parseInt(weekEl.value || '', 10) : null;
+  if (!week && weekEl) {
+    const last = getLastSelectedWeek();
+    if (last) {
+      weekEl.value = String(last);
+      week = last;
+    }
+  }
+  if (!week) {
+    const scoreWeekEl = document.getElementById('score-week');
+    const schWeekEl = document.getElementById('sch-week');
+    const w2 = scoreWeekEl && scoreWeekEl.value ? parseInt(scoreWeekEl.value, 10) : null;
+    const w3 = schWeekEl && schWeekEl.value ? parseInt(schWeekEl.value, 10) : null;
+    const pick = w2 || w3 || null;
+    if (pick && weekEl) {
+      weekEl.value = String(pick);
+      week = pick;
+      setLastSelectedWeek(week);
+    }
+  }
   if (!week) {
     showToast('Select week');
     return;
   }
+  setLastSelectedWeek(week);
 
   await loadPlayers().catch(() => {});
   await loadTeams().catch(() => {});
@@ -6665,7 +6709,11 @@ function hydrateScoreEntryUI() {
   const teeEl = document.getElementById('score-tee');
   if (weekEl && weekEl.options.length === 0) {
     weekEl.innerHTML = '<option value="">Select week...</option>' +
-      Array.from({ length: 10 }).map((_,i) => `<option value="${i+1}">Week ${i+1}</option>`).join('');
+      Array.from({ length: 20 }).map((_,i) => `<option value="${i+1}">Week ${i+1}</option>`).join('');
+  }
+  if (weekEl && !weekEl.value) {
+    const last = getLastSelectedWeek();
+    if (last) weekEl.value = String(last);
   }
   if (playerEl && playerEl.options.length <= 1) {
     const names = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
@@ -6680,6 +6728,7 @@ function hydrateScoreEntryUI() {
   if (weekEl) weekEl.addEventListener('change', async () => {
     try {
       const w = parseInt(weekEl.value || '0', 10);
+      if (w) setLastSelectedWeek(w);
       if (w && sideEl) {
         await loadScheduleCache();
         const sw = (scheduleCache || []).find(x => (x && x.week) === w) || null;
