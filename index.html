@@ -2783,9 +2783,9 @@ function renderScheduleMatchesEditor(matches) {
             const b = m && m.teamB ? Number(m.teamB) : null;
             return `
               <tr>
-                <td><select class="sch-team-a">${teamOptionsForSelect(a)}</select></td>
+                <td><input class="sch-team-a" type="number" min="1" placeholder="Team #" value="${a ? escapeHtml(a) : ''}" style="width:100%" /></td>
                 <td style="text-align:center;font-weight:900;color:#666">vs</td>
-                <td><select class="sch-team-b">${teamOptionsForSelect(b)}</select></td>
+                <td><input class="sch-team-b" type="number" min="1" placeholder="Team #" value="${b ? escapeHtml(b) : ''}" style="width:100%" /></td>
                 <td><button class="btn-sm" onclick="removeScheduleMatchRowFromUI(${idx})">Remove</button></td>
               </tr>
             `;
@@ -2804,8 +2804,8 @@ function readScheduleMatchesFromUI() {
   const used = new Set();
   const out = [];
   for (const r of rows) {
-    const aEl = r.querySelector('select.sch-team-a');
-    const bEl = r.querySelector('select.sch-team-b');
+    const aEl = r.querySelector('input.sch-team-a');
+    const bEl = r.querySelector('input.sch-team-b');
     const a = aEl && aEl.value ? parseInt(aEl.value, 10) : null;
     const b = bEl && bEl.value ? parseInt(bEl.value, 10) : null;
     if (!a || !b || a === b) continue;
