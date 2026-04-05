@@ -5983,12 +5983,15 @@ async function printAllScorecardsForWeek() {
   await loadTeams().catch(() => {});
   await loadScheduleCache().catch(() => {});
 
+  const activeLeagueId = getActiveLeagueId();
+
   const sw = (scheduleCache || []).find(x => (x && x.week) === week) || null;
   let matches = sw && Array.isArray(sw.matches) ? sw.matches : [];
   if (!matches.length) {
     try {
       const res = await fetchJson('/api/match-scorecards?week=' + encodeURIComponent(week));
       const scorecards = res && Array.isArray(res.scorecards) ? res.scorecards : [];
+      showToast('Saved match scorecards found: ' + scorecards.length + ' (league: ' + (activeLeagueId || 'default') + ')');
       matches = scorecards.map(sc => ({
         teamA: sc && sc.teamA ? Number(sc.teamA) : 0,
         teamB: sc && sc.teamB ? Number(sc.teamB) : 0
@@ -5998,7 +6001,7 @@ async function printAllScorecardsForWeek() {
     }
   }
   if (!matches.length) {
-    showToast('No team matchups for that week (schedule not set, and no match scorecards saved)');
+    showToast('No team matchups for that week (league: ' + (activeLeagueId || 'default') + '). Set schedule matches or verify you are in the same league you saved to.');
     return;
   }
 
