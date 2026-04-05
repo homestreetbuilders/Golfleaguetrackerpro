@@ -48,7 +48,10 @@ function sanitizePlayers(list) {
       ? holesRaw.map(v => (v === '' || v === null || v === undefined ? null : Number(v)))
       : null
 
-    const grossTotal = typeof p.grossTotal === 'number' ? p.grossTotal : (holes ? holes.reduce((a, b) => a + (Number(b) || 0), 0) : null)
+    const holesComplete = !!(holes && holes.length === 9 && holes.every(v => typeof v === 'number' && Number.isFinite(v)))
+    const grossTotal = typeof p.grossTotal === 'number'
+      ? p.grossTotal
+      : (holesComplete ? holes.reduce((a, b) => a + (Number(b) || 0), 0) : null)
 
     out.push({ email, name, holes, grossTotal: typeof grossTotal === 'number' ? grossTotal : null })
   }

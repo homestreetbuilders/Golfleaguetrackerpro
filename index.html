@@ -2553,22 +2553,25 @@ async function saveMatchScorecard(status) {
   }
 
   const playersPayload = activeMatchPlayers.map(p => {
-    const holes = matchHolesByEmail[p.email] || [];
-    const filled = holes.filter(v => v !== '' && v !== null && v !== undefined);
-    const ok = filled.length === 9;
-    const gross = ok ? filled.reduce((a, b) => a + (Number(b) || 0), 0) : null;
+    const holes = Array.isArray(matchHolesByEmail[p.email]) ? matchHolesByEmail[p.email] : new Array(9).fill('');
+    const holes9 = holes.length === 9 ? holes : new Array(9).fill('');
+    const holesNormalized = holes9.map(v => (v === '' || v === null || v === undefined ? null : Number(v)));
+    const complete = holesNormalized.every(v => typeof v === 'number' && Number.isFinite(v));
+    const gross = complete ? holesNormalized.reduce((a, b) => a + (Number(b) || 0), 0) : null;
     return {
       email: p.email,
       name: p.name,
-      holes: ok ? holes.map(v => (v === '' ? null : Number(v))) : null,
+      holes: holesNormalized,
       grossTotal: gross
     };
   });
 
-  const missing = playersPayload.some(p => !p.holes || p.holes.length !== 9 || p.holes.some(v => v === null || !Number.isFinite(v)));
-  if (missing) {
-    showToast('Enter all 9 holes for all 4 players');
-    return;
+  if (status === 'final') {
+    const missing = playersPayload.some(p => !Array.isArray(p.holes) || p.holes.length !== 9 || p.holes.some(v => v === null || !Number.isFinite(v)));
+    if (missing) {
+      showToast('Enter all 9 holes for all 4 players');
+      return;
+    }
   }
 
   const res = await fetchJsonAllowError('/api/match-scorecards', {
@@ -6005,41 +6008,53 @@ async function printAllScorecardsForWeek() {
   const hcpIdx = nine && Array.isArray(nine.hcpIdx) && nine.hcpIdx.length === 9 ? nine.hcpIdx : HOLE_HCP_INDEX;
 
   let html = '';
-  for (const m of matches) {
-    const a = m && m.teamA ? Number(m.teamA) : 0;
-    const b = m && m.teamB ? Number(m.teamB) : 0;
-    if (!a || !b) continue;
+  try {
+    for (const m of matches) {
+      const a = m && m.teamA ? Number(m.teamA) : 0;
+      const b = m && m.teamB ? Number(m.teamB) : 0;
+      if (!a || !b) continue;
 
-    const aPair = computeLowHighPair(resolveTeamPlayers(a));
-    const bPair = computeLowHighPair(resolveTeamPlayers(b));
-    const lowA = aPair.low;
-    const highA = aPair.high;
-    const lowB = bPair.low;
-    const highB = bPair.high;
+      const aPair = computeLowHighPair(resolveTeamPlayers(a));
+      const bPair = computeLowHighPair(resolveTeamPlayers(b));
+      const lowA = aPair.low;
+      const highA = aPair.high;
+      const lowB = bPair.low;
+      const highB = bPair.high;
 
-    const order = [
-      { left: lowA, right: lowB, label: 'Low HCP' },
-      { left: highA, right: highB, label: 'High HCP' }
-    ];
+      const order = [
+        { left: lowA, right: lowB, label: 'Low HCP' },
+        { left: highA, right: highB, label: 'High HCP' }
+      ];
 
-    for (const slot of order) {
-      const pL = slot.left;
-      const pR = slot.right;
-      if (!pL || !pR) continue;
+      for (const slot of order) {
+        const pL = slot.left;
+        const pR = slot.right;
+        if (!pL || !pR) continue;
 
-      const lStrokes = getStrokesForNine(pL.hi);
-      const rStrokes = getStrokesForNine(pR.hi);
-      const lDots = allocateStrokeDots(lStrokes, hcpIdx);
-      const rDots = allocateStrokeDots(rStrokes, hcpIdx);
+        const lStrokes = getStrokesForNine(pL.hi);
+        const rStrokes = getStrokesForNine(pR.hi);
+        const lDots = allocateStrokeDots(lStrokes, hcpIdx);
+        const rDots = allocateStrokeDots(rStrokes, hcpIdx);
 
-      const header = `${matchupLabel(a)} vs ${matchupLabel(b)} — ${slot.label}`;
-      html += '<div class="scorecard-pair">' +
-        buildScorecardHtml({ week, date, playerName: header + ' | ' + pL.name, course, tee, hi: pL.hi, strokes: lStrokes, dots: lDots, holes: null }) +
-        '</div>';
-      html += '<div class="scorecard-pair">' +
-        buildScorecardHtml({ week, date, playerName: header + ' | ' + pR.name, course, tee, hi: pR.hi, strokes: rStrokes, dots: rDots, holes: null }) +
-        '</div>';
+        const header = `${matchupLabel(a)} vs ${matchupLabel(b)} — ${slot.label}`;
+        html += '<div class="scorecard-pair">' +
+          buildScorecardHtml({ week, date, playerName: header + ' | ' + pL.name, course, tee, hi: pL.hi, strokes: lStrokes, dots: lDots, holes: null }) +
+          '</div>';
+        html += '<div class="scorecard-pair">' +
+          buildScorecardHtml({ week, date, playerName: header + ' | ' + pR.name, course, tee, hi: pR.hi, strokes: rStrokes, dots: rDots, holes: null }) +
+          '</div>';
+      }
     }
+  } catch (e) {
+    showToast('Print build failed');
+    root.innerHTML = '';
+    return;
+  }
+
+  if (!html.trim()) {
+    showToast('Nothing to print for that week');
+    root.innerHTML = '';
+    return;
   }
 
   root.innerHTML = html;
