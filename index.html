@@ -1716,6 +1716,10 @@
                 <label>Week</label>
                 <select id="score-week"></select>
               </div>
+              <div class="form-field" style="flex:2;min-width:220px">
+                <label>Matchup</label>
+                <select id="score-matchup"><option value="">Select matchup...</option></select>
+              </div>
               <div class="form-field" style="flex:1;min-width:140px">
                 <label>Date</label>
                 <input id="score-date" type="date" />
@@ -1738,6 +1742,7 @@
                 <select id="score-side"><option value="front">Front 9</option><option value="back">Back 9</option></select>
               </div>
             </div>
+            <div id="match-player-tabs" style="display:none;margin:-10px 0 14px"></div>
             <div id="score-lock-row" style="display:flex;gap:10px;align-items:center;margin:-6px 0 16px">
               <div style="font-size:12px;color:#666">Status: <span id="score-lock-status">—</span></div>
               <button class="btn-sm" id="btn-unlock" style="display:none" onclick="unlockScorecard()">Unlock</button>
@@ -1749,8 +1754,8 @@
               <div style="font-family:'Bebas Neue';font-size:28px;color:var(--gold-dark)">Total: <span id="score-total">—</span></div>
               <div style="font-size:13px;color:#666" id="score-diff"></div>
               <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-                <button class="btn-sm" onclick="saveScore('draft')">Save Draft</button>
-                <button class="btn-sm btn-green" onclick="saveScore('final')">Submit &amp; Lock</button>
+                <button class="btn-sm" onclick="saveScoreOrMatch('draft')">Save Draft</button>
+                <button class="btn-sm btn-green" onclick="saveScoreOrMatch('final')">Submit &amp; Lock</button>
               </div>
             </div>
           </div>
@@ -1790,6 +1795,7 @@
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
               <button class="btn-sm" onclick="generateScorecardPreview()">Preview</button>
               <button class="btn-sm btn-green" onclick="printScorecard()">🖨️ Print 5×7</button>
+              <button class="btn-sm" onclick="printAllScorecardsForWeek()">🖨️ Print All Week Matches</button>
               <div style="font-size:12px;color:#666">Stroke dots are computed from player handicap + hole handicap indexes</div>
             </div>
             <div class="scorecard-preview-wrap">
@@ -2368,6 +2374,235 @@ let scores = new Array(9).fill('');
 let scoreShots = new Array(9).fill('');
 let scorePutts = new Array(9).fill('');
 let scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
+
+let activeMatchScorecard = null;
+let activeMatchPlayers = [];
+let activeMatchPlayerEmail = '';
+let matchHolesByEmail = {};
+
+function getScoreMatchupValues() {
+  const weekEl = document.getElementById('score-week');
+  const matchupEl = document.getElementById('score-matchup');
+  const v = matchupEl ? String(matchupEl.value || '') : '';
+  const parts = v.split('-vs-');
+  const teamA = parts && parts.length === 2 ? parseInt(parts[0], 10) : null;
+  const teamB = parts && parts.length === 2 ? parseInt(parts[1], 10) : null;
+  return {
+    week: weekEl ? parseInt(weekEl.value, 10) : null,
+    teamA: Number.isFinite(teamA) ? teamA : null,
+    teamB: Number.isFinite(teamB) ? teamB : null
+  };
+}
+
+function matchupLabel(teamNumber) {
+  const n = Number(teamNumber) || 0;
+  if (!n) return '';
+  const t = (teamsCache || []).find(x => (Number(x && x.teamNumber) || 0) === n) || null;
+  const e1 = t && t.player1Email ? String(t.player1Email) : '';
+  const e2 = t && t.player2Email ? String(t.player2Email) : '';
+  const p1 = e1 ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === e1.toLowerCase()) : null;
+  const p2 = e2 ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === e2.toLowerCase()) : null;
+  const name1 = p1 && p1.name ? p1.name : e1;
+  const name2 = p2 && p2.name ? p2.name : e2;
+  const names = [name1, name2].filter(Boolean).join(' / ');
+  return names ? `Team ${n} (${names})` : `Team ${n}`;
+}
+
+async function hydrateMatchupSelectorForWeek() {
+  const sel = document.getElementById('score-matchup');
+  if (!sel) return;
+  const cur = sel.value;
+  const { week } = getScoreMatchupValues();
+  if (!week) {
+    sel.innerHTML = '<option value="">Select matchup...</option>';
+    return;
+  }
+  try {
+    await loadScheduleCache();
+    await loadTeams();
+    const w = (scheduleCache || []).find(x => (x && x.week) === week) || null;
+    const matches = w && Array.isArray(w.matches) ? w.matches : [];
+    sel.innerHTML = '<option value="">Select matchup...</option>' + matches.map(m => {
+      const a = m && m.teamA ? Number(m.teamA) : 0;
+      const b = m && m.teamB ? Number(m.teamB) : 0;
+      if (!a || !b) return '';
+      const value = `${a}-vs-${b}`;
+      const label = `${matchupLabel(a)} vs ${matchupLabel(b)}`;
+      return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
+    }).join('');
+    if (cur) sel.value = cur;
+    if (!sel.value && matches.length) {
+      const m0 = matches[0];
+      if (m0 && m0.teamA && m0.teamB) sel.value = `${m0.teamA}-vs-${m0.teamB}`;
+    }
+  } catch (e) {
+    sel.innerHTML = '<option value="">Select matchup...</option>';
+  }
+}
+
+function getMatchPlayersForTeams(teamA, teamB) {
+  const out = [];
+  const tA = (teamsCache || []).find(t => Number(t && t.teamNumber) === Number(teamA)) || null;
+  const tB = (teamsCache || []).find(t => Number(t && t.teamNumber) === Number(teamB)) || null;
+  const emails = [];
+  if (tA && tA.player1Email) emails.push({ team: teamA, email: tA.player1Email });
+  if (tA && tA.player2Email) emails.push({ team: teamA, email: tA.player2Email });
+  if (tB && tB.player1Email) emails.push({ team: teamB, email: tB.player1Email });
+  if (tB && tB.player2Email) emails.push({ team: teamB, email: tB.player2Email });
+  for (const e of emails) {
+    const em = e && e.email ? String(e.email).toLowerCase() : '';
+    if (!em) continue;
+    const p = (playersCache || []).find(x => String(x.email || '').toLowerCase() === em) || null;
+    out.push({ email: em, name: p && p.name ? p.name : em, team: e.team });
+  }
+  return out;
+}
+
+function renderMatchPlayerTabs() {
+  const box = document.getElementById('match-player-tabs');
+  if (!box) return;
+  if (!activeMatchPlayers.length) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  box.style.display = '';
+  box.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#666;font-weight:900;margin-right:4px">Players</div>
+      ${activeMatchPlayers.map(p => {
+        const active = String(p.email) === String(activeMatchPlayerEmail) ? 'btn-green' : '';
+        return `<button class="btn-sm ${active}" onclick="setActiveMatchPlayer('${escapeHtml(p.email)}')">${escapeHtml(p.name || p.email)}</button>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function setActiveMatchPlayer(email) {
+  const em = email ? String(email).toLowerCase() : '';
+  if (!em) return;
+  if (activeMatchPlayerEmail) {
+    matchHolesByEmail[activeMatchPlayerEmail] = scores.slice();
+  }
+  activeMatchPlayerEmail = em;
+  const existing = matchHolesByEmail[em];
+  scores = Array.isArray(existing) && existing.length === 9 ? existing.slice() : new Array(9).fill('');
+  buildScoreGrid();
+  renderMatchPlayerTabs();
+}
+
+async function loadMatchScorecardIntoEntry() {
+  const { week, teamA, teamB } = getScoreMatchupValues();
+  if (!week || !teamA || !teamB) {
+    activeMatchScorecard = null;
+    activeMatchPlayers = [];
+    activeMatchPlayerEmail = '';
+    matchHolesByEmail = {};
+    renderMatchPlayerTabs();
+    return;
+  }
+
+  await loadPlayers();
+  await loadTeams();
+
+  activeMatchPlayers = getMatchPlayersForTeams(teamA, teamB);
+  matchHolesByEmail = {};
+  for (const p of activeMatchPlayers) {
+    matchHolesByEmail[p.email] = new Array(9).fill('');
+  }
+
+  let sc = null;
+  try {
+    const res = await fetchJson('/api/match-scorecards?week=' + encodeURIComponent(week) + '&teamA=' + encodeURIComponent(teamA) + '&teamB=' + encodeURIComponent(teamB));
+    sc = res && res.scorecard ? res.scorecard : null;
+  } catch (e) {
+    sc = null;
+  }
+  activeMatchScorecard = sc;
+  if (sc && Array.isArray(sc.players)) {
+    for (const pl of sc.players) {
+      const em = pl && pl.email ? String(pl.email).toLowerCase() : '';
+      const holes = pl && Array.isArray(pl.holes) && pl.holes.length === 9 ? pl.holes.map(v => (v === null || v === undefined ? '' : Number(v))) : null;
+      if (em && holes) matchHolesByEmail[em] = holes;
+    }
+  }
+
+  const first = activeMatchPlayers[0] ? activeMatchPlayers[0].email : '';
+  if (first) {
+    activeMatchPlayerEmail = '';
+    setActiveMatchPlayer(first);
+  } else {
+    renderMatchPlayerTabs();
+  }
+}
+
+async function saveMatchScorecard(status) {
+  const { week, teamA, teamB } = getScoreMatchupValues();
+  const { date, course, tee, side } = getScoreEntryValues();
+  if (!week || !teamA || !teamB || !date || !course) {
+    showToast('Select week, matchup, date, and course');
+    return;
+  }
+  if (!activeMatchPlayers.length) {
+    showToast('Matchup has no players');
+    return;
+  }
+
+  if (activeMatchPlayerEmail) {
+    matchHolesByEmail[activeMatchPlayerEmail] = scores.slice();
+  }
+
+  const playersPayload = activeMatchPlayers.map(p => {
+    const holes = matchHolesByEmail[p.email] || [];
+    const filled = holes.filter(v => v !== '' && v !== null && v !== undefined);
+    const ok = filled.length === 9;
+    const gross = ok ? filled.reduce((a, b) => a + (Number(b) || 0), 0) : null;
+    return {
+      email: p.email,
+      name: p.name,
+      holes: ok ? holes.map(v => (v === '' ? null : Number(v))) : null,
+      grossTotal: gross
+    };
+  });
+
+  const missing = playersPayload.some(p => !p.holes || p.holes.length !== 9 || p.holes.some(v => v === null || !Number.isFinite(v)));
+  if (missing) {
+    showToast('Enter all 9 holes for all 4 players');
+    return;
+  }
+
+  const res = await fetchJsonAllowError('/api/match-scorecards', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      week,
+      teamA,
+      teamB,
+      date,
+      course,
+      tee,
+      side,
+      players: playersPayload,
+      status: status === 'final' ? 'final' : 'draft',
+      submittedBy: currentUser ? currentUser.email : null
+    })
+  });
+  if (!res || !res.ok) {
+    const msg = (res && res.text) ? String(res.text) : '';
+    showToast(msg || ('Save failed' + (res && res.status ? (' (' + res.status + ')') : '')));
+    return;
+  }
+  showToast(status === 'final' ? 'Match scorecard submitted' : 'Match draft saved');
+}
+
+function saveScoreOrMatch(status) {
+  const { teamA, teamB } = getScoreMatchupValues();
+  if (teamA && teamB) {
+    saveMatchScorecard(status);
+    return;
+  }
+  saveScore(status);
+}
 
 let activeParsCache = PARS.slice();
 let activeHcpIdxCache = HOLE_HCP_INDEX.slice();
@@ -5661,6 +5896,156 @@ async function printScorecard() {
   setTimeout(() => window.print(), 50);
 }
 
+function resolvePlayerByEmail(email) {
+  const em = String(email || '').trim().toLowerCase();
+  if (!em) return null;
+  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  return pool.find(p => String(p.email || '').trim().toLowerCase() === em) || null;
+}
+
+function resolveTeamPlayers(teamNumber) {
+  const n = Number(teamNumber) || 0;
+  if (!n) return [];
+  const t = (teamsCache || []).find(x => Number(x && x.teamNumber) === n) || null;
+  if (!t) return [];
+  const p1 = t.player1Email ? resolvePlayerByEmail(t.player1Email) : null;
+  const p2 = t.player2Email ? resolvePlayerByEmail(t.player2Email) : null;
+  const e1 = t.player1Email ? String(t.player1Email).toLowerCase() : '';
+  const e2 = t.player2Email ? String(t.player2Email).toLowerCase() : '';
+  return [
+    { email: e1, name: (p1 && p1.name) ? p1.name : e1, hi: p1 ? Number(p1.hdcp !== undefined ? p1.hdcp : p1.handicap) : 0 },
+    { email: e2, name: (p2 && p2.name) ? p2.name : e2, hi: p2 ? Number(p2.hdcp !== undefined ? p2.hdcp : p2.handicap) : 0 }
+  ].filter(x => x.email);
+}
+
+function computeLowHighPair(teamPlayers) {
+  const ps = Array.isArray(teamPlayers) ? teamPlayers.slice() : [];
+  ps.sort((a, b) => (Number(a.hi) || 0) - (Number(b.hi) || 0));
+  return { low: ps[0] || null, high: ps[1] || null };
+}
+
+async function ensureEmptyDraftMatchScorecard(week, teamA, teamB, meta) {
+  const w = Number(week) || 0;
+  const a = Number(teamA) || 0;
+  const b = Number(teamB) || 0;
+  if (!w || !a || !b) return;
+  try {
+    const res = await fetchJson('/api/match-scorecards?week=' + encodeURIComponent(w) + '&teamA=' + encodeURIComponent(a) + '&teamB=' + encodeURIComponent(b));
+    if (res && res.scorecard) return;
+  } catch (e) {
+    // ignore
+  }
+
+  const aPlayers = resolveTeamPlayers(a);
+  const bPlayers = resolveTeamPlayers(b);
+  const players = aPlayers.concat(bPlayers).map(p => ({ email: p.email, name: p.name, holes: null, grossTotal: null }));
+  try {
+    await fetchJson('/api/match-scorecards', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        week: w,
+        teamA: a,
+        teamB: b,
+        date: meta && meta.date ? meta.date : null,
+        course: meta && meta.course ? meta.course : null,
+        tee: meta && meta.tee ? meta.tee : null,
+        side: meta && meta.side ? meta.side : null,
+        players,
+        status: 'draft',
+        submittedBy: currentUser ? currentUser.email : null
+      })
+    });
+  } catch (e) {
+    // ignore
+  }
+}
+
+async function printAllScorecardsForWeek() {
+  const root = document.getElementById('print-root');
+  if (!root) return;
+
+  const weekEl = document.getElementById('sc-week');
+  const dateEl = document.getElementById('sc-date');
+  const courseEl = document.getElementById('sc-course');
+  const teeEl = document.getElementById('sc-tee');
+  const sideEl = document.getElementById('sc-side');
+  const week = weekEl ? parseInt(weekEl.value || '', 10) : null;
+  if (!week) {
+    showToast('Select week');
+    return;
+  }
+
+  await loadPlayers().catch(() => {});
+  await loadTeams().catch(() => {});
+  await loadScheduleCache().catch(() => {});
+
+  const sw = (scheduleCache || []).find(x => (x && x.week) === week) || null;
+  const matches = sw && Array.isArray(sw.matches) ? sw.matches : [];
+  if (!matches.length) {
+    showToast('No team matchups for that week');
+    return;
+  }
+
+  const date = (dateEl && dateEl.value) ? dateEl.value : (sw && sw.date ? sw.date : null);
+  const course = (courseEl && courseEl.value) ? courseEl.value : (sw && sw.course ? sw.course : null);
+  const tee = teeEl ? (teeEl.value || null) : null;
+  const sideRaw = sw && sw.side ? String(sw.side) : '';
+  const side = (sideRaw === 'front' || sideRaw === 'back') ? sideRaw : (sideEl ? (sideEl.value || 'front') : 'front');
+
+  // Pre-create empty draft match scorecards so batch entry can find them later.
+  for (const m of matches) {
+    const a = m && m.teamA ? Number(m.teamA) : 0;
+    const b = m && m.teamB ? Number(m.teamB) : 0;
+    if (!a || !b) continue;
+    await ensureEmptyDraftMatchScorecard(week, a, b, { date, course, tee, side });
+  }
+
+  const nine = (coursesCache && coursesCache.length && course) ? getActiveNineCourseData(course, tee, side) : null;
+  const hcpIdx = nine && Array.isArray(nine.hcpIdx) && nine.hcpIdx.length === 9 ? nine.hcpIdx : HOLE_HCP_INDEX;
+
+  let html = '';
+  for (const m of matches) {
+    const a = m && m.teamA ? Number(m.teamA) : 0;
+    const b = m && m.teamB ? Number(m.teamB) : 0;
+    if (!a || !b) continue;
+
+    const aPair = computeLowHighPair(resolveTeamPlayers(a));
+    const bPair = computeLowHighPair(resolveTeamPlayers(b));
+    const lowA = aPair.low;
+    const highA = aPair.high;
+    const lowB = bPair.low;
+    const highB = bPair.high;
+
+    const order = [
+      { left: lowA, right: lowB, label: 'Low HCP' },
+      { left: highA, right: highB, label: 'High HCP' }
+    ];
+
+    for (const slot of order) {
+      const pL = slot.left;
+      const pR = slot.right;
+      if (!pL || !pR) continue;
+
+      const lStrokes = getStrokesForNine(pL.hi);
+      const rStrokes = getStrokesForNine(pR.hi);
+      const lDots = allocateStrokeDots(lStrokes, hcpIdx);
+      const rDots = allocateStrokeDots(rStrokes, hcpIdx);
+
+      const header = `${matchupLabel(a)} vs ${matchupLabel(b)} — ${slot.label}`;
+      html += '<div class="scorecard-pair">' +
+        buildScorecardHtml({ week, date, playerName: header + ' | ' + pL.name, course, tee, hi: pL.hi, strokes: lStrokes, dots: lDots, holes: null }) +
+        '</div>';
+      html += '<div class="scorecard-pair">' +
+        buildScorecardHtml({ week, date, playerName: header + ' | ' + pR.name, course, tee, hi: pR.hi, strokes: rStrokes, dots: rDots, holes: null }) +
+        '</div>';
+    }
+  }
+
+  root.innerHTML = html;
+  setTimeout(() => window.print(), 50);
+}
+
 async function finalizeSelectedWeek() {
   if (!currentUser || currentUser.role !== 'admin') {
     showToast('Access denied');
@@ -6055,7 +6440,25 @@ async function refreshScorecardLockStatus() {
   const { week, player } = getScoreEntryValues();
   const statusEl = document.getElementById('score-lock-status');
   const btnUnlock = document.getElementById('btn-unlock');
-  if (!statusEl || !week || !player) {
+  if (!statusEl) return;
+
+  const { teamA, teamB } = getScoreMatchupValues();
+  if (week && teamA && teamB) {
+    try {
+      const res = await fetchJson('/api/match-scorecards?week=' + encodeURIComponent(week) + '&teamA=' + encodeURIComponent(teamA) + '&teamB=' + encodeURIComponent(teamB));
+      const sc = res && res.scorecard ? res.scorecard : null;
+      const st = sc && sc.status ? String(sc.status) : 'draft';
+      const locked = st === 'final';
+      statusEl.textContent = locked ? 'Locked (Match)' : 'Open (Match)';
+      if (btnUnlock) btnUnlock.style.display = (locked && currentUser && currentUser.role === 'admin') ? '' : 'none';
+      return;
+    } catch (e) {
+      statusEl.textContent = '—';
+      if (btnUnlock) btnUnlock.style.display = 'none';
+      return;
+    }
+  }
+  if (!week || !player) {
     if (statusEl) statusEl.textContent = '—';
     if (btnUnlock) btnUnlock.style.display = 'none';
     return;
@@ -6077,8 +6480,27 @@ async function unlockScorecard() {
     return;
   }
   const { week, player } = getScoreEntryValues();
+  const { teamA, teamB } = getScoreMatchupValues();
+
+  if (week && teamA && teamB) {
+    try {
+      await fetchJson('/api/match-scorecards', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'unlock', week, teamA, teamB, submittedBy: currentUser.email })
+      });
+      showToast('Match unlocked');
+      await refreshScorecardLockStatus();
+      await loadMatchScorecardIntoEntry();
+      return;
+    } catch (e) {
+      showToast('Unlock failed');
+      return;
+    }
+  }
+
   if (!week || !player) {
-    showToast('Select player and week');
+    showToast('Select week and player');
     return;
   }
   try {
@@ -6188,6 +6610,7 @@ async function saveScore(status) {
 
 function hydrateScoreEntryUI() {
   const weekEl = document.getElementById('score-week');
+  const matchupEl = document.getElementById('score-matchup');
   const playerEl = document.getElementById('score-player');
   const dateEl = document.getElementById('score-date');
   const sideEl = document.getElementById('score-side');
@@ -6220,8 +6643,17 @@ function hydrateScoreEntryUI() {
     } catch (e) {
       // ignore
     }
+    await hydrateMatchupSelectorForWeek();
+    await loadMatchScorecardIntoEntry();
     await refreshScorecardLockStatus();
-    await loadLatestScoreIntoEntry();
+    const mm = getScoreMatchupValues();
+    if (!(mm && mm.teamA && mm.teamB)) {
+      await loadLatestScoreIntoEntry();
+    }
+  });
+  if (matchupEl) matchupEl.addEventListener('change', async () => {
+    await loadMatchScorecardIntoEntry();
+    await refreshScorecardLockStatus();
   });
   if (playerEl) playerEl.addEventListener('change', async () => { await refreshScorecardLockStatus(); await loadLatestScoreIntoEntry(); });
   if (courseEl) courseEl.addEventListener('change', () => { hydrateCourseTeeForScoreEntry(); buildScoreGrid(); });
