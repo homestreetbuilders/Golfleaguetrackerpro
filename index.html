@@ -2771,6 +2771,14 @@ function getTeamNamesOnly(teamNumber) {
   return [name1, name2].filter(Boolean).join(' / ');
 }
 
+function scheduleTeamHintText(teamNumber) {
+  const n = Number(teamNumber) || 0;
+  if (!n) return '';
+  const names = getTeamNamesOnly(n);
+  if (names) return '— ' + names;
+  return '— Unknown team #' + n;
+}
+
 function teamOptionsForSelect(selected) {
   const list = Array.isArray(teamsCache) ? teamsCache.slice() : [];
   list.sort((a, b) => (a.teamNumber || 0) - (b.teamNumber || 0));
@@ -2799,9 +2807,15 @@ function renderScheduleMatchesEditor(matches) {
             const b = m && m.teamB ? Number(m.teamB) : null;
             return `
               <tr>
-                <td><input class="sch-team-a" type="number" min="1" placeholder="Team #" value="${a ? escapeHtml(a) : ''}" style="width:100%" /></td>
+                <td>
+                  <input class="sch-team-a" type="number" min="1" placeholder="Team #" value="${a ? escapeHtml(a) : ''}" style="width:100%" />
+                  <div class="sch-team-a-hint" style="font-size:12px;color:#666;margin-top:4px">${a ? escapeHtml(scheduleTeamHintText(a)) : ''}</div>
+                </td>
                 <td style="text-align:center;font-weight:900;color:#666">vs</td>
-                <td><input class="sch-team-b" type="number" min="1" placeholder="Team #" value="${b ? escapeHtml(b) : ''}" style="width:100%" /></td>
+                <td>
+                  <input class="sch-team-b" type="number" min="1" placeholder="Team #" value="${b ? escapeHtml(b) : ''}" style="width:100%" />
+                  <div class="sch-team-b-hint" style="font-size:12px;color:#666;margin-top:4px">${b ? escapeHtml(scheduleTeamHintText(b)) : ''}</div>
+                </td>
                 <td><button class="btn-sm" onclick="removeScheduleMatchRowFromUI(${idx})">Remove</button></td>
               </tr>
             `;
@@ -2811,6 +2825,24 @@ function renderScheduleMatchesEditor(matches) {
     </div>
     ${list.length ? '' : '<div style="padding:10px 0;color:#666">No matchups yet. Click Add Match.</div>'}
   `;
+
+  const body = document.getElementById('sch-matches-body');
+  if (body) {
+    body.querySelectorAll('tr').forEach(tr => {
+      const aEl = tr.querySelector('input.sch-team-a');
+      const bEl = tr.querySelector('input.sch-team-b');
+      const aHint = tr.querySelector('.sch-team-a-hint');
+      const bHint = tr.querySelector('.sch-team-b-hint');
+      const onUpdate = () => {
+        const a = aEl && aEl.value ? parseInt(aEl.value, 10) : null;
+        const b = bEl && bEl.value ? parseInt(bEl.value, 10) : null;
+        if (aHint) aHint.textContent = a ? scheduleTeamHintText(a) : '';
+        if (bHint) bHint.textContent = b ? scheduleTeamHintText(b) : '';
+      };
+      if (aEl) aEl.addEventListener('input', onUpdate);
+      if (bEl) bEl.addEventListener('input', onUpdate);
+    });
+  }
 }
 
 function readScheduleMatchesFromUI() {
@@ -2833,10 +2865,16 @@ function readScheduleMatchesFromUI() {
   return out;
 }
 
-function addScheduleMatchRowFromUI() {
+async function addScheduleMatchRowFromUI() {
   if (!currentUser || currentUser.role !== 'admin') {
     showToast('Access denied');
     return;
+  }
+  try {
+    await loadPlayers();
+    await loadTeams();
+  } catch (e) {
+    // ignore
   }
   const cur = readScheduleMatchesFromUI();
   cur.push({ teamA: null, teamB: null });
@@ -2907,6 +2945,7 @@ async function loadScheduleWeekIntoAdminEditor() {
   }
 
   try {
+    await loadPlayers();
     await loadTeams();
   } catch (e) {
     // ignore
@@ -6064,6 +6103,20 @@ async function printAllScorecardsForWeek() {
   if (!matches.length) {
     showToast('No team matchups for that week (league: ' + (activeLeagueId || 'default') + '). Set schedule matches or verify you are in the same league you saved to.');
     return;
+  }
+
+  const missing = [];
+  for (const m of matches) {
+    const a = m && m.teamA ? Number(m.teamA) : 0;
+    const b = m && m.teamB ? Number(m.teamB) : 0;
+    const aPlayers = resolveTeamPlayers(a);
+    const bPlayers = resolveTeamPlayers(b);
+    if (!a || !b || aPlayers.length < 2 || bPlayers.length < 2) {
+      missing.push(`${a || '?'} vs ${b || '?'}`);
+    }
+  }
+  if (missing.length) {
+    showToast('Some matchups reference missing/invalid teams: ' + missing.slice(0, 4).join(', ') + (missing.length > 4 ? '…' : ''));
   }
 
   const date = (dateEl && dateEl.value) ? dateEl.value : (sw && sw.date ? sw.date : null);
