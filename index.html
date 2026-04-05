@@ -5677,6 +5677,21 @@ function fmtMoney(v) {
   return '$' + n.toFixed(2);
 }
 
+function parseIsoDateLocal(iso) {
+  const s = iso ? String(iso).trim() : '';
+  if (!s) return null;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) {
+    const d2 = new Date(s);
+    return isNaN(d2.getTime()) ? null : d2;
+  }
+  const y = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10) - 1;
+  const d = parseInt(m[3], 10);
+  const dt = new Date(y, mo, d);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
 function renderPayoutTable(payouts) {
   const entries = payouts && typeof payouts === 'object' ? Object.entries(payouts) : [];
   if (!entries.length) return '<div style="color:#666">No payouts</div>';
@@ -5790,7 +5805,7 @@ function allocateStrokeDots(strokes, hcpIdxArr) {
 }
 
 function buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, dots, holes }) {
-  const d = date ? new Date(date) : null;
+  const d = date ? parseIsoDateLocal(date) : null;
   const dateText = d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-US') : (date || '');
   const dotHtml = (n) => `<span class="stroke-dots">${Array.from({ length: n }).map(() => '<span class="stroke-dot"></span>').join('')}</span>`;
   const holeCells = Array.from({ length: 9 }).map((_, i) => {
@@ -6247,7 +6262,7 @@ async function buildSchedule() {
     if (!weeks.length) throw new Error('No schedule');
     const sorted = weeks.slice().sort((a,b) => (a.week || 0) - (b.week || 0));
     list.innerHTML = sorted.map(w => {
-      const d = w.date ? new Date(w.date) : null;
+      const d = w.date ? parseIsoDateLocal(w.date) : null;
       const day = d && !isNaN(d.getTime()) ? String(d.getDate()).padStart(2,'0') : '--';
       const month = d && !isNaN(d.getTime()) ? d.toLocaleString('en-US', { month: 'short' }) : '--';
       const title = w.title || `Week ${w.week} — Regular Match`;
