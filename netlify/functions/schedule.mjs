@@ -22,6 +22,30 @@ function isoDateOrNull(v) {
   return new Date(ts).toISOString().slice(0, 10)
 }
 
+function normalizeSide(v) {
+  const s = String(v || '').trim().toLowerCase()
+  if (s === 'front' || s === 'back' || s === 'both') return s
+  return null
+}
+
+function sanitizeMatches(matches) {
+  const list = Array.isArray(matches) ? matches : []
+  const out = []
+  const used = new Set()
+  for (const m of list) {
+    const a = asInt(m && m.teamA)
+    const b = asInt(m && m.teamB)
+    if (!a || !b) continue
+    if (a < 1 || b < 1) continue
+    if (a === b) continue
+    if (used.has(a) || used.has(b)) continue
+    used.add(a)
+    used.add(b)
+    out.push({ teamA: a, teamB: b })
+  }
+  return out
+}
+
 function addDays(iso, days) {
   const ts = Date.parse(iso)
   if (!ts || isNaN(ts)) return iso
@@ -149,11 +173,15 @@ export default async (req) => {
     }
     const key = `week-${week}`
     const existing = await store.get(key, { type: 'json' }).catch(() => ({}))
+    const side = normalizeSide(body && body.side)
+    const matches = sanitizeMatches(body && body.matches)
     const updated = {
       ...existing,
       ...body,
       week,
       date: isoDateOrNull(body && body.date) || (existing && existing.date) || null,
+      side: side || (existing && existing.side) || null,
+      matches,
       updatedAt: new Date().toISOString()
     }
     await store.setJSON(key, updated)

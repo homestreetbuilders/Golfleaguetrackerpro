@@ -1,3 +1,6 @@
 node_modules/
 
 *.docx
+
+# Local Netlify folder
+.netlify

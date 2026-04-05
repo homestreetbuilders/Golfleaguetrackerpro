@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fairway Command — The Ultimate League System</title>
 <meta name="theme-color" content="#3DA06B" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="fairwaycommandshortcut.png" />
-<link rel="apple-touch-icon" href="fairwaycommandshortcut.png" />
+<link rel="apple-touch-icon" href="fc_icon_512.png" />
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   /* Font fallbacks if Google Fonts blocked */
@@ -81,7 +81,7 @@
     background: #3DA06B;
     border: 1px solid rgba(212, 175, 55, 0.4);
     border-radius: 4px;
-    padding: 22px 18px;
+    padding: 2px 18px 22px;
     box-shadow: 0 18px 44px rgba(18, 52, 31, 0.55), 0 0 0 1px rgba(212,175,55,0.06);
     animation: loginFadeIn 0.6s ease forwards;
     z-index: 1;
@@ -98,13 +98,13 @@
   }
 
   .login-card-logo {
-    width: 500px;
+    width: 438px;
     max-width: 100%;
     max-height: 160px;
     height: auto;
     object-fit: contain;
     display: block;
-    margin: 0 auto 10px;
+    margin: 0 auto 0;
   }
 
   .fc-badge {
@@ -1453,7 +1453,7 @@
           <div class="card-header"><div class="card-title">Schedule Management</div></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom:16px">
-              <div class="form-field"><label>Week</label><input id="sch-week" type="number" min="1" placeholder="1" /></div>
+              <div class="form-field"><label>Week</label><input id="sch-week" type="number" min="1" placeholder="1" onchange="loadScheduleWeekIntoAdminEditor()" /></div>
               <div class="form-field"><label>Date</label><input id="sch-date" type="date" /></div>
               <div class="form-field"><label>Title</label><input id="sch-title" placeholder="Week 1 — Regular Match" /></div>
               <div class="form-field"><label>Course</label><input id="sch-course" placeholder="Mud Run GC" /></div>
@@ -1461,7 +1461,22 @@
               <div class="form-field"><label>Type</label>
                 <select id="sch-type"><option value="match">Match</option><option value="scramble">Scramble</option><option value="tournament">Tournament</option></select>
               </div>
+              <div class="form-field"><label>Side</label>
+                <select id="sch-side"><option value="front">Front 9</option><option value="back">Back 9</option><option value="both">Both</option></select>
+              </div>
             </div>
+
+            <div class="card" style="margin:0 0 16px">
+              <div class="card-header"><div class="card-title">Weekly Team Matchups</div></div>
+              <div class="card-body" id="sch-matches"></div>
+              <div class="card-body" style="padding-top:0">
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn-sm" onclick="addScheduleMatchRowFromUI()">Add Match</button>
+                </div>
+                <div style="margin-top:10px;font-size:12px;color:#666">Set Team # vs Team # for this week. Each team should appear only once per week.</div>
+              </div>
+            </div>
+
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button class="btn-sm btn-green" onclick="saveScheduleWeekFromUI()">Save Week</button>
               <button class="btn-sm" onclick="deleteScheduleWeekFromUI()">Delete Week</button>
@@ -1708,6 +1723,7 @@
               <div class="form-field" style="flex:1;min-width:160px">
                 <label>Course</label>
                 <select id="score-course"><option value="Mud Run Golf Club">Mud Run Golf Club</option></select>
+                <input id="score-course-manual" placeholder="Type course name" style="display:none;margin-top:6px" />
               </div>
               <div class="form-field" style="flex:1;min-width:140px">
                 <label>Player</label>
@@ -1716,6 +1732,10 @@
               <div class="form-field" style="flex:1;min-width:140px">
                 <label>Tee</label>
                 <select id="score-tee"><option value="White">White</option><option value="Blue">Blue</option><option value="Red">Red</option></select>
+              </div>
+              <div class="form-field" style="flex:1;min-width:140px">
+                <label>Side</label>
+                <select id="score-side"><option value="front">Front 9</option><option value="back">Back 9</option></select>
               </div>
             </div>
             <div id="score-lock-row" style="display:flex;gap:10px;align-items:center;margin:-6px 0 16px">
@@ -1803,7 +1823,7 @@
           <div class="card-header"><div class="card-title">Player Roster</div></div>
           <div class="card-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Hdcp</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Hdcp</th><th>Net Skins</th><th>Gross Skins</th><th>50/50</th><th>Actions</th></tr></thead>
               <tbody id="player-roster"></tbody>
             </table>
           </div>
@@ -2014,6 +2034,17 @@
               <div class="form-field"><label>Season End</label><input id="ls-season-end" type="date" /></div>
               <div class="form-field"><label>Tee Placements (count)</label><input id="ls-tee-count" type="number" min="1" max="4" value="3" /></div>
             </div>
+
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Skins (Season Pots)</p>
+            <div class="form-grid" style="margin-bottom:20px">
+              <div class="form-field"><label>Net Skins Season Pot ($)</label><input id="ls-net-skins-pot" type="number" min="0" step="0.01" value="0" /></div>
+              <div class="form-field"><label>Gross Skins Season Pot ($)</label><input id="ls-gross-skins-pot" type="number" min="0" step="0.01" value="0" /></div>
+            </div>
+
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">50/50</p>
+            <div class="form-grid" style="margin-bottom:20px">
+              <div class="form-field"><label>50/50 Season Buy-In ($ per player)</label><input id="ls-fifty-buyin" type="number" min="0" step="0.01" value="0" /></div>
+            </div>
             <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Scoring Mode</p>
             <div class="form-grid" style="margin-bottom:20px">
               <div class="form-field">
@@ -2058,6 +2089,35 @@
                 <button class="btn-sm btn-green" style="width:100%" onclick="finalizeSelectedWeek()">Finalize &amp; Lock All</button>
               </div>
             </div>
+
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Side Games Ledger</p>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field">
+                <label>Week</label>
+                <select id="sg-week"></select>
+              </div>
+              <div class="form-field" style="display:flex;align-items:flex-end">
+                <button class="btn-sm" style="width:100%" onclick="loadSideGamesLedgerFromUI()">Load Ledger</button>
+              </div>
+              <div class="form-field" style="display:flex;align-items:flex-end">
+                <button class="btn-sm btn-green" style="width:100%" onclick="recomputeSideGamesLedgerFromUI()">Recompute</button>
+              </div>
+            </div>
+            <div id="sg-ledger" style="border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:12px;background:#fff;margin-bottom:16px"></div>
+
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:12px">Season Teams (2-Man)</p>
+            <div class="card" style="margin:0 0 16px">
+              <div class="card-header"><div class="card-title">Teams</div></div>
+              <div class="card-body" id="teams-admin"></div>
+              <div class="card-body" style="padding-top:0">
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn-sm" onclick="addTeamRowFromUI()">Add Team</button>
+                  <button class="btn-sm btn-green" onclick="saveTeamsFromUI()">Save Teams</button>
+                </div>
+                <div style="margin-top:10px;font-size:12px;color:#666">Teams are season-long. Each player can only be on one team.</div>
+              </div>
+            </div>
+
             <button class="btn-sm btn-green" onclick="saveLeagueSettingsFromUI()">Save Settings</button>
           </div>
         </div>
@@ -2281,8 +2341,6 @@ const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
 
 const PARS = [4, 3, 5, 4, 3, 4, 4, 3, 4];
 const PAR_TOTAL = PARS.reduce((a,b) => a+b, 0);
-let activeParsCache = PARS.slice();
-let activeHcpIdxCache = HOLE_HCP_INDEX.slice();
 
 const PAYMENT_DATA = [
   { name: 'Ronald McCoy', due: 120, paid: 120, status: 'Paid' },
@@ -2296,24 +2354,25 @@ const PAYMENT_DATA = [
 // STATE
 // ═══════════════════════════════
 let currentUser = null;
-let scores = new Array(9).fill('');
-let scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
 let leaderboardMode = 'gross';
 let scoringMode = 'batch';
 let leaderboardFilters = { week: '', start: '', end: '' };
+let leaguesCache = [];
 let playersCache = [];
-let paymentSettingsCache = null;
-let editingPlayerEmail = null;
-let scheduleCache = [];
-let scrambleEventsCache = [];
-let activeScrambleEvent = null;
-let tournamentEventsCache = [];
-let activeTournamentEvent = null;
-let bracketsCache = [];
-let activeBracket = null;
 let coursesCache = [];
+let scheduleCache = [];
+let teamsCache = [];
+let sideGameOptInsCache = [];
 let featuresCache = { shotTracking: false };
+let scores = new Array(9).fill('');
 let scoreShots = new Array(9).fill('');
+let scorePutts = new Array(9).fill('');
+let scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
+
+let activeParsCache = PARS.slice();
+let activeHcpIdxCache = HOLE_HCP_INDEX.slice();
+
+let teamsAdminDirty = false;
 
 function getCourseByName(name) {
   const n = String(name || '').trim().toLowerCase();
@@ -2417,6 +2476,291 @@ function attachLeagueIdToUrl(url, leagueId) {
   if (u.includes('leagueId=')) return url;
   const sep = u.includes('?') ? '&' : '?';
   return u + sep + 'leagueId=' + encodeURIComponent(leagueId);
+}
+
+function getTeamPlayerOptionsHtml(selectedEmail) {
+  const players = (playersCache && playersCache.length) ? playersCache : [];
+  const se = selectedEmail ? String(selectedEmail).toLowerCase() : '';
+  const opts = ['<option value="">—</option>'];
+  for (const p of players) {
+    if (!p || !p.email) continue;
+    const em = String(p.email).toLowerCase();
+    const sel = se && em === se ? 'selected' : '';
+    const label = p.name ? `${p.name} (${p.email})` : p.email;
+    opts.push(`<option value="${escapeHtml(p.email)}" ${sel}>${escapeHtml(label)}</option>`);
+  }
+  return opts.join('');
+}
+
+function getTeamLabel(teamNumber) {
+  const n = Number(teamNumber) || 0;
+  if (!n) return '';
+  const t = (teamsCache || []).find(x => (Number(x && x.teamNumber) || 0) === n) || null;
+  const p1 = t && t.player1Email ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player1Email).toLowerCase()) : null;
+  const p2 = t && t.player2Email ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player2Email).toLowerCase()) : null;
+  const name1 = p1 && p1.name ? p1.name : (t && t.player1Email ? t.player1Email : '');
+  const name2 = p2 && p2.name ? p2.name : (t && t.player2Email ? t.player2Email : '');
+  const names = [name1, name2].filter(Boolean).join(' / ');
+  return names ? `Team ${n} — ${names}` : `Team ${n}`;
+}
+
+function getTeamNamesOnly(teamNumber) {
+  const n = Number(teamNumber) || 0;
+  if (!n) return '';
+  const t = (teamsCache || []).find(x => (Number(x && x.teamNumber) || 0) === n) || null;
+  const p1 = t && t.player1Email ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player1Email).toLowerCase()) : null;
+  const p2 = t && t.player2Email ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player2Email).toLowerCase()) : null;
+  const name1 = p1 && p1.name ? p1.name : (t && t.player1Email ? String(t.player1Email) : '');
+  const name2 = p2 && p2.name ? p2.name : (t && t.player2Email ? String(t.player2Email) : '');
+  return [name1, name2].filter(Boolean).join(' / ');
+}
+
+function teamOptionsForSelect(selected) {
+  const list = Array.isArray(teamsCache) ? teamsCache.slice() : [];
+  list.sort((a, b) => (a.teamNumber || 0) - (b.teamNumber || 0));
+  const selNum = selected !== null && selected !== undefined ? Number(selected) : null;
+  const opts = ['<option value="">—</option>'];
+  for (const t of list) {
+    const n = Number(t && t.teamNumber) || 0;
+    if (!n) continue;
+    const sel = (selNum !== null && n === selNum) ? 'selected' : '';
+    opts.push(`<option value="${escapeHtml(n)}" ${sel}>${escapeHtml(getTeamLabel(n))}</option>`);
+  }
+  return opts.join('');
+}
+
+function renderScheduleMatchesEditor(matches) {
+  const box = document.getElementById('sch-matches');
+  if (!box) return;
+  const list = Array.isArray(matches) ? matches : [];
+  box.innerHTML = `
+    <div style="overflow:auto">
+      <table class="data-table">
+        <thead><tr><th style="width:46%">Team A</th><th style="width:8%"></th><th style="width:46%">Team B</th><th style="width:90px"></th></tr></thead>
+        <tbody id="sch-matches-body">
+          ${list.map((m, idx) => {
+            const a = m && m.teamA ? Number(m.teamA) : null;
+            const b = m && m.teamB ? Number(m.teamB) : null;
+            return `
+              <tr>
+                <td><select class="sch-team-a">${teamOptionsForSelect(a)}</select></td>
+                <td style="text-align:center;font-weight:900;color:#666">vs</td>
+                <td><select class="sch-team-b">${teamOptionsForSelect(b)}</select></td>
+                <td><button class="btn-sm" onclick="removeScheduleMatchRowFromUI(${idx})">Remove</button></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${list.length ? '' : '<div style="padding:10px 0;color:#666">No matchups yet. Click Add Match.</div>'}
+  `;
+}
+
+function readScheduleMatchesFromUI() {
+  const body = document.getElementById('sch-matches-body');
+  if (!body) return [];
+  const rows = Array.from(body.querySelectorAll('tr'));
+  const used = new Set();
+  const out = [];
+  for (const r of rows) {
+    const aEl = r.querySelector('select.sch-team-a');
+    const bEl = r.querySelector('select.sch-team-b');
+    const a = aEl && aEl.value ? parseInt(aEl.value, 10) : null;
+    const b = bEl && bEl.value ? parseInt(bEl.value, 10) : null;
+    if (!a || !b || a === b) continue;
+    if (used.has(a) || used.has(b)) continue;
+    used.add(a);
+    used.add(b);
+    out.push({ teamA: a, teamB: b });
+  }
+  return out;
+}
+
+function addScheduleMatchRowFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const cur = readScheduleMatchesFromUI();
+  cur.push({ teamA: null, teamB: null });
+  renderScheduleMatchesEditor(cur);
+}
+
+function removeScheduleMatchRowFromUI(idx) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const cur = readScheduleMatchesFromUI();
+  cur.splice(idx, 1);
+  renderScheduleMatchesEditor(cur);
+}
+
+function renderTeamsAdminUI() {
+  const box = document.getElementById('teams-admin');
+  if (!box) return;
+  if (!currentUser || currentUser.role !== 'admin') {
+    box.innerHTML = '<div style="padding:10px 0;color:#666">Admin only.</div>';
+    return;
+  }
+  const teams = Array.isArray(teamsCache) ? teamsCache.slice() : [];
+  teams.sort((a, b) => (a.teamNumber || 0) - (b.teamNumber || 0));
+
+  const rows = teams.map((t, idx) => {
+    const n = (t && t.teamNumber) ? Number(t.teamNumber) : (idx + 1);
+    const p1 = t && t.player1Email ? String(t.player1Email) : '';
+    const p2 = t && t.player2Email ? String(t.player2Email) : '';
+    return `
+      <tr>
+        <td style="width:90px"><input class="team-num" type="number" min="1" value="${escapeHtml(n)}" /></td>
+        <td><select class="team-p1">${getTeamPlayerOptionsHtml(p1)}</select></td>
+        <td><select class="team-p2">${getTeamPlayerOptionsHtml(p2)}</select></td>
+        <td style="width:110px"><button class="btn-sm" onclick="removeTeamRowFromUI(${idx})">Remove</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  box.innerHTML = `
+    <div style="overflow:auto">
+      <table class="data-table">
+        <thead><tr><th>Team #</th><th>Player 1</th><th>Player 2</th><th></th></tr></thead>
+        <tbody id="teams-admin-body">${rows || ''}</tbody>
+      </table>
+    </div>
+    ${rows ? '' : '<div style="padding:10px 0;color:#666">No teams yet. Click Add Team.</div>'}
+  `;
+
+  // Mark dirty on edits so an async load doesn't overwrite UI state.
+  const body = document.getElementById('teams-admin-body');
+  if (body) {
+    body.querySelectorAll('input.team-num, select.team-p1, select.team-p2').forEach(el => {
+      el.addEventListener('change', () => { teamsAdminDirty = true; });
+      el.addEventListener('input', () => { teamsAdminDirty = true; });
+    });
+  }
+}
+
+async function loadScheduleWeekIntoAdminEditor() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  const weekEl = document.getElementById('sch-week');
+  const week = weekEl && weekEl.value ? parseInt(weekEl.value, 10) : null;
+  if (!week) {
+    renderScheduleMatchesEditor([]);
+    return;
+  }
+
+  try {
+    await loadTeams();
+  } catch (e) {
+    // ignore
+  }
+
+  let weeks = [];
+  try {
+    const res = await fetchJson('/api/schedule');
+    weeks = Array.isArray(res && res.weeks) ? res.weeks : [];
+  } catch (e) {
+    weeks = [];
+  }
+
+  const hit = weeks.find(w => (w.week || 0) === week) || null;
+  const dateEl = document.getElementById('sch-date');
+  const titleEl = document.getElementById('sch-title');
+  const courseEl = document.getElementById('sch-course');
+  const teeEl = document.getElementById('sch-tee');
+  const typeEl = document.getElementById('sch-type');
+  const sideEl = document.getElementById('sch-side');
+
+  if (hit) {
+    if (dateEl) dateEl.value = hit.date || '';
+    if (titleEl) titleEl.value = hit.title || '';
+    if (courseEl) courseEl.value = hit.course || '';
+    if (teeEl) teeEl.value = hit.teeTime || '';
+    if (typeEl) typeEl.value = hit.type || 'match';
+    if (sideEl && hit.side) sideEl.value = hit.side;
+  }
+
+  const ms = hit && Array.isArray(hit.matches) ? hit.matches : [];
+  renderScheduleMatchesEditor(ms);
+}
+
+function addTeamRowFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const teams = Array.isArray(teamsCache) ? teamsCache.slice() : [];
+  const nextNum = teams.length ? (Math.max(...teams.map(t => Number(t && t.teamNumber) || 0)) + 1) : 1;
+  teams.push({ teamNumber: nextNum, player1Email: '', player2Email: '' });
+  teamsCache = teams;
+  renderTeamsAdminUI();
+}
+
+function removeTeamRowFromUI(idx) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const teams = Array.isArray(teamsCache) ? teamsCache.slice() : [];
+  teams.splice(idx, 1);
+  teamsCache = teams;
+  renderTeamsAdminUI();
+}
+
+async function loadTeams() {
+  const r = await fetchJsonAllowError('/api/teams');
+  if (!r.ok) {
+    teamsCache = [];
+    if (!teamsAdminDirty) renderTeamsAdminUI();
+    return;
+  }
+  teamsCache = (r.json && Array.isArray(r.json.teams)) ? r.json.teams : [];
+  if (!teamsAdminDirty) renderTeamsAdminUI();
+}
+
+function readTeamsFromEditor() {
+  const body = document.getElementById('teams-admin-body');
+  if (!body) return [];
+  const rows = Array.from(body.querySelectorAll('tr'));
+  const out = [];
+  for (const r of rows) {
+    const numEl = r.querySelector('input.team-num');
+    const p1El = r.querySelector('select.team-p1');
+    const p2El = r.querySelector('select.team-p2');
+    const teamNumber = numEl && numEl.value !== '' ? parseInt(numEl.value, 10) : null;
+    const player1Email = p1El ? String(p1El.value || '').trim() : '';
+    const player2Email = p2El ? String(p2El.value || '').trim() : '';
+    if (!teamNumber || !player1Email || !player2Email) continue;
+    out.push({ teamNumber, player1Email, player2Email });
+  }
+  out.sort((a, b) => (a.teamNumber || 0) - (b.teamNumber || 0));
+  return out;
+}
+
+async function saveTeamsFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const teams = readTeamsFromEditor();
+  if (!teams.length) {
+    showToast('Add teams first');
+    return;
+  }
+  const r = await fetchJsonAllowError('/api/teams', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ teams })
+  });
+  if (!r.ok) {
+    showToast(r.text || 'Save teams failed');
+    return;
+  }
+  teamsCache = (r.json && Array.isArray(r.json.teams)) ? r.json.teams : teams;
+  teamsAdminDirty = false;
+  renderTeamsAdminUI();
+  showToast('Teams saved');
 }
 
 function setShotTrackingEnabled(enabled) {
@@ -3319,6 +3663,9 @@ async function loadLeagueSettings() {
     const startEl = document.getElementById('ls-season-start');
     const endEl = document.getElementById('ls-season-end');
     const teeCountEl = document.getElementById('ls-tee-count');
+    const netSkinsEl = document.getElementById('ls-net-skins-pot');
+    const grossSkinsEl = document.getElementById('ls-gross-skins-pot');
+    const fiftyEl = document.getElementById('ls-fifty-buyin');
     const modeEl = document.getElementById('ls-handicap-mode');
     const customEl = document.getElementById('ls-custom-formula');
     if (s) {
@@ -3326,6 +3673,9 @@ async function loadLeagueSettings() {
       if (startEl) startEl.value = s.seasonStart || '';
       if (endEl) endEl.value = s.seasonEnd || '';
       if (teeCountEl) teeCountEl.value = s.teePlacementsCount || 3;
+      if (netSkinsEl) netSkinsEl.value = s.netSkinsSeasonPot || 0;
+      if (grossSkinsEl) grossSkinsEl.value = s.grossSkinsSeasonPot || 0;
+      if (fiftyEl) fiftyEl.value = s.fiftyFiftySeasonBuyIn || 0;
       if (modeEl) modeEl.value = s.handicapMode || 'usga';
       if (customEl) customEl.value = s.customFormulaText || '';
       toggleCustomFormulaUI();
@@ -3383,6 +3733,9 @@ async function saveLeagueSettingsFromUI() {
   const startEl = document.getElementById('ls-season-start');
   const endEl = document.getElementById('ls-season-end');
   const teeCountEl = document.getElementById('ls-tee-count');
+  const netSkinsEl = document.getElementById('ls-net-skins-pot');
+  const grossSkinsEl = document.getElementById('ls-gross-skins-pot');
+  const fiftyEl = document.getElementById('ls-fifty-buyin');
   const modeEl = document.getElementById('ls-handicap-mode');
   const customEl = document.getElementById('ls-custom-formula');
 
@@ -3391,6 +3744,9 @@ async function saveLeagueSettingsFromUI() {
     seasonStart: startEl ? startEl.value : null,
     seasonEnd: endEl ? endEl.value : null,
     teePlacementsCount: teeCountEl ? Number(teeCountEl.value) : 3,
+    netSkinsSeasonPot: netSkinsEl ? Number(netSkinsEl.value) : 0,
+    grossSkinsSeasonPot: grossSkinsEl ? Number(grossSkinsEl.value) : 0,
+    fiftyFiftySeasonBuyIn: fiftyEl ? Number(fiftyEl.value) : 0,
     handicapMode: modeEl ? modeEl.value : 'usga',
     customFormulaText: customEl ? customEl.value : ''
   };
@@ -3445,11 +3801,15 @@ async function saveScheduleWeekFromUI() {
   const courseEl = document.getElementById('sch-course');
   const teeEl = document.getElementById('sch-tee');
   const typeEl = document.getElementById('sch-type');
+  const sideEl = document.getElementById('sch-side');
   const week = weekEl ? parseInt(weekEl.value, 10) : null;
   if (!week) {
     showToast('Week required');
     return;
   }
+
+  const matches = readScheduleMatchesFromUI();
+
   try {
     await fetchJson('/api/schedule', {
       method: 'POST',
@@ -3460,7 +3820,9 @@ async function saveScheduleWeekFromUI() {
         title: titleEl ? titleEl.value.trim() : '',
         course: courseEl ? courseEl.value.trim() : '',
         teeTime: teeEl ? teeEl.value.trim() : '',
-        type: typeEl ? typeEl.value : 'match'
+        type: typeEl ? typeEl.value : 'match',
+        side: sideEl ? sideEl.value : 'front',
+        matches
       })
     });
     showToast('Schedule saved');
@@ -3829,7 +4191,8 @@ function initData() {
     hydratePlayerSelectors();
     hydrateScoreEntryUI();
     hydrateScorecardUI();
-    buildPlayerRoster();
+    loadSideGameOptIns().then(() => { buildPlayerRoster(); }).catch(() => { buildPlayerRoster(); });
+    loadTeams();
     buildRoleList();
     buildLeaderboard();
   }).catch(() => {
@@ -3840,6 +4203,7 @@ function initData() {
   });
   hydrateLeaderboardFiltersUI();
   hydrateFinalizeWeekUI();
+  hydrateSideGamesLedgerUI();
   loadScoringMode();
   setLeaderboardMode('gross');
   buildLeaderboard();
@@ -3852,8 +4216,51 @@ function initData() {
   loadSeasonOverview();
   hydrateScrambleAdminUI();
   loadCourses().then(() => {
+    if (!coursesCache || !coursesCache.length) {
+      loadScheduleCache().then(() => {
+        hydrateCourseSelectors();
+      }).catch(() => {
+        hydrateCourseSelectors();
+      });
+      return;
+    }
     hydrateCourseSelectors();
   });
+}
+
+async function loadSideGameOptIns() {
+  try {
+    const res = await fetchJson('/api/side-game-optins');
+    sideGameOptInsCache = Array.isArray(res && res.optIns) ? res.optIns : [];
+  } catch (e) {
+    sideGameOptInsCache = [];
+  }
+  return sideGameOptInsCache;
+}
+
+function getOptInForEmail(email) {
+  const e = String(email || '').trim().toLowerCase();
+  return (sideGameOptInsCache || []).find(o => String(o.email || '').trim().toLowerCase() === e) || null;
+}
+
+async function setSideGameOptIn(email, game, enabled) {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const joinedWeek = enabled ? parseInt(prompt('Join week (1 = start of season):', '1') || '1', 10) : null;
+  try {
+    await fetchJson('/api/side-game-optins', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, game, enabled: !!enabled, joinedWeek })
+    });
+    await loadSideGameOptIns();
+    buildPlayerRoster();
+    showToast('Updated');
+  } catch (e) {
+    showToast('Update failed');
+  }
 }
 
 async function loadFeatures() {
@@ -5012,6 +5419,118 @@ function hydrateFinalizeWeekUI() {
   }
 }
 
+function hydrateSideGamesLedgerUI() {
+  const weekEl = document.getElementById('sg-week');
+  if (weekEl && weekEl.options.length === 0) {
+    weekEl.innerHTML = '<option value="">Select week...</option>' +
+      Array.from({ length: 20 }).map((_, i) => `<option value="${i + 1}">Week ${i + 1}</option>`).join('');
+  }
+  const box = document.getElementById('sg-ledger');
+  if (box && !box.innerHTML.trim()) {
+    box.innerHTML = '<div style="color:#666">Select a week to view side game results.</div>';
+  }
+}
+
+function fmtMoney(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  if (!isFinite(n)) return '$0.00';
+  return '$' + n.toFixed(2);
+}
+
+function renderPayoutTable(payouts) {
+  const entries = payouts && typeof payouts === 'object' ? Object.entries(payouts) : [];
+  if (!entries.length) return '<div style="color:#666">No payouts</div>';
+  entries.sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  return `
+    <table class="data-table" style="margin-top:8px">
+      <thead><tr><th>Player</th><th>Payout</th></tr></thead>
+      <tbody>
+        ${entries.map(([name, amt]) => `<tr><td style="font-weight:800;color:#1a1a1a">${escapeHtml(name)}</td><td style="font-weight:900">${fmtMoney(amt)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderSkinsSection(label, data) {
+  if (!data) return '';
+  const skins = Array.isArray(data.skins) ? data.skins : [];
+  const skinLines = skins.length ? skins.map(s => {
+    const score = (s.net !== undefined && s.net !== null) ? s.net : (s.gross !== undefined && s.gross !== null ? s.gross : '');
+    const scoreLabel = (s.net !== undefined && s.net !== null) ? `Net ${score}` : (s.gross !== undefined && s.gross !== null ? `Gross ${score}` : '');
+    return `<div style="font-size:13px;color:#333">H${s.hole}: <b>${escapeHtml(s.playerName || '')}</b> <span style="color:#666">(${escapeHtml(scoreLabel)})</span></div>`;
+  }).join('') : '<div style="color:#666">No skins</div>';
+
+  return `
+    <div style="margin-top:12px">
+      <div style="font-weight:900;color:#1a1a1a">${escapeHtml(label)}</div>
+      <div style="font-size:12px;color:#444;margin-top:2px">
+        Pot: <b>${fmtMoney(data.pot)}</b>
+        &nbsp;|&nbsp; Carry In: <b>${fmtMoney(data.carryIn)}</b>
+        &nbsp;|&nbsp; Carry Out: <b>${fmtMoney(data.carryOut)}</b>
+        ${data.skinValue ? `&nbsp;|&nbsp; Skin Value: <b>${fmtMoney(data.skinValue)}</b>` : ''}
+      </div>
+      <div style="margin-top:8px">${skinLines}</div>
+      ${renderPayoutTable(data.payouts)}
+    </div>
+  `;
+}
+
+function renderSideGamesLedger(ledger) {
+  const box = document.getElementById('sg-ledger');
+  if (!box) return;
+  if (!ledger) {
+    box.innerHTML = '<div style="color:#666">No ledger found for that week. Try recompute.</div>';
+    return;
+  }
+
+  const sched = ledger.schedule || {};
+  const skins = ledger.skins || {};
+  const fifty = ledger.fiftyFifty || {};
+
+  const skinSides = Object.keys(skins);
+  const skinsHtml = skinSides.length ? skinSides.map(side => {
+    const block = skins[side] || {};
+    return `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900">${escapeHtml(side)} 9</div>
+        ${renderSkinsSection('Net Skins', block.net)}
+        ${renderSkinsSection('Gross Skins', block.gross)}
+      </div>
+    `;
+  }).join('') : '<div style="color:#666">No skins computed</div>';
+
+  const lowNet = fifty.lowNet || {};
+  const lowNetWinners = Array.isArray(lowNet.winners) ? lowNet.winners : [];
+  const lowNetText = lowNetWinners.length ? lowNetWinners.map(w => `<b>${escapeHtml(w)}</b>`).join(', ') : '—';
+
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:1000;color:#1a1a1a">Week ${ledger.week || '—'} Side Games</div>
+        <div style="font-size:12px;color:#444;margin-top:3px">
+          ${escapeHtml(sched.title || '')}
+          ${sched.side ? `&nbsp;|&nbsp; Side: <b>${escapeHtml(sched.side)}</b>` : ''}
+          ${sched.course ? `&nbsp;|&nbsp; Course: <b>${escapeHtml(sched.course)}</b>` : ''}
+        </div>
+        <div style="font-size:11px;color:#666;margin-top:3px">Computed: ${escapeHtml(ledger.computedAt || '')}</div>
+      </div>
+    </div>
+
+    ${skinsHtml}
+
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)">
+      <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900">50/50</div>
+      <div style="font-size:12px;color:#444;margin-top:4px">
+        Pot: <b>${fmtMoney(fifty.pot)}</b>
+        &nbsp;|&nbsp; Carry In: <b>${fmtMoney(fifty.carryIn)}</b>
+        &nbsp;|&nbsp; Carry Out: <b>${fmtMoney(fifty.carryOut)}</b>
+      </div>
+      <div style="margin-top:8px;font-size:13px;color:#333">Low Net: ${lowNet.lowNet !== null && lowNet.lowNet !== undefined ? `<b>${escapeHtml(String(lowNet.lowNet))}</b>` : '—'} &nbsp;|&nbsp; Winner(s): ${lowNetText}</div>
+      ${renderPayoutTable(fifty.payouts)}
+    </div>
+  `;
+}
+
 function getStrokesForNine(hi) {
   const h = typeof hi === 'number' ? hi : parseFloat(hi);
   if (isNaN(h) || h <= 0) return 0;
@@ -5163,8 +5682,55 @@ async function finalizeSelectedWeek() {
     showToast('Finalized ' + count + ' scorecards');
     buildLeaderboard();
     refreshScorecardLockStatus();
+    const sgWeekEl = document.getElementById('sg-week');
+    if (sgWeekEl) sgWeekEl.value = String(week);
+    loadSideGamesLedgerFromUI();
   } catch (e) {
     showToast('Finalize failed');
+  }
+}
+
+async function loadSideGamesLedgerFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('sg-week');
+  const week = weekEl ? weekEl.value : '';
+  if (!week) {
+    showToast('Select week');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/side-games-ledger?week=' + encodeURIComponent(parseInt(week, 10)));
+    renderSideGamesLedger(res && res.ledger ? res.ledger : null);
+  } catch (e) {
+    renderSideGamesLedger(null);
+    showToast('Load failed');
+  }
+}
+
+async function recomputeSideGamesLedgerFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('Access denied');
+    return;
+  }
+  const weekEl = document.getElementById('sg-week');
+  const week = weekEl ? weekEl.value : '';
+  if (!week) {
+    showToast('Select week');
+    return;
+  }
+  try {
+    const res = await fetchJson('/api/side-games-ledger', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'compute', week: parseInt(week, 10) })
+    });
+    renderSideGamesLedger(res && res.ledger ? res.ledger : null);
+    showToast('Recomputed');
+  } catch (e) {
+    showToast('Recompute failed');
   }
 }
 
@@ -5172,6 +5738,18 @@ async function buildSchedule() {
   const list = document.getElementById('schedule-list');
   if (!list) return;
   try {
+    // Ensure team/player caches are available so matchup labels can include names.
+    try {
+      await loadPlayers();
+    } catch (e) {
+      // ignore
+    }
+    try {
+      await loadTeams();
+    } catch (e) {
+      // ignore
+    }
+
     const res = await fetchJson('/api/schedule');
     const weeks = Array.isArray(res.weeks) ? res.weeks : [];
     const rainouts = Array.isArray(res.rainouts) ? res.rainouts : [];
@@ -5196,11 +5774,23 @@ async function buildSchedule() {
     const adminCard = document.getElementById('schedule-admin-card');
     if (adminCard) adminCard.style.display = isAdmin ? '' : 'none';
 
-    const pairCard = document.getElementById('pairings-admin-card');
-    if (pairCard) pairCard.style.display = isAdmin ? '' : 'none';
+    // If admin is on schedule page, hydrate matchups editor for the selected week.
     if (isAdmin) {
-      hydratePairingsAdminUI(weeks, pairings);
+      try {
+        await loadTeams();
+      } catch (e) {
+        // ignore
+      }
+      const wEl = document.getElementById('sch-week');
+      const wNum = wEl && wEl.value ? parseInt(wEl.value, 10) : null;
+      const hit = wNum ? (weeks.find(x => (x.week || 0) === wNum) || null) : null;
+      const ms = hit && Array.isArray(hit.matches) ? hit.matches : [];
+      renderScheduleMatchesEditor(ms);
     }
+
+    const pairCard = document.getElementById('pairings-admin-card');
+    const hasTeams = Array.isArray(teamsCache) && teamsCache.length > 0;
+    if (pairCard) pairCard.style.display = 'none';
 
     const propCard = document.getElementById('schedule-proposal-card');
     const propBody = document.getElementById('schedule-proposal-body');
@@ -5254,7 +5844,8 @@ async function buildSchedule() {
 
       const pairing = (pairings || []).find(p => (p.week || 0) === (w.week || 0)) || null;
       const groups = pairing && Array.isArray(pairing.groups) ? pairing.groups : [];
-      const pairsHtml = groups.length ? `
+      const matchups = Array.isArray(w.matches) ? w.matches : [];
+      const pairsHtml = (!hasTeams && !matchups.length && groups.length) ? `
         <div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(212,175,55,0.18);border-radius:4px;background:rgba(212,175,55,0.06)">
           <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900;margin-bottom:8px">Pairings</div>
           ${groups.map((g, gi) => {
@@ -5271,6 +5862,21 @@ async function buildSchedule() {
           }).join('')}
         </div>
       ` : '';
+
+      const matchupsHtml = matchups.length ? `
+        <div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(0,0,0,0.08);border-radius:4px;background:#fff">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900;margin-bottom:8px">Team Matchups</div>
+          ${matchups.map(m => {
+            const a = m && m.teamA ? Number(m.teamA) : 0;
+            const b = m && m.teamB ? Number(m.teamB) : 0;
+            const an = a ? getTeamNamesOnly(a) : '';
+            const bn = b ? getTeamNamesOnly(b) : '';
+            const aLabel = an ? `Team ${escapeHtml(a)} (${escapeHtml(an)})` : `Team ${escapeHtml(a)}`;
+            const bLabel = bn ? `Team ${escapeHtml(b)} (${escapeHtml(bn)})` : `Team ${escapeHtml(b)}`;
+            return `<div style="font-size:13px;color:#1a1a1a;margin-bottom:6px"><b>${aLabel}</b> vs <b>${bLabel}</b></div>`;
+          }).join('')}
+        </div>
+      ` : '';
       return `
         <div class="match-row">
           <div class="match-date">
@@ -5281,6 +5887,7 @@ async function buildSchedule() {
           <div class="match-info">
             <div class="match-title">${title}${badge}</div>
             <div class="match-course">${courseLine}</div>
+            ${matchupsHtml}
             ${pairsHtml}
           </div>
           <span class="match-type type-${type}">${type === 'scramble' ? '🔀 Scramble' : (type === 'tournament' ? '🏆 Tournament' : '⛳ Match')}</span>
@@ -5428,13 +6035,16 @@ function getScoreEntryValues() {
   const weekEl = document.getElementById('score-week');
   const dateEl = document.getElementById('score-date');
   const courseEl = document.getElementById('score-course');
+  const manualEl = document.getElementById('score-course-manual');
   const playerEl = document.getElementById('score-player');
   const teeEl = document.getElementById('score-tee');
   const sideEl = document.getElementById('score-side');
+  const courseValue = courseEl ? courseEl.value : null;
+  const courseManual = manualEl ? String(manualEl.value || '').trim() : '';
   return {
     week: weekEl ? parseInt(weekEl.value, 10) : null,
     date: dateEl ? dateEl.value : null,
-    course: courseEl ? courseEl.value : null,
+    course: courseValue === '__manual__' ? (courseManual || null) : courseValue,
     player: playerEl ? playerEl.value : null,
     tee: teeEl ? teeEl.value : null,
     side: sideEl ? sideEl.value : 'front'
@@ -5510,7 +6120,7 @@ async function saveScore(status) {
   const handicapSnapshot = p ? Number(p.hdcp !== undefined ? p.hdcp : p.handicap) : null;
 
   try {
-    await fetchJson('/api/scores', {
+    const res = await fetchJsonAllowError('/api/scores', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -5542,6 +6152,16 @@ async function saveScore(status) {
         submittedBy: currentUser ? currentUser.email : null
       })
     });
+    if (!res || !res.ok) {
+      const msg = (res && res.text) ? String(res.text) : '';
+      if (msg.toLowerCase().includes('locked')) {
+        showToast('Scorecard locked');
+        await refreshScorecardLockStatus();
+        return;
+      }
+      showToast(msg || ('Save failed' + (res && res.status ? (' (' + res.status + ')') : '')));
+      return;
+    }
     showToast(status === 'final' ? 'Score submitted' : 'Draft saved');
     if (status === 'final') {
       await refreshScorecardLockStatus();
@@ -5556,12 +6176,13 @@ async function saveScore(status) {
     if (penEl2) penEl2.value = '0';
     buildScoreGrid();
   } catch (e) {
-    if (String(e && e.message || '').toLowerCase().includes('locked')) {
+    const msg = String(e && e.message || '').trim();
+    if (msg.toLowerCase().includes('locked')) {
       showToast('Scorecard locked');
       await refreshScorecardLockStatus();
       return;
     }
-    showToast('Save failed');
+    showToast(msg || 'Save failed');
   }
 }
 
@@ -5586,7 +6207,22 @@ function hydrateScoreEntryUI() {
     dateEl.value = d.toISOString().slice(0, 10);
   }
 
-  if (weekEl) weekEl.addEventListener('change', async () => { await refreshScorecardLockStatus(); await loadLatestScoreIntoEntry(); });
+  if (weekEl) weekEl.addEventListener('change', async () => {
+    try {
+      const w = parseInt(weekEl.value || '0', 10);
+      if (w && sideEl) {
+        await loadScheduleCache();
+        const sw = (scheduleCache || []).find(x => (x && x.week) === w) || null;
+        const s = sw && sw.side ? String(sw.side) : '';
+        if (s === 'front' || s === 'back') sideEl.value = s;
+        if (s === 'both' && !sideEl.value) sideEl.value = 'front';
+      }
+    } catch (e) {
+      // ignore
+    }
+    await refreshScorecardLockStatus();
+    await loadLatestScoreIntoEntry();
+  });
   if (playerEl) playerEl.addEventListener('change', async () => { await refreshScorecardLockStatus(); await loadLatestScoreIntoEntry(); });
   if (courseEl) courseEl.addEventListener('change', () => { hydrateCourseTeeForScoreEntry(); buildScoreGrid(); });
   if (teeEl) teeEl.addEventListener('change', () => { buildScoreGrid(); });
@@ -5612,11 +6248,29 @@ function hydrateCourseSelectors() {
 
 function hydrateCourseSelectorForScoreEntry() {
   const courseEl = document.getElementById('score-course');
+  const manualEl = document.getElementById('score-course-manual');
   if (!courseEl) return;
   const cur = courseEl.value;
-  courseEl.innerHTML = '<option value="">Select course...</option>' + (coursesCache || []).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  const curManual = manualEl ? manualEl.value : '';
+  const courses = (coursesCache && coursesCache.length) ? coursesCache : [];
+  if (courses.length) {
+    courseEl.innerHTML = '<option value="">Select course...</option>' + courses.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  } else {
+    const schedCourses = Array.from(new Set((scheduleCache || []).map(w => (w && w.course) ? String(w.course).trim() : '').filter(Boolean)));
+    if (schedCourses.length) {
+      courseEl.innerHTML = '<option value="">Select course...</option>' + schedCourses.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    } else {
+      courseEl.innerHTML = '<option value="">Select course...</option><option value="__manual__">Manual (type below)</option>';
+    }
+  }
   if (cur) courseEl.value = cur;
-  if (!courseEl.value && coursesCache && coursesCache.length) courseEl.value = coursesCache[0].name;
+  if (!courseEl.value && courses && courses.length) courseEl.value = courses[0].name;
+  if (manualEl) {
+    const manualMode = courseEl.value === '__manual__';
+    manualEl.style.display = manualMode ? '' : 'none';
+    if (!manualMode) manualEl.value = '';
+    else if (curManual && !manualEl.value) manualEl.value = curManual;
+  }
   hydrateCourseTeeForScoreEntry();
 }
 
@@ -5624,6 +6278,12 @@ function hydrateCourseTeeForScoreEntry() {
   const courseEl = document.getElementById('score-course');
   const teeEl = document.getElementById('score-tee');
   if (!courseEl || !teeEl) return;
+  if (courseEl.value === '__manual__') {
+    const cur = teeEl.value;
+    teeEl.innerHTML = '<option value="">—</option>';
+    if (cur) teeEl.value = cur;
+    return;
+  }
   const course = getCourseByName(courseEl.value);
   const tees = course && Array.isArray(course.tees) ? course.tees : [];
   const cur = teeEl.value;
@@ -6134,12 +6794,19 @@ function buildPlayerRoster() {
   const rows = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA.map(p => ({ name: p.name, email: p.email, phone: p.phone, handicap: p.hdcp }));
   tbody.innerHTML = rows.map(p => {
     const hc = (p.handicap !== undefined && p.handicap !== null) ? p.handicap : (p.hdcp !== undefined ? p.hdcp : '');
+    const opt = p.email ? getOptInForEmail(p.email) : null;
+    const netOn = !!(opt && opt.netSkins && opt.netSkins.enabled);
+    const grossOn = !!(opt && opt.grossSkins && opt.grossSkins.enabled);
+    const fiftyOn = !!(opt && opt.fiftyFifty && opt.fiftyFifty.enabled);
     return `
       <tr>
         <td style="font-weight:600;color:#1a1a1a">${p.name || ''}</td>
         <td>${p.email || ''}</td>
         <td>${p.phone || ''}</td>
         <td>${(hc === null || hc === undefined || hc === '') ? '—' : hc}</td>
+        <td style="text-align:center"><input type="checkbox" ${netOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'net_skins', this.checked)" /></td>
+        <td style="text-align:center"><input type="checkbox" ${grossOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'gross_skins', this.checked)" /></td>
+        <td style="text-align:center"><input type="checkbox" ${fiftyOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'fifty_fifty', this.checked)" /></td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="editPlayer('${p.email}')">Edit</button>

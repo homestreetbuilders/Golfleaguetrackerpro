@@ -28,6 +28,14 @@ function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n))
 }
 
+function getSiteBaseUrl(req) {
+  const envUrl = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.DEPLOY_URL
+  if (envUrl) return String(envUrl).replace(/\/$/, '')
+  const host = req && req.headers ? (req.headers.get('x-forwarded-host') || req.headers.get('host')) : null
+  const proto = req && req.headers ? (req.headers.get('x-forwarded-proto') || 'https') : 'https'
+  return host ? `${proto}://${host}` : null
+}
+
 async function listScoresForPlayer(store, playerName) {
   const prefix = `week-`
   const { blobs } = await store.list({ prefix }).catch(() => ({ blobs: [] }))
@@ -220,6 +228,20 @@ export default async (req) => {
     } catch (e) {
       // non-fatal
     }
+  }
+
+  // Side games ledger compute (non-fatal)
+  try {
+    const base = getSiteBaseUrl(req)
+    if (base && leagueId) {
+      await fetch(`${base}/api/side-games-ledger?leagueId=${encodeURIComponent(leagueId)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'compute', week })
+      }).catch(() => null)
+    }
+  } catch (e) {
+    // non-fatal
   }
 
   return Response.json({
