@@ -831,8 +831,8 @@
   }
 
   .scorecard-card {
-    width: 5in;
-    height: 7in;
+    width: 7in;
+    height: 5in;
     background: #fff;
     color: #111;
     border: 2px solid var(--green);
@@ -841,11 +841,154 @@
   }
 
   .scorecard-inner {
-    padding: 0.25in;
+    padding: 0.375in;
     height: 100%;
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .matchup-card {
+    border: 2px solid #1A4A2E;
+  }
+
+  .mcard-header {
+    background: #2E7D4F;
+    color: #fff;
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .mcard-header .left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .mcard-course {
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .mcard-date {
+    font-size: 12px;
+    opacity: 0.92;
+    line-height: 1;
+  }
+
+  .mcard-header .right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mcard-pill {
+    background: #D4AF37;
+    color: #1A4A2E;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .mcard-matchnum {
+    font-size: 12px;
+    font-weight: 900;
+    opacity: 0.95;
+  }
+
+  .mcard-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    color: #111;
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .mgrid {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .mgrid th,
+  .mgrid td {
+    border: 1px solid rgba(0,0,0,0.22);
+    padding: 6px 4px;
+    text-align: center;
+  }
+
+  .mgrid .row-label {
+    text-align: left;
+    font-weight: 900;
+    width: 128px;
+    padding-left: 10px;
+  }
+
+  .mgrid .colhead {
+    background: #1A4A2E;
+    color: #fff;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .mgrid .par-row td { font-weight: 900; }
+
+  .mgrid .hcp-row td {
+    color: #D4AF37;
+    font-weight: 900;
+  }
+
+  .mgrid .p-row td {
+    background: #F5FAF6;
+  }
+
+  .mgrid .p-row.alt td {
+    background: #EFF4FF;
+  }
+
+  .mgrid .divider td {
+    padding: 0;
+    height: 8px;
+    background: #1A4A2E;
+    border-color: #1A4A2E;
+  }
+
+  .m-scorecell {
+    position: relative;
+    height: 18px;
+    background: transparent;
+  }
+
+  .m-dots {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .m-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #8B1D2C;
+    border: 1px solid rgba(0,0,0,0.25);
   }
 
   .scorecard-title {
@@ -954,13 +1097,14 @@
   .print-only { display: none; }
 
   @media print {
-    @page { size: 5in 7in; margin: 0; }
+    @page { size: 7in 5in; margin: 0; }
     body { background: #fff; }
     #login-screen, .toast { display: none !important; }
     #app { display: block !important; }
     #app > * { display: none !important; }
     #app .print-only { display: block !important; }
     .print-only .scorecard-card { box-shadow: none; border-radius: 0; }
+    .scorecard-card { page-break-after: always; }
   }
 
   /* PLAYER FORM */
@@ -5876,6 +6020,86 @@ function allocateStrokeDots(strokes, hcpIdxArr) {
   return dots;
 }
 
+function buildMatchupScorecardHtml({ course, date, side, matchLabel, matchNum, lowA, lowB, highA, highB, yards, pars, hcpIdx, dotsLowA, dotsLowB, dotsHighA, dotsHighB }) {
+  const sideText = side === 'back' ? 'Back 9' : 'Front 9';
+  const startHole = side === 'back' ? 10 : 1;
+  const holeLabels = Array.from({ length: 9 }).map((_, i) => String(startHole + i)).concat(['Total']);
+  const yardsTotal = (yards || []).reduce((a, b) => a + (Number(b) || 0), 0);
+  const parTotal = (pars || []).reduce((a, b) => a + (Number(b) || 0), 0);
+
+  const dotsHtml = (n) => `<span class="m-dots">${Array.from({ length: n }).map(() => '<span class="m-dot"></span>').join('')}</span>`;
+  const scoreCell = (nDots) => `<div class="m-scorecell">${nDots ? dotsHtml(nDots) : ''}</div>`;
+  const rowCells = (dotsArr) => (dotsArr || []).slice(0, 9).map(n => `<td>${scoreCell(Number(n) || 0)}</td>`).join('') + '<td></td>';
+  const headerCells = (vals, total) => (vals || []).slice(0, 9).map(v => `<td>${escapeHtml(String(v))}</td>`).join('') + `<td>${escapeHtml(String(total))}</td>`;
+  const hcpCells = (vals) => (vals || []).slice(0, 9).map(v => `<td>${escapeHtml(String(v))}</td>`).join('') + '<td></td>';
+  const playerLabel = (p) => {
+    if (!p) return '';
+    const hi = (p.hi !== null && p.hi !== undefined) ? p.hi : '';
+    return `<div style="font-weight:900">${escapeHtml(p.name || '')}</div><div style="font-size:10px;color:#666">Hdcp: ${escapeHtml(String(hi))}</div>`;
+  };
+
+  return `
+    <div class="scorecard-card matchup-card">
+      <div class="scorecard-inner" style="gap:8px">
+        <div class="mcard-header">
+          <div class="left">
+            <div class="mcard-course">${escapeHtml(course || '—')}</div>
+            <div class="mcard-date">${escapeHtml(date || '—')}</div>
+          </div>
+          <div class="right">
+            <div class="mcard-pill">${escapeHtml(sideText)}</div>
+            <div class="mcard-matchnum">Match ${escapeHtml(String(matchNum || ''))}</div>
+          </div>
+        </div>
+        <div class="mcard-title">${escapeHtml(matchLabel || '')}</div>
+
+        <table class="mgrid">
+          <thead>
+            <tr>
+              <th class="colhead row-label">Hole</th>
+              ${holeLabels.map(h => `<th class="colhead">${escapeHtml(h)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label">Yards</td>
+              ${headerCells((yards || []).map(y => Number(y) || 0), yardsTotal)}
+            </tr>
+            <tr class="par-row">
+              <td class="row-label">Par</td>
+              ${headerCells((pars || []).map(p => Number(p) || 0), parTotal)}
+            </tr>
+            <tr class="hcp-row">
+              <td class="row-label">Hdcp</td>
+              ${hcpCells((hcpIdx || []).map(x => Number(x) || 0))}
+            </tr>
+
+            <tr class="p-row">
+              <td class="row-label">${playerLabel(lowA)}</td>
+              ${rowCells(dotsLowA)}
+            </tr>
+            <tr class="p-row">
+              <td class="row-label">${playerLabel(lowB)}</td>
+              ${rowCells(dotsLowB)}
+            </tr>
+
+            <tr class="divider"><td colspan="11"></td></tr>
+
+            <tr class="p-row alt">
+              <td class="row-label">${playerLabel(highA)}</td>
+              ${rowCells(dotsHighA)}
+            </tr>
+            <tr class="p-row alt">
+              <td class="row-label">${playerLabel(highB)}</td>
+              ${rowCells(dotsHighB)}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
 function buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, dots, holes }) {
   const d = date ? parseIsoDateLocal(date) : null;
   const dateText = d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-US') : (date || '');
@@ -6144,13 +6368,18 @@ async function printAllScorecardsForWeek() {
 
   const nine = (coursesCache && coursesCache.length && course) ? getActiveNineCourseData(course, tee, side) : null;
   const hcpIdx = nine && Array.isArray(nine.hcpIdx) && nine.hcpIdx.length === 9 ? nine.hcpIdx : HOLE_HCP_INDEX;
+  const pars = nine && Array.isArray(nine.pars) && nine.pars.length === 9 ? nine.pars : PARS;
+  const yards = nine && Array.isArray(nine.yards) && nine.yards.length === 9 ? nine.yards : new Array(9).fill(0);
 
   let html = '';
   try {
+    let matchNum = 0;
     for (const m of matches) {
       const a = m && m.teamA ? Number(m.teamA) : 0;
       const b = m && m.teamB ? Number(m.teamB) : 0;
       if (!a || !b) continue;
+
+      matchNum += 1;
 
       const aPair = computeLowHighPair(resolveTeamPlayers(a));
       const bPair = computeLowHighPair(resolveTeamPlayers(b));
@@ -6159,29 +6388,29 @@ async function printAllScorecardsForWeek() {
       const lowB = bPair.low;
       const highB = bPair.high;
 
-      const order = [
-        { left: lowA, right: lowB, label: 'Low HCP' },
-        { left: highA, right: highB, label: 'High HCP' }
-      ];
+      const lowADots = lowA ? allocateStrokeDots(getStrokesForNine(lowA.hi), hcpIdx) : new Array(9).fill(0);
+      const lowBDots = lowB ? allocateStrokeDots(getStrokesForNine(lowB.hi), hcpIdx) : new Array(9).fill(0);
+      const highADots = highA ? allocateStrokeDots(getStrokesForNine(highA.hi), hcpIdx) : new Array(9).fill(0);
+      const highBDots = highB ? allocateStrokeDots(getStrokesForNine(highB.hi), hcpIdx) : new Array(9).fill(0);
 
-      for (const slot of order) {
-        const pL = slot.left;
-        const pR = slot.right;
-        if (!pL || !pR) continue;
-
-        const lStrokes = getStrokesForNine(pL.hi);
-        const rStrokes = getStrokesForNine(pR.hi);
-        const lDots = allocateStrokeDots(lStrokes, hcpIdx);
-        const rDots = allocateStrokeDots(rStrokes, hcpIdx);
-
-        const header = `${matchupLabel(a)} vs ${matchupLabel(b)} — ${slot.label}`;
-        html += '<div class="scorecard-pair">' +
-          buildScorecardHtml({ week, date, playerName: header + ' | ' + pL.name, course, tee, hi: pL.hi, strokes: lStrokes, dots: lDots, holes: null }) +
-          '</div>';
-        html += '<div class="scorecard-pair">' +
-          buildScorecardHtml({ week, date, playerName: header + ' | ' + pR.name, course, tee, hi: pR.hi, strokes: rStrokes, dots: rDots, holes: null }) +
-          '</div>';
-      }
+      html += buildMatchupScorecardHtml({
+        course,
+        date,
+        side,
+        matchLabel: `${matchupLabel(a)} vs ${matchupLabel(b)}`,
+        matchNum,
+        lowA,
+        lowB,
+        highA,
+        highB,
+        yards,
+        pars,
+        hcpIdx,
+        dotsLowA: lowADots,
+        dotsLowB: lowBDots,
+        dotsHighA: highADots,
+        dotsHighB: highBDots
+      });
     }
   } catch (e) {
     showToast('Print build failed');
