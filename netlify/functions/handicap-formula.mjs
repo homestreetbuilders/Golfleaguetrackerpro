@@ -15,12 +15,13 @@ export default async (req) => {
   const store = getStore(leagueStoreName('handicap-config', leagueId))
 
   if (req.method === 'POST') {
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
+    if (!body) return new Response('Invalid request body', { status: 400 })
     await store.setJSON('formula', {
       bestN: body.bestN || 8,
       lastN: body.lastN || 20,
       multiplier: body.multiplier || 0.96,
-      maxHcp: body.maxHcp || 18,
+      maxHcp: body.maxHcp || 36,
       minRounds: body.minRounds || 3,
       bonus: body.bonus || 'none',
       updatedAt: new Date().toISOString()
@@ -29,11 +30,11 @@ export default async (req) => {
   }
 
   if (req.method === 'GET') {
-    const formula = await store.get('formula', { type: 'json' })
+    const formula = await store.get('formula', { type: 'json' }).catch(() => null)
     if (!formula) {
       return Response.json({
         bestN: 8, lastN: 20, multiplier: 0.96,
-        maxHcp: 18, minRounds: 3, bonus: 'none'
+        maxHcp: 36, minRounds: 3, bonus: 'none'
       })
     }
     return Response.json(formula)

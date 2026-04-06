@@ -22,8 +22,19 @@ function sanitizeCategory(cat) {
   return { id, name, active, amount }
 }
 
+function normalizeLeagueId(v) {
+  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+}
+
+function leagueStoreName(base, leagueId) {
+  const id = normalizeLeagueId(leagueId)
+  return id ? `${base}-${id}` : base
+}
+
 export default async (req) => {
-  const store = getStore('payment-settings')
+  const url = new URL(req.url)
+  const leagueId = url.searchParams.get('leagueId')
+  const store = getStore(leagueStoreName('payment-settings', leagueId))
   const key = 'settings'
 
   if (req.method === 'GET') {

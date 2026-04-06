@@ -37,10 +37,10 @@ export default async (req) => {
   }
 
   if (req.method === 'GET') {
-    const { blobs } = await store.list()
+    const { blobs } = await store.list().catch(() => ({ blobs: [] }))
     const rainouts = []
-    for (const blob of blobs) {
-      const data = await store.get(blob.key, { type: 'json' })
+    for (const blob of blobs || []) {
+      const data = await store.get(blob.key, { type: 'json' }).catch(() => null)
       if (data) rainouts.push(data)
     }
     return Response.json({ rainouts })

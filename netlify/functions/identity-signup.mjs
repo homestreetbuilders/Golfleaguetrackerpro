@@ -18,7 +18,7 @@ export default async (req) => {
   const role = isFirstUser ? 'admin' : 'player'
 
   const key = `role-${email.toLowerCase()}`
-  const existing = await store.get(key, { type: 'text' })
+  const existing = await store.get(key, { type: 'text' }).catch(() => null)
   if (!existing) {
     await store.set(key, role)
   }

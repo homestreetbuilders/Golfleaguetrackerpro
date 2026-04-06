@@ -105,7 +105,7 @@ export default async (req) => {
   }
 
   const prefix = `week-${week}-`
-  const { blobs } = await store.list({ prefix })
+  const { blobs } = await store.list({ prefix }).catch(() => ({ blobs: [] }))
 
   const latestByPlayer = new Map()
   for (const blob of blobs) {
@@ -137,7 +137,7 @@ export default async (req) => {
     }
 
     const lockKey = `lock-${String(playerName).toLowerCase()}-week-${week}`
-    const lock = await lockStore.get(lockKey, { type: 'json' })
+    const lock = await lockStore.get(lockKey, { type: 'json' }).catch(() => null)
     if (lock && lock.locked) {
       skippedLocked.push(playerName)
       continue
