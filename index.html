@@ -3996,22 +3996,41 @@ async function unpinAnnouncement() {
 }
 
 function printLeaderboard() {
-  const root = document.getElementById('print-root');
-  if (!root) return;
-
-  const title = 'Leaderboard';
   const mode = leaderboardMode === 'net' ? 'Net' : 'Gross';
   const table = document.querySelector('#page-leaderboard table.data-table');
-  const html = table ? table.outerHTML : '';
+  const tableHtml = table ? table.outerHTML : '<p style="color:#666">No scores to display.</p>';
 
-  root.innerHTML = `
-    <div style="padding:16px">
-      <div style="font-family:'Bebas Neue', sans-serif;font-size:28px;letter-spacing:2px;color:#1a1a1a">${escapeHtml(title)} — ${escapeHtml(mode)}</div>
-      <div style="margin:6px 0 14px;color:#444;font-size:12px">Printed ${new Date().toLocaleString()}</div>
-      ${html}
-    </div>
-  `;
-  setTimeout(() => window.print(), 50);
+  const win = window.open('', '_blank', 'width=860,height=680');
+  if (!win) return;
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Leaderboard \u2014 ${mode}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Barlow', sans-serif; background: #fff; color: #1a1a1a; padding: 28px 32px; }
+    h1 { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: #1A4A2E; margin-bottom: 4px; }
+    .sub { color: #666; font-size: 12px; margin-bottom: 20px; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    thead th { background: #1A4A2E; color: #fff; padding: 9px 12px; text-align: left; font-weight: 600; }
+    tbody td { padding: 8px 12px; border-bottom: 1px solid #e8e8e8; }
+    tbody tr:nth-child(even) td { background: #f7f7f5; }
+    tbody tr:first-child td { color: #B8860B; font-weight: 700; }
+    tbody tr:nth-child(2) td { color: #666; font-weight: 600; }
+    tbody tr:nth-child(3) td { color: #996515; font-weight: 600; }
+    @media print { @page { margin: 0.5in; size: letter; } body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <h1>Leaderboard \u2014 ${mode}</h1>
+  <div class="sub">Printed ${new Date().toLocaleString()}</div>
+  ${tableHtml}
+  <script>window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 200); });<\/script>
+</body>
+</html>`);
+  win.document.close();
 }
 
 async function resolveUserRole(user) {
@@ -5614,8 +5633,16 @@ function setLeaderboardMode(mode) {
   leaderboardMode = mode === 'net' ? 'net' : 'gross';
   const g = document.getElementById('lb-mode-gross');
   const n = document.getElementById('lb-mode-net');
-  if (g) g.style.background = leaderboardMode === 'gross' ? 'rgba(212,175,55,0.22)' : 'rgba(212,175,55,0.12)';
-  if (n) n.style.background = leaderboardMode === 'net' ? 'rgba(212,175,55,0.22)' : 'rgba(212,175,55,0.12)';
+  // Clearly distinguish the active button with solid gold fill vs ghost style
+  if (g) { g.style.background = leaderboardMode === 'gross' ? '#D4AF37' : 'transparent'; g.style.color = leaderboardMode === 'gross' ? '#1A4A2E' : ''; g.style.fontWeight = leaderboardMode === 'gross' ? '700' : ''; }
+  if (n) { n.style.background = leaderboardMode === 'net' ? '#D4AF37' : 'transparent'; n.style.color = leaderboardMode === 'net' ? '#1A4A2E' : ''; n.style.fontWeight = leaderboardMode === 'net' ? '700' : ''; }
+  // Update column headers to reflect active mode
+  const thead = document.querySelector('#page-leaderboard table.data-table thead tr');
+  if (thead) {
+    const ths = thead.querySelectorAll('th');
+    if (ths[3]) ths[3].textContent = leaderboardMode === 'net' ? 'Net Avg' : 'Avg';
+    if (ths[4]) ths[4].textContent = leaderboardMode === 'net' ? 'Net Best' : 'Best';
+  }
   buildLeaderboard();
 }
 
