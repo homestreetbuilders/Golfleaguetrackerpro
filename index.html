@@ -1593,60 +1593,93 @@
       <div class="page" id="page-schedule">
         <div class="page-header">
           <h2>Schedule</h2>
-          <p>Season 2026 — weekly matches & scramble events</p>
+          <p>Season 2026 — weekly matches &amp; events</p>
         </div>
+
+        <!-- ── ADMIN: Schedule Entry ── -->
         <div class="card" id="schedule-admin-card" style="display:none">
-          <div class="card-header"><div class="card-title">Schedule Management</div></div>
-          <div class="card-body">
-            <div class="form-grid" style="margin-bottom:16px">
-              <div class="form-field"><label>Week</label><input id="sch-week" type="number" min="1" placeholder="1" onchange="loadScheduleWeekIntoAdminEditor()" /></div>
-              <div class="form-field"><label>Date</label><input id="sch-date" type="date" /></div>
-              <div class="form-field"><label>Title</label><input id="sch-title" placeholder="Week 1 — Regular Match" /></div>
-              <div class="form-field"><label>Course</label><input id="sch-course" placeholder="Mud Run GC" /></div>
-              <div class="form-field"><label>Tee Time</label><input id="sch-tee" placeholder="5:30 PM" /></div>
-              <div class="form-field"><label>Type</label>
-                <select id="sch-type"><option value="match">Match</option><option value="scramble">Scramble</option><option value="tournament">Tournament</option></select>
+          <div class="card-header" style="padding:10px 16px">
+            <div class="card-title">Schedule Entry</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+
+            <!-- Row 1: Date (prominent) · Week · Match Type -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1A4A2E;margin-bottom:4px">Date *</label>
+                <input id="sch-date" type="date" onchange="onSchDateChange()" style="width:100%;padding:7px 10px;border:2px solid #D4AF37;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box" />
               </div>
-              <div class="form-field"><label>Side</label>
-                <select id="sch-side"><option value="front">Front 9</option><option value="back">Back 9</option><option value="both">Both</option></select>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Week #</label>
+                <input id="sch-week" type="number" min="1" placeholder="Auto" onchange="loadScheduleWeekIntoAdminEditor()" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box" />
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Match Type</label>
+                <select id="sch-type" onchange="onSchTypeChange()" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box">
+                  <option value="match">Regular Match</option>
+                  <option value="scramble">Scramble</option>
+                  <option value="tournament">Tournament</option>
+                </select>
               </div>
             </div>
 
-            <div class="card" style="margin:0 0 16px">
-              <div class="card-header"><div class="card-title">Weekly Team Matchups</div></div>
-              <div class="card-body" id="sch-matches"></div>
-              <div class="card-body" style="padding-top:0">
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
-                  <button class="btn-sm" onclick="addScheduleMatchRowFromUI()">Add Match</button>
-                </div>
-                <div style="margin-top:10px;font-size:12px;color:#666">Set Team # vs Team # for this week. Each team should appear only once per week.</div>
+            <!-- Row 2: Course · Tee · Side -->
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:16px">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Course</label>
+                <select id="sch-course-sel" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box">
+                  <option value="">— Select Course —</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Tee</label>
+                <select id="sch-tee-sel" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box">
+                  <option value="white">White</option>
+                  <option value="blue">Blue</option>
+                  <option value="red">Red</option>
+                  <option value="gold">Gold</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Side</label>
+                <select id="sch-side" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box">
+                  <option value="front">Front 9</option>
+                  <option value="back">Back 9</option>
+                  <option value="both">Full 18</option>
+                </select>
               </div>
             </div>
 
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <!-- ── Regular Match entry ── -->
+            <div id="sch-entry-regular">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1A4A2E;border-bottom:2px solid #D4AF37;padding-bottom:5px;margin-bottom:10px">Match Cards <span style="color:#999;font-weight:400">(max 5)</span></div>
+              <div id="sch-matches"></div>
+              <button class="btn-sm" onclick="addScheduleMatchCardFromUI()" style="margin-top:8px">+ Add Match</button>
+            </div>
+
+            <!-- ── Scramble entry ── -->
+            <div id="sch-entry-scramble" style="display:none">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1A4A2E;border-bottom:2px solid #D4AF37;padding-bottom:5px;margin-bottom:10px">Scramble Teams</div>
+              <div id="sch-scramble-teams"></div>
+              <button class="btn-sm" onclick="addScrambleTeamFromUI()" style="margin-top:8px">+ Add Team</button>
+            </div>
+
+            <!-- ── Tournament entry ── -->
+            <div id="sch-entry-tournament" style="display:none">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1A4A2E;border-bottom:2px solid #D4AF37;padding-bottom:5px;margin-bottom:10px">Tournament Field</div>
+              <div id="sch-tournament-field"></div>
+              <button class="btn-sm" onclick="addTournamentPlayerFromUI()" style="margin-top:8px">+ Add Player to Field</button>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid #eee">
               <button class="btn-sm btn-green" onclick="saveScheduleWeekFromUI()">Save Week</button>
               <button class="btn-sm" onclick="deleteScheduleWeekFromUI()">Delete Week</button>
-              <button class="btn-sm" onclick="showToast('Tip: Use Rainout Mgmt to shift schedule')">Rainout Shift</button>
             </div>
           </div>
         </div>
 
-        <div class="card" id="pairings-admin-card" style="display:none">
-          <div class="card-header"><div class="card-title">Pairings (Admin)</div></div>
-          <div class="card-body">
-            <div class="form-grid" style="margin-bottom:12px">
-              <div class="form-field"><label>Week</label><select id="pair-week" onchange="loadPairingsIntoEditor()"></select></div>
-              <div class="form-field" style="display:flex;align-items:flex-end"><button class="btn-sm" style="width:100%" onclick="autoGeneratePairingsForWeek()">Auto Generate</button></div>
-              <div class="form-field" style="display:flex;align-items:flex-end"><button class="btn-sm btn-green" style="width:100%" onclick="savePairingsFromUI()">Save Pairings</button></div>
-            </div>
-            <div id="pairings-editor"></div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-              <button class="btn-sm" onclick="addPairingGroupFromUI()">Add Group</button>
-            </div>
-            <div style="margin-top:10px;font-size:12px;color:#666">Groups are used to show who plays with whom for the selected week (2–4 players per group).</div>
-          </div>
-        </div>
-
+        <!-- ── Pending Rainout Proposal (admin) ── -->
         <div class="card" id="schedule-proposal-card" style="display:none">
           <div class="card-header"><div class="card-title">Pending Schedule Adjustment</div></div>
           <div class="card-body">
@@ -1658,10 +1691,16 @@
           </div>
         </div>
 
+        <!-- ── Full Schedule (compact table) ── -->
         <div class="card">
-          <div class="card-header"><div class="card-title">Full Schedule</div></div>
-          <div class="card-body" id="schedule-list"></div>
+          <div class="card-header" style="padding:10px 16px"><div class="card-title">Full Schedule</div></div>
+          <div class="card-body" style="padding:0">
+            <div id="schedule-list"></div>
+          </div>
         </div>
+
+        <!-- Hidden legacy fields kept for pairings compatibility -->
+        <select id="pair-week" style="display:none"></select>
       </div>
 
       <!-- ── SEASON OVERVIEW ── -->
@@ -2945,111 +2984,283 @@ function teamOptionsForSelect(selected) {
   return opts.join('');
 }
 
-function renderScheduleMatchesEditor(matches) {
+// ── Schedule: player dropdown helper ──────────────────────────────
+function playerOptionsHtml(selectedEmail) {
+  const pool = Array.isArray(playersCache) && playersCache.length ? playersCache : PLAYERS_DATA;
+  const sorted = [...pool].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  const sel = String(selectedEmail || '').toLowerCase();
+  return '<option value="">— Player —</option>' + sorted.map(p => {
+    const email = String(p.email || '').toLowerCase();
+    const isSelected = email && email === sel ? 'selected' : '';
+    return `<option value="${escapeHtml(email)}" ${isSelected}>${escapeHtml(p.name || email)}</option>`;
+  }).join('');
+}
+
+function inferTeamNumber(email1, email2) {
+  const e1 = String(email1 || '').toLowerCase();
+  const e2 = String(email2 || '').toLowerCase();
+  if (!e1 && !e2) return null;
+  const team = (teamsCache || []).find(t => {
+    const te1 = String(t.player1Email || '').toLowerCase();
+    const te2 = String(t.player2Email || '').toLowerCase();
+    return (te1 === e1 && te2 === e2) || (te1 === e2 && te2 === e1);
+  });
+  return team ? Number(team.teamNumber) : null;
+}
+
+function hydrateSchCourseDropdown(currentCourse) {
+  const sel = document.getElementById('sch-course-sel');
+  if (!sel) return;
+  const courses = Array.isArray(coursesCache) ? coursesCache : [];
+  const cur = currentCourse || sel.value || '';
+  sel.innerHTML = '<option value="">— Select Course —</option>' +
+    courses.map(c => {
+      const name = c && c.name ? String(c.name) : '';
+      const isSel = name && name.toLowerCase() === cur.toLowerCase() ? 'selected' : '';
+      return `<option value="${escapeHtml(name)}" ${isSel}>${escapeHtml(name)}</option>`;
+    }).join('');
+  // If course not in list but was provided, add it
+  if (cur && !courses.some(c => String(c && c.name || '').toLowerCase() === cur.toLowerCase())) {
+    const opt = document.createElement('option');
+    opt.value = cur; opt.textContent = cur; opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function onSchTypeChange() {
+  const type = (document.getElementById('sch-type') || {}).value || 'match';
+  document.getElementById('sch-entry-regular').style.display = type === 'match' ? '' : 'none';
+  document.getElementById('sch-entry-scramble').style.display = type === 'scramble' ? '' : 'none';
+  document.getElementById('sch-entry-tournament').style.display = type === 'tournament' ? '' : 'none';
+}
+
+async function onSchDateChange() {
+  const dateEl = document.getElementById('sch-date');
+  const weekEl = document.getElementById('sch-week');
+  if (!dateEl || !weekEl || !dateEl.value) return;
+  let weeks = [];
+  try { const res = await fetchJson('/api/schedule'); weeks = Array.isArray(res.weeks) ? res.weeks : []; } catch (e) {}
+  const hit = weeks.find(w => w.date === dateEl.value);
+  if (hit) {
+    weekEl.value = hit.week;
+    await loadScheduleWeekIntoAdminEditor();
+  } else if (!weekEl.value) {
+    const maxWeek = weeks.length ? Math.max(...weeks.map(w => w.week || 0)) : 0;
+    weekEl.value = maxWeek + 1;
+  }
+}
+
+// ── Regular Match Cards ───────────────────────────────────────────
+function renderScheduleMatchCards(matches) {
   const box = document.getElementById('sch-matches');
   if (!box) return;
   const list = Array.isArray(matches) ? matches : [];
-  box.innerHTML = `
-    <div style="overflow:auto">
-      <table class="data-table">
-        <thead><tr><th style="width:46%">Team A</th><th style="width:8%"></th><th style="width:46%">Team B</th><th style="width:90px"></th></tr></thead>
-        <tbody id="sch-matches-body">
-          ${list.map((m, idx) => {
-            const a = m && m.teamA ? Number(m.teamA) : null;
-            const b = m && m.teamB ? Number(m.teamB) : null;
-            return `
-              <tr>
-                <td>
-                  <input class="sch-team-a" type="number" min="1" placeholder="Team #" value="${a ? escapeHtml(a) : ''}" style="width:100%" />
-                  <div class="sch-team-a-hint" style="font-size:12px;color:#666;margin-top:4px">${a ? escapeHtml(scheduleTeamHintText(a)) : ''}</div>
-                </td>
-                <td style="text-align:center;font-weight:900;color:#666">vs</td>
-                <td>
-                  <input class="sch-team-b" type="number" min="1" placeholder="Team #" value="${b ? escapeHtml(b) : ''}" style="width:100%" />
-                  <div class="sch-team-b-hint" style="font-size:12px;color:#666;margin-top:4px">${b ? escapeHtml(scheduleTeamHintText(b)) : ''}</div>
-                </td>
-                <td><button class="btn-sm" onclick="removeScheduleMatchRowFromUI(${idx})">Remove</button></td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+  if (!list.length) {
+    box.innerHTML = '<div style="padding:8px 0;color:#888;font-size:13px">No matchups yet — click + Add Match.</div>';
+    return;
+  }
+  box.innerHTML = list.map((m, idx) => `
+    <div class="sch-match-card" data-idx="${idx}" style="border:1px solid #e0e0e0;border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fafafa">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;font-weight:700;color:#1A4A2E;text-transform:uppercase;letter-spacing:.5px">Match ${idx + 1}</span>
+          <input type="text" class="sch-mc-tee" placeholder="Tee time" value="${escapeHtml(m.teeTime || '')}"
+            style="width:88px;padding:4px 7px;border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff" />
+        </div>
+        <button class="btn-sm" onclick="removeScheduleMatchCardFromUI(${idx})" style="padding:2px 9px;font-size:12px">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;align-items:start">
+        <div style="border:1px solid rgba(212,175,55,0.4);border-radius:4px;padding:8px;background:#fff">
+          <div style="font-size:10px;font-weight:700;color:#1A4A2E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Team 1</div>
+          <select class="sch-mc-t1p1" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;margin-bottom:4px">${playerOptionsHtml(m.t1p1 || '')}</select>
+          <select class="sch-mc-t1p2" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px">${playerOptionsHtml(m.t1p2 || '')}</select>
+        </div>
+        <div style="text-align:center;font-weight:900;font-size:14px;color:#ccc;padding-top:20px">vs</div>
+        <div style="border:1px solid rgba(212,175,55,0.4);border-radius:4px;padding:8px;background:#fff">
+          <div style="font-size:10px;font-weight:700;color:#1A4A2E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Team 2</div>
+          <select class="sch-mc-t2p1" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;margin-bottom:4px">${playerOptionsHtml(m.t2p1 || '')}</select>
+          <select class="sch-mc-t2p2" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px">${playerOptionsHtml(m.t2p2 || '')}</select>
+        </div>
+      </div>
     </div>
-    ${list.length ? '' : '<div style="padding:10px 0;color:#666">No matchups yet. Click Add Match.</div>'}
-  `;
-
-  const body = document.getElementById('sch-matches-body');
-  if (body) {
-    body.querySelectorAll('tr').forEach(tr => {
-      const aEl = tr.querySelector('input.sch-team-a');
-      const bEl = tr.querySelector('input.sch-team-b');
-      const aHint = tr.querySelector('.sch-team-a-hint');
-      const bHint = tr.querySelector('.sch-team-b-hint');
-      const onUpdate = () => {
-        const a = aEl && aEl.value ? parseInt(aEl.value, 10) : null;
-        const b = bEl && bEl.value ? parseInt(bEl.value, 10) : null;
-        if (aHint) aHint.textContent = a ? scheduleTeamHintText(a) : '';
-        if (bHint) bHint.textContent = b ? scheduleTeamHintText(b) : '';
-      };
-      if (aEl) aEl.addEventListener('input', onUpdate);
-      if (bEl) bEl.addEventListener('input', onUpdate);
-      onUpdate();
-    });
-  }
+  `).join('');
 }
 
-function readScheduleMatchesFromUI() {
-  const body = document.getElementById('sch-matches-body');
-  if (!body) return [];
-  const rows = Array.from(body.querySelectorAll('tr'));
-  const used = new Set();
-  const out = [];
-  for (const r of rows) {
-    const aEl = r.querySelector('input.sch-team-a');
-    const bEl = r.querySelector('input.sch-team-b');
-    const a = aEl && aEl.value ? parseInt(aEl.value, 10) : null;
-    const b = bEl && bEl.value ? parseInt(bEl.value, 10) : null;
-    if (!a || !b || a === b) continue;
-    if (used.has(a) || used.has(b)) continue;
-    used.add(a);
-    used.add(b);
-    out.push({ teamA: a, teamB: b });
-  }
-  return out;
+function readScheduleMatchCardsFromUI() {
+  const box = document.getElementById('sch-matches');
+  if (!box) return [];
+  return Array.from(box.querySelectorAll('.sch-match-card')).map(card => ({
+    teeTime: (card.querySelector('.sch-mc-tee') || {}).value || '',
+    t1p1: (card.querySelector('.sch-mc-t1p1') || {}).value || '',
+    t1p2: (card.querySelector('.sch-mc-t1p2') || {}).value || '',
+    t2p1: (card.querySelector('.sch-mc-t2p1') || {}).value || '',
+    t2p2: (card.querySelector('.sch-mc-t2p2') || {}).value || '',
+  }));
 }
 
-async function addScheduleMatchRowFromUI() {
-  if (!currentUser || currentUser.role !== 'admin') {
-    showToast('Access denied');
-    return;
-  }
-  try {
-    await loadPlayers();
-    await loadTeams();
-  } catch (e) {
-    // ignore
-  }
-
-  // Re-render any existing rows so player name hints resolve after async loads.
-  try {
-    const cur = readScheduleMatchesFromUI();
-    if (cur && cur.length) renderScheduleMatchesEditor(cur);
-  } catch (e) {
-    // ignore
-  }
-  const cur = readScheduleMatchesFromUI();
-  cur.push({ teamA: null, teamB: null });
-  renderScheduleMatchesEditor(cur);
+async function addScheduleMatchCardFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  try { await loadPlayers(); await loadTeams(); } catch (e) {}
+  const cur = readScheduleMatchCardsFromUI();
+  if (cur.length >= 5) { showToast('Maximum 5 matches per week'); return; }
+  cur.push({ teeTime: '', t1p1: '', t1p2: '', t2p1: '', t2p2: '' });
+  renderScheduleMatchCards(cur);
 }
 
-function removeScheduleMatchRowFromUI(idx) {
-  if (!currentUser || currentUser.role !== 'admin') {
-    showToast('Access denied');
-    return;
-  }
-  const cur = readScheduleMatchesFromUI();
+function removeScheduleMatchCardFromUI(idx) {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  const cur = readScheduleMatchCardsFromUI();
   cur.splice(idx, 1);
-  renderScheduleMatchesEditor(cur);
+  renderScheduleMatchCards(cur);
+}
+
+// Legacy alias so any external references don't break
+function addScheduleMatchRowFromUI() { addScheduleMatchCardFromUI(); }
+function renderScheduleMatchesEditor(matches) {
+  // Convert old teamA/teamB format to new card format
+  const cards = (Array.isArray(matches) ? matches : []).map(m => {
+    if (m.t1p1 !== undefined) return m;
+    const ta = m.teamA ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamA)) : null;
+    const tb = m.teamB ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamB)) : null;
+    return { teeTime: m.teeTime || '', t1p1: ta ? (ta.player1Email||'') : '', t1p2: ta ? (ta.player2Email||'') : '',
+             t2p1: tb ? (tb.player1Email||'') : '', t2p2: tb ? (tb.player2Email||'') : '', teamA: m.teamA, teamB: m.teamB };
+  });
+  renderScheduleMatchCards(cards);
+}
+function readScheduleMatchesFromUI() { return readScheduleMatchCardsFromUI(); }
+
+// ── Scramble Team Editor ──────────────────────────────────────────
+let schScrambleTeams = [];
+
+function renderScrambleTeamsEditor(teams) {
+  const box = document.getElementById('sch-scramble-teams');
+  if (!box) return;
+  schScrambleTeams = Array.isArray(teams) ? teams : [];
+  if (!schScrambleTeams.length) {
+    box.innerHTML = '<div style="padding:8px 0;color:#888;font-size:13px">No teams yet — click + Add Team.</div>';
+    return;
+  }
+  box.innerHTML = schScrambleTeams.map((team, ti) => {
+    const players = Array.isArray(team.players) ? team.players : [];
+    const pool = Array.isArray(playersCache) && playersCache.length ? playersCache : PLAYERS_DATA;
+    const tags = players.map((email, pi) => {
+      const p = pool.find(x => String(x.email||'').toLowerCase() === String(email||'').toLowerCase());
+      const name = p ? p.name : email;
+      return `<span style="display:inline-flex;align-items:center;gap:3px;margin:2px 4px 2px 0;padding:2px 7px;background:rgba(212,175,55,0.15);border-radius:10px;font-size:12px">${escapeHtml(name)}<button onclick="removeScramblePlayerFromUI(${ti},${pi})" style="background:none;border:none;cursor:pointer;color:#999;font-size:11px;padding:0 0 0 3px;line-height:1">✕</button></span>`;
+    }).join('');
+    return `
+      <div style="border:1px solid #e0e0e0;border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fafafa">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <input type="text" class="sch-scr-name" data-ti="${ti}" placeholder="Team name" value="${escapeHtml(team.name || 'Team ' + (ti+1))}"
+            style="flex:1;padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff" />
+          <button class="btn-sm" onclick="removeScrambleTeamFromUI(${ti})" style="padding:2px 9px;font-size:12px">✕</button>
+        </div>
+        <div style="min-height:22px;margin-bottom:7px">${tags || '<span style="color:#aaa;font-size:12px">No players yet</span>'}</div>
+        ${players.length < 4 ? `<div style="display:flex;gap:6px;align-items:center">
+          <select id="sch-scr-add-${ti}" style="flex:1;padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff">${playerOptionsHtml('')}</select>
+          <button class="btn-sm" onclick="addScramblePlayerToTeamFromUI(${ti})" style="padding:4px 10px;font-size:12px">Add</button>
+        </div>` : '<div style="font-size:11px;color:#888;font-style:italic">Team full (4 players max)</div>'}
+      </div>
+    `;
+  }).join('');
+}
+
+function syncScrambleNamesFromUI() {
+  const box = document.getElementById('sch-scramble-teams');
+  if (!box) return;
+  box.querySelectorAll('.sch-scr-name').forEach(el => {
+    const ti = Number(el.dataset.ti);
+    if (schScrambleTeams[ti]) schScrambleTeams[ti].name = el.value;
+  });
+}
+
+function addScrambleTeamFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  syncScrambleNamesFromUI();
+  schScrambleTeams.push({ name: 'Team ' + (schScrambleTeams.length + 1), players: [] });
+  renderScrambleTeamsEditor(schScrambleTeams);
+}
+
+function removeScrambleTeamFromUI(ti) {
+  syncScrambleNamesFromUI();
+  schScrambleTeams.splice(ti, 1);
+  renderScrambleTeamsEditor(schScrambleTeams);
+}
+
+function addScramblePlayerToTeamFromUI(ti) {
+  syncScrambleNamesFromUI();
+  const team = schScrambleTeams[ti];
+  if (!team) return;
+  const sel = document.getElementById('sch-scr-add-' + ti);
+  const email = sel ? sel.value : '';
+  if (!email) { showToast('Select a player'); return; }
+  if (!Array.isArray(team.players)) team.players = [];
+  if (team.players.includes(email)) { showToast('Player already on this team'); return; }
+  team.players.push(email);
+  renderScrambleTeamsEditor(schScrambleTeams);
+}
+
+function removeScramblePlayerFromUI(ti, pi) {
+  syncScrambleNamesFromUI();
+  const team = schScrambleTeams[ti];
+  if (team && Array.isArray(team.players)) { team.players.splice(pi, 1); renderScrambleTeamsEditor(schScrambleTeams); }
+}
+
+// ── Tournament Field Editor ───────────────────────────────────────
+function renderTournamentFieldEditor(field) {
+  const box = document.getElementById('sch-tournament-field');
+  if (!box) return;
+  const list = Array.isArray(field) ? field : [];
+  if (!list.length) {
+    box.innerHTML = '<div style="padding:8px 0;color:#888;font-size:13px">No players yet — click + Add Player to Field.</div>';
+    return;
+  }
+  box.innerHTML = `<table class="data-table" style="margin-bottom:0"><thead><tr><th style="width:110px">Tee Time</th><th>Player</th><th style="width:50px"></th></tr></thead><tbody>` +
+    list.map((p, idx) => `<tr>
+      <td><input type="text" class="sch-trn-tee" placeholder="5:30 PM" value="${escapeHtml(p.teeTime || '')}" style="width:100%;padding:3px 6px;border:1px solid #ddd;border-radius:3px;font-size:13px" /></td>
+      <td><select class="sch-trn-player" style="width:100%;padding:3px 6px;border:1px solid #ddd;border-radius:3px;font-size:13px">${playerOptionsHtml(p.playerEmail || '')}</select></td>
+      <td><button class="btn-sm" onclick="removeTournamentPlayerFromUI(${idx})" style="padding:2px 7px;font-size:12px">✕</button></td>
+    </tr>`).join('') + '</tbody></table>';
+}
+
+function readTournamentFieldFromUI() {
+  const box = document.getElementById('sch-tournament-field');
+  if (!box) return [];
+  return Array.from(box.querySelectorAll('tbody tr')).map(tr => ({
+    teeTime: (tr.querySelector('.sch-trn-tee') || {}).value || '',
+    playerEmail: (tr.querySelector('.sch-trn-player') || {}).value || '',
+  }));
+}
+
+function addTournamentPlayerFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  const cur = readTournamentFieldFromUI();
+  cur.push({ teeTime: '', playerEmail: '' });
+  renderTournamentFieldEditor(cur);
+}
+
+function removeTournamentPlayerFromUI(idx) {
+  const cur = readTournamentFieldFromUI();
+  cur.splice(idx, 1);
+  renderTournamentFieldEditor(cur);
+}
+
+// ── Edit week from table ──────────────────────────────────────────
+async function editScheduleWeek(week) {
+  const weekEl = document.getElementById('sch-week');
+  if (weekEl) weekEl.value = week;
+  await loadScheduleWeekIntoAdminEditor();
+  const card = document.getElementById('schedule-admin-card');
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function deleteScheduleWeekFromUIByNum(week) {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  if (!confirm('Delete schedule for Week ' + week + '?')) return;
+  try {
+    await fetchJson('/api/schedule?week=' + encodeURIComponent(week), { method: 'DELETE' });
+    showToast('Deleted'); buildSchedule();
+  } catch (e) { showToast('Delete failed'); }
 }
 
 function renderTeamsAdminUI() {
@@ -3101,44 +3312,47 @@ async function loadScheduleWeekIntoAdminEditor() {
   const weekEl = document.getElementById('sch-week');
   const week = weekEl && weekEl.value ? parseInt(weekEl.value, 10) : null;
   if (!week) {
-    renderScheduleMatchesEditor([]);
+    renderScheduleMatchCards([]);
+    schScrambleTeams = []; renderScrambleTeamsEditor([]); renderTournamentFieldEditor([]);
     return;
   }
-
-  try {
-    await loadPlayers();
-    await loadTeams();
-  } catch (e) {
-    // ignore
-  }
-
+  try { await loadPlayers(); await loadTeams(); } catch (e) {}
   let weeks = [];
-  try {
-    const res = await fetchJson('/api/schedule');
-    weeks = Array.isArray(res && res.weeks) ? res.weeks : [];
-  } catch (e) {
-    weeks = [];
-  }
+  try { const res = await fetchJson('/api/schedule'); weeks = Array.isArray(res && res.weeks) ? res.weeks : []; } catch (e) {}
 
   const hit = weeks.find(w => (w.week || 0) === week) || null;
   const dateEl = document.getElementById('sch-date');
-  const titleEl = document.getElementById('sch-title');
-  const courseEl = document.getElementById('sch-course');
-  const teeEl = document.getElementById('sch-tee');
   const typeEl = document.getElementById('sch-type');
   const sideEl = document.getElementById('sch-side');
+  const teeEl = document.getElementById('sch-tee-sel');
 
   if (hit) {
     if (dateEl) dateEl.value = hit.date || '';
-    if (titleEl) titleEl.value = hit.title || '';
-    if (courseEl) courseEl.value = hit.course || '';
-    if (teeEl) teeEl.value = hit.teeTime || '';
     if (typeEl) typeEl.value = hit.type || 'match';
     if (sideEl && hit.side) sideEl.value = hit.side;
+    if (teeEl && hit.tee) teeEl.value = hit.tee;
+    hydrateSchCourseDropdown(hit.course || '');
+    onSchTypeChange();
   }
 
-  const ms = hit && Array.isArray(hit.matches) ? hit.matches : [];
-  renderScheduleMatchesEditor(ms);
+  const type = (hit && hit.type) || 'match';
+  if (type === 'match') {
+    const rawMs = hit && Array.isArray(hit.matches) ? hit.matches : [];
+    // Convert old teamA/teamB format to new card format with player dropdowns
+    const cards = rawMs.map(m => {
+      if (m.t1p1 !== undefined) return m;
+      const ta = m.teamA ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamA)) : null;
+      const tb = m.teamB ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamB)) : null;
+      return { teeTime: m.teeTime || '', t1p1: ta ? (ta.player1Email||'') : '', t1p2: ta ? (ta.player2Email||'') : '',
+               t2p1: tb ? (tb.player1Email||'') : '', t2p2: tb ? (tb.player2Email||'') : '', teamA: m.teamA||0, teamB: m.teamB||0 };
+    });
+    renderScheduleMatchCards(cards);
+  } else if (type === 'scramble') {
+    const teams = hit && Array.isArray(hit.scrambleTeams) ? hit.scrambleTeams : [];
+    schScrambleTeams = teams; renderScrambleTeamsEditor(teams);
+  } else if (type === 'tournament') {
+    renderTournamentFieldEditor(hit && Array.isArray(hit.tournamentField) ? hit.tournamentField : []);
+  }
 }
 
 function addTeamRowFromUI() {
@@ -4266,45 +4480,48 @@ async function saveLeagueSettingsFromUI() {
 }
 
 async function saveScheduleWeekFromUI() {
-  if (!currentUser || currentUser.role !== 'admin') {
-    showToast('Access denied');
-    return;
-  }
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
   const weekEl = document.getElementById('sch-week');
   const dateEl = document.getElementById('sch-date');
-  const titleEl = document.getElementById('sch-title');
-  const courseEl = document.getElementById('sch-course');
-  const teeEl = document.getElementById('sch-tee');
+  const courseEl = document.getElementById('sch-course-sel');
+  const teeEl = document.getElementById('sch-tee-sel');
   const typeEl = document.getElementById('sch-type');
   const sideEl = document.getElementById('sch-side');
   const week = weekEl ? parseInt(weekEl.value, 10) : null;
-  if (!week) {
-    showToast('Week required');
-    return;
-  }
+  if (!week) { showToast('Week required'); return; }
 
-  const matches = readScheduleMatchesFromUI();
+  const type = typeEl ? typeEl.value : 'match';
+  const course = courseEl ? courseEl.value.trim() : '';
+  const tee = teeEl ? teeEl.value : 'white';
+  const side = sideEl ? sideEl.value : 'front';
+  const typeLabel = type === 'scramble' ? 'Scramble' : type === 'tournament' ? 'Tournament' : 'Regular Match';
+
+  let matches = [], scrambleTeams = null, tournamentField = null;
+  if (type === 'match') {
+    const cards = readScheduleMatchCardsFromUI();
+    matches = cards.map(m => {
+      const teamA = inferTeamNumber(m.t1p1, m.t1p2);
+      const teamB = inferTeamNumber(m.t2p1, m.t2p2);
+      return { ...m, teamA: teamA || 0, teamB: teamB || 0 };
+    });
+  } else if (type === 'scramble') {
+    syncScrambleNamesFromUI();
+    scrambleTeams = schScrambleTeams;
+  } else if (type === 'tournament') {
+    tournamentField = readTournamentFieldFromUI();
+  }
 
   try {
     await fetchJson('/api/schedule', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        week,
-        date: dateEl ? dateEl.value : null,
-        title: titleEl ? titleEl.value.trim() : '',
-        course: courseEl ? courseEl.value.trim() : '',
-        teeTime: teeEl ? teeEl.value.trim() : '',
-        type: typeEl ? typeEl.value : 'match',
-        side: sideEl ? sideEl.value : 'front',
-        matches
-      })
+      body: JSON.stringify({ week, date: dateEl ? dateEl.value : null,
+        title: `Week ${week} \u2014 ${typeLabel}`, course, tee, teeTime: '', type, side,
+        matches, scrambleTeams, tournamentField })
     });
     showToast('Schedule saved');
     buildSchedule();
-  } catch (e) {
-    showToast('Save failed');
-  }
+  } catch (e) { showToast('Save failed'); }
 }
 
 async function deleteScheduleWeekFromUI() {
@@ -6549,59 +6766,23 @@ async function buildSchedule() {
   const list = document.getElementById('schedule-list');
   if (!list) return;
   try {
-    // Ensure team/player caches are available so matchup labels can include names.
-    try {
-      await loadPlayers();
-    } catch (e) {
-      // ignore
-    }
-    try {
-      await loadTeams();
-    } catch (e) {
-      // ignore
-    }
+    try { await loadPlayers(); } catch (e) {}
+    try { await loadTeams(); } catch (e) {}
 
     const res = await fetchJson('/api/schedule');
     const weeks = Array.isArray(res.weeks) ? res.weeks : [];
     const rainouts = Array.isArray(res.rainouts) ? res.rainouts : [];
     const pendingProposal = res.pendingProposal || null;
 
-    let pairings = [];
     let substitutes = [];
-    try {
-      const pr = await fetchJson('/api/pairings');
-      pairings = Array.isArray(pr && pr.pairings) ? pr.pairings : [];
-    } catch (e) {
-      pairings = [];
-    }
-    try {
-      const sr = await fetchJson('/api/substitutes');
-      substitutes = Array.isArray(sr && sr.substitutes) ? sr.substitutes : [];
-    } catch (e) {
-      substitutes = [];
-    }
+    try { const sr = await fetchJson('/api/substitutes'); substitutes = Array.isArray(sr && sr.substitutes) ? sr.substitutes : []; } catch (e) {}
 
     const isAdmin = currentUser && currentUser.role === 'admin';
     const adminCard = document.getElementById('schedule-admin-card');
     if (adminCard) adminCard.style.display = isAdmin ? '' : 'none';
 
-    // If admin is on schedule page, hydrate matchups editor for the selected week.
-    if (isAdmin) {
-      try {
-        await loadTeams();
-      } catch (e) {
-        // ignore
-      }
-      const wEl = document.getElementById('sch-week');
-      const wNum = wEl && wEl.value ? parseInt(wEl.value, 10) : null;
-      const hit = wNum ? (weeks.find(x => (x.week || 0) === wNum) || null) : null;
-      const ms = hit && Array.isArray(hit.matches) ? hit.matches : [];
-      renderScheduleMatchesEditor(ms);
-    }
-
-    const pairCard = document.getElementById('pairings-admin-card');
-    const hasTeams = Array.isArray(teamsCache) && teamsCache.length > 0;
-    if (pairCard) pairCard.style.display = 'none';
+    // Hydrate course dropdown for admin entry
+    if (isAdmin) hydrateSchCourseDropdown();
 
     const propCard = document.getElementById('schedule-proposal-card');
     const propBody = document.getElementById('schedule-proposal-body');
@@ -6629,97 +6810,61 @@ async function buildSchedule() {
       rainBody.innerHTML = rows.map(r => {
         const status = r.status || 'pending';
         const color = status === 'approved' ? '#4CAF50' : status === 'rejected' ? '#f66' : 'var(--gold)';
-        return `<tr>
-          <td style="font-weight:800;color:#1a1a1a">${r.week}</td>
-          <td>${r.originalDate || '—'}</td>
-          <td>${r.rescheduledDate || '—'}</td>
-          <td style="font-weight:900;color:${color}">${status}</td>
-        </tr>`;
+        return `<tr><td style="font-weight:800;color:#1a1a1a">${r.week}</td><td>${r.originalDate||'—'}</td><td>${r.rescheduledDate||'—'}</td><td style="font-weight:900;color:${color}">${status}</td></tr>`;
       }).join('') || '<tr><td colspan="4" style="padding:18px;color:#666;text-align:center">No rainouts</td></tr>';
     }
 
     if (!weeks.length) throw new Error('No schedule');
-    const sorted = weeks.slice().sort((a,b) => (a.week || 0) - (b.week || 0));
-    list.innerHTML = sorted.map(w => {
-      const d = w.date ? parseIsoDateLocal(w.date) : null;
-      const day = d && !isNaN(d.getTime()) ? String(d.getDate()).padStart(2,'0') : '--';
-      const month = d && !isNaN(d.getTime()) ? d.toLocaleString('en-US', { month: 'short' }) : '--';
-      const title = w.title || `Week ${w.week} — Regular Match`;
-      const course = w.course || '—';
-      const type = w.type || 'match';
-      const courseLine = w.teeTime ? `${course} · ${w.teeTime}` : course;
+    const sorted = weeks.slice().sort((a,b) => (a.week||0) - (b.week||0));
 
-      const rain = rainouts.find(r => (r.week || 0) === (w.week || 0));
-      const rainStatus = rain ? (rain.status || 'pending') : null;
-      const badge = rain ? `<span style="margin-left:10px;font-size:11px;font-weight:900;color:${rainStatus==='approved'?'#4CAF50':rainStatus==='rejected'?'#f66':'var(--gold-dark)'};text-transform:uppercase">Rainout ${rainStatus}</span>` : '';
+    // ── Compact table view ──────────────────────────────────────────
+    const typeColors = { scramble: ['rgba(61,160,107,0.15)','#1A4A2E'], tournament: ['rgba(212,175,55,0.22)','#7a5800'], match: ['rgba(26,74,46,0.1)','#1A4A2E'] };
+    const typeLabels = { scramble: 'Scramble', tournament: 'Tournament', match: 'Match' };
 
-      const pairing = (pairings || []).find(p => (p.week || 0) === (w.week || 0)) || null;
-      const groups = pairing && Array.isArray(pairing.groups) ? pairing.groups : [];
-      const matchups = Array.isArray(w.matches) ? w.matches : [];
-      const pairsHtml = (!hasTeams && !matchups.length && groups.length) ? `
-        <div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(212,175,55,0.18);border-radius:4px;background:rgba(212,175,55,0.06)">
-          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900;margin-bottom:8px">Pairings</div>
-          ${groups.map((g, gi) => {
-            const ps = Array.isArray(g.players) ? g.players : [];
-            const names = ps.map(p => {
-              const email = p && p.email ? String(p.email).toLowerCase() : '';
-              const sub = email ? (substitutes || []).find(s => (s.week || 0) === (w.week || 0) && String(s.playerEmail || '').toLowerCase() === email) : null;
-              if (sub && sub.substituteName) {
-                return `${escapeHtml(p.name)} <span style="color:#666">(Sub: ${escapeHtml(sub.substituteName)})</span>`;
-              }
-              return escapeHtml(p.name);
-            }).filter(Boolean);
-            return `<div style="font-size:13px;color:#1a1a1a;margin-bottom:${gi === groups.length - 1 ? '0' : '6px'}"><b>Group ${gi + 1}:</b> ${names.join(' vs ')}</div>`;
-          }).join('')}
-        </div>
-      ` : '';
+    list.innerHTML = `<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:500px">
+      <thead><tr>
+        <th style="width:38px">Wk</th>
+        <th style="width:130px">Date</th>
+        <th style="width:90px">Type</th>
+        <th>Course / Side</th>
+        <th style="width:60px;text-align:center">Matches</th>
+        ${isAdmin ? '<th style="width:110px"></th>' : ''}
+      </tr></thead>
+      <tbody>
+        ${sorted.map(w => {
+          const d = w.date ? parseIsoDateLocal(w.date) : null;
+          const dateStr = d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) : '—';
+          const type = w.type || 'match';
+          const [bg, fg] = typeColors[type] || typeColors.match;
+          const side = w.side === 'front' ? 'Front 9' : w.side === 'back' ? 'Back 9' : w.side === 'both' ? 'Full 18' : '';
+          const courseSide = [w.course, side].filter(Boolean).join(' / ') || '—';
+          const matchCount = Array.isArray(w.matches) ? (w.matches.filter(m => m && (m.teamA || m.t1p1)).length || '—') : '—';
+          const rain = rainouts.find(r => (r.week||0) === (w.week||0));
+          const rainBadge = rain ? `<span style="margin-left:6px;font-size:10px;font-weight:900;color:${rain.status==='approved'?'#4CAF50':'#f90'};text-transform:uppercase">${rain.status}</span>` : '';
+          return `<tr>
+            <td style="font-weight:700;color:#1A4A2E;text-align:center">${w.week}</td>
+            <td style="font-size:13px">${dateStr}${rainBadge}</td>
+            <td><span style="font-size:11px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:10px;background:${bg};color:${fg}">${typeLabels[type]||type}</span></td>
+            <td style="font-size:13px;color:#444">${escapeHtml(courseSide)}</td>
+            <td style="text-align:center;font-size:13px;color:#666">${matchCount}</td>
+            ${isAdmin ? `<td style="white-space:nowrap"><button class="btn-sm" onclick="editScheduleWeek(${w.week})" style="padding:3px 9px;font-size:11px;margin-right:4px">Edit</button><button class="btn-sm" onclick="deleteScheduleWeekFromUIByNum(${w.week})" style="padding:3px 9px;font-size:11px;color:#c33;border-color:#c33">Del</button></td>` : ''}
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
 
-      const matchupsHtml = matchups.length ? `
-        <div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(0,0,0,0.08);border-radius:4px;background:#fff">
-          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:900;margin-bottom:8px">Team Matchups</div>
-          ${matchups.map(m => {
-            const a = m && m.teamA ? Number(m.teamA) : 0;
-            const b = m && m.teamB ? Number(m.teamB) : 0;
-            const an = a ? getTeamNamesOnly(a) : '';
-            const bn = b ? getTeamNamesOnly(b) : '';
-            const aLabel = an ? `Team ${escapeHtml(a)} (${escapeHtml(an)})` : `Team ${escapeHtml(a)}`;
-            const bLabel = bn ? `Team ${escapeHtml(b)} (${escapeHtml(bn)})` : `Team ${escapeHtml(b)}`;
-            return `<div style="font-size:13px;color:#1a1a1a;margin-bottom:6px"><b>${aLabel}</b> vs <b>${bLabel}</b></div>`;
-          }).join('')}
-        </div>
-      ` : '';
-      return `
-        <div class="match-row">
-          <div class="match-date">
-            <div class="match-day">${day}</div>
-            <div class="match-month">${month}</div>
-          </div>
-          <div class="match-divider"></div>
-          <div class="match-info">
-            <div class="match-title">${title}${badge}</div>
-            <div class="match-course">${courseLine}</div>
-            ${matchupsHtml}
-            ${pairsHtml}
-          </div>
-          <span class="match-type type-${type}">${type === 'scramble' ? '🔀 Scramble' : (type === 'tournament' ? '🏆 Tournament' : '⛳ Match')}</span>
-        </div>
-      `;
-    }).join('');
   } catch (e) {
-    list.innerHTML = SCHEDULE_DATA.map(m => `
-      <div class="match-row">
-        <div class="match-date">
-          <div class="match-day">${m.day}</div>
-          <div class="match-month">${m.month}</div>
-        </div>
-        <div class="match-divider"></div>
-        <div class="match-info">
-          <div class="match-title">${m.title}</div>
-          <div class="match-course">${m.course}</div>
-        </div>
-        <span class="match-type type-${m.type}">${m.type === 'scramble' ? '🔀 Scramble' : (m.type === 'tournament' ? '🏆 Tournament' : '⛳ Match')}</span>
-      </div>
-    `).join('');
+    // Fallback to demo data
+    list.innerHTML = `<div style="overflow-x:auto"><table class="data-table" style="width:100%">
+      <thead><tr><th>Wk</th><th>Date</th><th>Type</th><th>Course / Side</th><th style="text-align:center">Matches</th></tr></thead>
+      <tbody>${SCHEDULE_DATA.map((m,i) => `<tr>
+        <td style="font-weight:700;color:#1A4A2E;text-align:center">${i+1}</td>
+        <td style="font-size:13px">${m.month} ${m.day}</td>
+        <td><span style="font-size:11px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:10px;background:rgba(26,74,46,0.1);color:#1A4A2E">${m.type==='scramble'?'Scramble':m.type==='tournament'?'Tournament':'Match'}</span></td>
+        <td style="font-size:13px;color:#444">${escapeHtml(m.course)}</td>
+        <td style="text-align:center;font-size:13px;color:#666">—</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
   }
 }
 
@@ -7112,6 +7257,7 @@ async function loadCourses() {
 function hydrateCourseSelectors() {
   hydrateCourseSelectorForScoreEntry();
   hydrateCourseSelectorForScorecards();
+  hydrateSchCourseDropdown();
 }
 
 function hydrateCourseSelectorForScoreEntry() {
