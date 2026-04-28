@@ -103,6 +103,8 @@ export default async (req) => {
   const week = body && body.week
   const players = Array.isArray(body && body.players) ? body.players : null
   const submittedBy = body && body.submittedBy ? body.submittedBy : null
+  // force=true bypasses lock check and recalculates handicaps for already-final scores
+  const force = Boolean(body && body.force)
 
   if (!week) {
     return new Response('Missing week', { status: 400 })
@@ -162,33 +164,36 @@ export default async (req) => {
 
     const nameLock = await lockStore.get(nameLockKey, { type: 'json' }).catch(() => null)
     const emailLock = emailLockKey ? await lockStore.get(emailLockKey, { type: 'json' }).catch(() => null) : null
-    if ((nameLock && nameLock.locked) || (emailLock && emailLock.locked)) {
+    if (!force && ((nameLock && nameLock.locked) || (emailLock && emailLock.locked))) {
       skippedLocked.push(playerName)
       continue
     }
 
-    if (latest.status === 'final') {
+    const alreadyFinal = latest.status === 'final'
+    if (alreadyFinal) {
+      // Lock it and record; if not force, skip handicap recalc
       const lockData = { locked: true, lockedAt: new Date().toISOString(), reason: 'finalize_week_existing_final' }
       await lockStore.setJSON(nameLockKey, lockData)
       if (emailLockKey) await lockStore.setJSON(emailLockKey, lockData).catch(() => null)
       finalized.push({ player: playerName, key: null, alreadyFinal: true })
-      continue
+      if (!force) continue
+      // force=true: fall through to handicap recalc
+    } else {
+      const newKey = `week-${week}-${String(playerName).toLowerCase()}-${Date.now()}`
+      await store.setJSON(newKey, {
+        ...latest,
+        status: 'final',
+        finalizedFromKey: latest.key || null,
+        finalizedBy: submittedBy,
+        finalizedAt: new Date().toISOString()
+      })
+
+      const lockData = { locked: true, lockedAt: new Date().toISOString(), reason: 'finalize_week' }
+      await lockStore.setJSON(nameLockKey, lockData)
+      if (emailLockKey) await lockStore.setJSON(emailLockKey, lockData).catch(() => null)
+
+      finalized.push({ player: playerName, key: newKey, alreadyFinal: false })
     }
-
-    const key = `week-${week}-${String(playerName).toLowerCase()}-${Date.now()}`
-    await store.setJSON(key, {
-      ...latest,
-      status: 'final',
-      finalizedFromKey: latest.key || null,
-      finalizedBy: submittedBy,
-      finalizedAt: new Date().toISOString()
-    })
-
-    const lockData = { locked: true, lockedAt: new Date().toISOString(), reason: 'finalize_week' }
-    await lockStore.setJSON(nameLockKey, lockData)
-    if (emailLockKey) await lockStore.setJSON(emailLockKey, lockData).catch(() => null)
-
-    finalized.push({ player: playerName, key, alreadyFinal: false })
 
     // Handicap update
     try {
