@@ -2704,11 +2704,15 @@ async function saveMatchScorecard(status) {
     const holesNormalized = holes9.map(v => (v === '' || v === null || v === undefined ? null : Number(v)));
     const complete = holesNormalized.every(v => typeof v === 'number' && Number.isFinite(v));
     const gross = complete ? holesNormalized.reduce((a, b) => a + (Number(b) || 0), 0) : null;
+    // Fix #6/#9: capture each player's current handicap snapshot at time of submission
+    const poolPlayer = (playersCache || []).find(x => String(x.email || '').toLowerCase() === String(p.email || '').toLowerCase());
+    const handicapSnapshot = poolPlayer ? Number(poolPlayer.handicap !== undefined ? poolPlayer.handicap : poolPlayer.hdcp) : null;
     return {
       email: p.email,
       name: p.name,
       holes: holesNormalized,
-      grossTotal: gross
+      grossTotal: gross,
+      handicapSnapshot: Number.isFinite(handicapSnapshot) ? handicapSnapshot : null
     };
   });
 
@@ -2732,6 +2736,10 @@ async function saveMatchScorecard(status) {
       tee,
       side,
       players: playersPayload,
+      // Fix #6: send actual 9-hole par so handicap differentials are correct
+      parTotal: (activeParsCache && activeParsCache.length === 9)
+        ? activeParsCache.reduce((a, b) => a + b, 0)
+        : PAR_TOTAL,
       status: status === 'final' ? 'final' : 'draft',
       submittedBy: currentUser ? currentUser.email : null
     })
@@ -5410,7 +5418,7 @@ function computeTeamScore(event, teamId) {
     const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
     const hcaps = emails.map(e => {
       const p = pool.find(x => String(x.email).toLowerCase() === String(e).toLowerCase());
-      const h = p ? (p.hdcp !== undefined ? p.hdcp : p.handicap) : 0;
+      const h = p ? (p.handicap !== undefined ? p.handicap : (p.hdcp !== undefined ? p.hdcp : 0)) : 0;
       return Number(h) || 0;
     });
     const avg = hcaps.length ? (hcaps.reduce((a, b) => a + b, 0) / hcaps.length) : 0;
@@ -5663,9 +5671,14 @@ async function buildLeaderboard() {
     const name = s.player;
     const gross = typeof s.grossTotal === 'number' ? s.grossTotal : (Array.isArray(s.holes) ? s.holes.reduce((a,b)=>a+(parseInt(b)||0),0) : null);
     if (gross === null || isNaN(gross)) continue;
+    // Fix #4: use the handicap captured AT the time of play (handicapSnapshot) so
+    // net leaderboard history does not change retroactively when handicaps update.
+    // Fall back to current player handicap only if snapshot was never stored.
     const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
     const player = pool.find(p => String(p.name).toLowerCase() === String(name).toLowerCase()) || { name, handicap: 0, hdcp: 0 };
-    const h = (player && player.hdcp !== undefined) ? player.hdcp : (player && player.handicap !== undefined ? player.handicap : 0);
+    const h = (typeof s.handicapSnapshot === 'number')
+      ? s.handicapSnapshot
+      : (player.handicap !== undefined ? player.handicap : (player.hdcp !== undefined ? player.hdcp : 0));
     const net = calcNetScore(gross, h);
     const val = leaderboardMode === 'net' ? net : gross;
     if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: h, values: [] });
@@ -6169,7 +6182,7 @@ async function generateScorecardPreview() {
   const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
   const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
   let displayName = playerName;
-  let hi = player ? (player.hdcp !== undefined ? player.hdcp : player.handicap) : 0;
+  let hi = player ? (player.handicap !== undefined ? player.handicap : (player.hdcp !== undefined ? player.hdcp : 0)) : 0;
 
   if (currentUser && currentUser.role === 'admin' && week && player && player.email) {
     try {
@@ -6229,8 +6242,8 @@ function resolveTeamPlayers(teamNumber) {
   const e1 = t.player1Email ? String(t.player1Email).toLowerCase() : '';
   const e2 = t.player2Email ? String(t.player2Email).toLowerCase() : '';
   return [
-    { email: e1, name: (p1 && p1.name) ? p1.name : e1, hi: p1 ? Number(p1.hdcp !== undefined ? p1.hdcp : p1.handicap) : 0 },
-    { email: e2, name: (p2 && p2.name) ? p2.name : e2, hi: p2 ? Number(p2.hdcp !== undefined ? p2.hdcp : p2.handicap) : 0 }
+    { email: e1, name: (p1 && p1.name) ? p1.name : e1, hi: p1 ? Number(p1.handicap !== undefined ? p1.handicap : (p1.hdcp !== undefined ? p1.hdcp : 0)) : 0 },
+    { email: e2, name: (p2 && p2.name) ? p2.name : e2, hi: p2 ? Number(p2.handicap !== undefined ? p2.handicap : (p2.hdcp !== undefined ? p2.hdcp : 0)) : 0 }
   ].filter(x => x.email);
 }
 
@@ -6925,7 +6938,8 @@ async function saveScore(status) {
 
   const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
   const p = pool.find(x => String(x.name).toLowerCase() === String(player).toLowerCase());
-  const handicapSnapshot = p ? Number(p.hdcp !== undefined ? p.hdcp : p.handicap) : null;
+  // Fix #9: check `handicap` first (API field) then fall back to `hdcp` (fallback data)
+  const handicapSnapshot = p ? Number(p.handicap !== undefined ? p.handicap : p.hdcp) : null;
 
   try {
     const res = await fetchJsonAllowError('/api/scores', {
@@ -6933,7 +6947,7 @@ async function saveScore(status) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         player,
-        playerEmail: null,
+        playerEmail: p ? (p.email || null) : null,
         week,
         date,
         course,
@@ -6943,6 +6957,10 @@ async function saveScore(status) {
         shots: shotsPayload,
         grossTotal,
         handicapSnapshot: Number.isFinite(handicapSnapshot) ? handicapSnapshot : null,
+        // Fix #6: send actual 9-hole par so finalize-week uses the right differential
+        parTotal: (activeParsCache && activeParsCache.length === 9)
+          ? activeParsCache.reduce((a, b) => a + b, 0)
+          : PAR_TOTAL,
         stats: {
           perHole: scoreStatsPerHole.map(s => ({
             fairwayHit: !!(s && s.fw),
@@ -7352,7 +7370,9 @@ async function buildMyAnalytics() {
   if (trendBox) trendBox.innerHTML = '';
 
   try {
-    const res = await fetchJson('/api/scores?player=' + encodeURIComponent(currentUser.name || '') + '&includeDraft=0');
+    // Fix #5: send both email and name so scores match even if display name changed.
+    // Email is the reliable key; name is the fallback for older records without playerEmail.
+    const res = await fetchJson('/api/scores?player=' + encodeURIComponent(currentUser.name || '') + '&playerEmail=' + encodeURIComponent(currentUser.email || '') + '&includeDraft=0');
     const rows = Array.isArray(res && res.scores) ? res.scores : [];
     rows.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
 
@@ -7729,6 +7749,12 @@ function hydratePaymentsAdminUI() {
 
   if (catSel) {
     catSel.innerHTML = '<option value="">Select category...</option>' +
+      cats.filter(c => c && c.active).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
+  // Fix #3: also populate the analytics category dropdown (was never populated)
+  const analyticsCatSel = document.getElementById('pay-analytics-category');
+  if (analyticsCatSel) {
+    analyticsCatSel.innerHTML = '<option value="">Select category...</option>' +
       cats.filter(c => c && c.active).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   }
 }

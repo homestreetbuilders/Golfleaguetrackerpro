@@ -123,7 +123,15 @@ async function listCourses(coursesStore) {
 
 function findCourseByName(courses, courseName) {
   const n = String(courseName || '').trim().toLowerCase()
-  return (courses || []).find(c => String(c && c.name || '').trim().toLowerCase() === n) || null
+  if (!n) return null
+  // Fix #8: exact match first, then partial/contains match so minor name
+  // variations ("Mud Run GC" vs "Mud Run Golf Club") don't silently drop scores
+  const exact = (courses || []).find(c => String(c && c.name || '').trim().toLowerCase() === n)
+  if (exact) return exact
+  return (courses || []).find(c => {
+    const cn = String(c && c.name || '').trim().toLowerCase()
+    return cn && (cn.includes(n) || n.includes(cn))
+  }) || null
 }
 
 function getNineHcpIdx(course, side) {
@@ -480,8 +488,12 @@ export default async (req) => {
     }
   }
 
-  await ledgerStore.setJSON(`week-${week}`, record)
-  await ledgerStore.setJSON('carryover', carryover)
+  // Fix #10: write carryover first so the running totals are preserved even if
+  // the ledger record write fails; then write both writes concurrently.
+  await Promise.all([
+    ledgerStore.setJSON('carryover', carryover),
+    ledgerStore.setJSON(`week-${week}`, record)
+  ])
 
   return Response.json({ success: true, ledger: record, carryover })
 }

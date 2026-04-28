@@ -36,7 +36,7 @@ function getSiteBaseUrl(req) {
   return host ? `${proto}://${host}` : null
 }
 
-async function listScoresForPlayer(store, playerName) {
+async function listScoresForPlayer(store, playerName, playerEmail) {
   const prefix = `week-`
   const { blobs } = await store.list({ prefix }).catch(() => ({ blobs: [] }))
   const out = []
@@ -45,7 +45,10 @@ async function listScoresForPlayer(store, playerName) {
     if (!data) continue
     if (data.status !== 'final') continue
     if (!data.player) continue
-    if (String(data.player).toLowerCase() !== String(playerName).toLowerCase()) continue
+    // Fix #5: match by email when available, fall back to name
+    const emailMatch = playerEmail && data.playerEmail && normalizeEmail(data.playerEmail) === normalizeEmail(playerEmail)
+    const nameMatch = String(data.player).toLowerCase() === String(playerName).toLowerCase()
+    if (!emailMatch && !nameMatch) continue
     out.push(data)
   }
   out.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
@@ -64,11 +67,12 @@ function computeHandicapFromScores(scores, formula) {
   const recent = (scores || []).slice(0, Math.max(1, lastN))
   if (recent.length < minRounds) return null
 
-  // Default: (gross - par36) for 9-hole rounds
+  // Fix #6: use actual course par stored in the score record instead of hardcoded 36
   const diffs = recent.map(r => {
     const gross = asNum(r && r.grossTotal)
     if (!Number.isFinite(gross)) return null
-    return gross - 36
+    const par = asNum(r && r.parTotal) || 36
+    return gross - par
   }).filter(v => v !== null)
 
   if (diffs.length < minRounds) return null
@@ -128,6 +132,21 @@ export default async (req) => {
 
   const targetPlayers = players || Array.from(latestByPlayer.keys())
 
+  // Fix #11: build player lookup map ONCE before the loop instead of scanning
+  // all player blobs for every player being finalized (was O(N²) blob reads)
+  const { blobs: pBlobs } = await playerStore.list().catch(() => ({ blobs: [] }))
+  const playerByName = new Map()   // name.toLowerCase() → { email, key, obj }
+  const playerByEmail = new Map()  // email → { email, key, obj }
+  for (const pb of pBlobs || []) {
+    const po = await playerStore.get(pb.key, { type: 'json' }).catch(() => null)
+    if (!po || !po.name || !po.email) continue
+    const entry = { email: normalizeEmail(po.email), key: pb.key, obj: po }
+    playerByName.set(String(po.name).toLowerCase(), entry)
+    playerByEmail.set(normalizeEmail(po.email), entry)
+  }
+
+  const formula = await formulaStore.get('formula', { type: 'json' }).catch(() => null)
+
   for (const p of targetPlayers) {
     const playerName = p
     const latest = latestByPlayer.get(playerName)
@@ -136,19 +155,22 @@ export default async (req) => {
       continue
     }
 
-    const lockKey = `lock-${String(playerName).toLowerCase()}-week-${week}`
-    const lock = await lockStore.get(lockKey, { type: 'json' }).catch(() => null)
-    if (lock && lock.locked) {
+    // Fix #7: check both name-based and email-based lock keys
+    const nameLockKey = `lock-${String(playerName).toLowerCase()}-week-${week}`
+    const playerEmailFromScore = latest.playerEmail ? normalizeEmail(latest.playerEmail) : null
+    const emailLockKey = playerEmailFromScore ? `lock-email-${playerEmailFromScore}-week-${week}` : null
+
+    const nameLock = await lockStore.get(nameLockKey, { type: 'json' }).catch(() => null)
+    const emailLock = emailLockKey ? await lockStore.get(emailLockKey, { type: 'json' }).catch(() => null) : null
+    if ((nameLock && nameLock.locked) || (emailLock && emailLock.locked)) {
       skippedLocked.push(playerName)
       continue
     }
 
     if (latest.status === 'final') {
-      await lockStore.setJSON(lockKey, {
-        locked: true,
-        lockedAt: new Date().toISOString(),
-        reason: 'finalize_week_existing_final'
-      })
+      const lockData = { locked: true, lockedAt: new Date().toISOString(), reason: 'finalize_week_existing_final' }
+      await lockStore.setJSON(nameLockKey, lockData)
+      if (emailLockKey) await lockStore.setJSON(emailLockKey, lockData).catch(() => null)
       finalized.push({ player: playerName, key: null, alreadyFinal: true })
       continue
     }
@@ -162,36 +184,28 @@ export default async (req) => {
       finalizedAt: new Date().toISOString()
     })
 
-    await lockStore.setJSON(lockKey, {
-      locked: true,
-      lockedAt: new Date().toISOString(),
-      reason: 'finalize_week'
-    })
+    const lockData = { locked: true, lockedAt: new Date().toISOString(), reason: 'finalize_week' }
+    await lockStore.setJSON(nameLockKey, lockData)
+    if (emailLockKey) await lockStore.setJSON(emailLockKey, lockData).catch(() => null)
 
     finalized.push({ player: playerName, key, alreadyFinal: false })
 
     // Handicap update
     try {
-      // Map playerName -> email by scanning players store (small leagues)
-      const { blobs: pBlobs } = await playerStore.list().catch(() => ({ blobs: [] }))
-      let email = null
-      let playerKey = null
-      let playerObj = null
-      for (const pb of pBlobs || []) {
-        const po = await playerStore.get(pb.key, { type: 'json' }).catch(() => null)
-        if (!po || !po.name || !po.email) continue
-        if (String(po.name).toLowerCase() === String(playerName).toLowerCase()) {
-          email = normalizeEmail(po.email)
-          playerKey = pb.key
-          playerObj = po
-          break
-        }
+      // Fix #5/#11: use playerEmail from the score record first, then fall back to name scan
+      // (player map is already built above — no extra blob reads per player)
+      let playerEntry = null
+      if (playerEmailFromScore) {
+        playerEntry = playerByEmail.get(playerEmailFromScore)
       }
+      if (!playerEntry) {
+        playerEntry = playerByName.get(String(playerName).toLowerCase())
+      }
+      if (!playerEntry) continue
 
-      if (!email || !playerKey) continue
+      const { email, key: playerKey, obj: playerObj } = playerEntry
 
       const override = await overrideStore.get(`override-${email}`, { type: 'json' }).catch(() => null)
-      const formula = await formulaStore.get('formula', { type: 'json' }).catch(() => null)
 
       let nextHcp = null
       let source = 'system'
@@ -202,7 +216,8 @@ export default async (req) => {
         source = 'override'
         note = override.note || null
       } else {
-        const allScores = await listScoresForPlayer(store, playerName)
+        // Fix #5: pass both email and name so listScoresForPlayer can match either
+        const allScores = await listScoresForPlayer(store, playerName, email)
         nextHcp = computeHandicapFromScores(allScores, formula || null)
         source = 'system'
       }

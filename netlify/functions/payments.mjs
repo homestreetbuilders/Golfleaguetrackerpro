@@ -13,8 +13,9 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
 
+// Fix #13: lowercase so category IDs are case-insensitive ("League_Dues" === "league_dues")
 function normalizeCategoryId(id) {
-  return String(id || '').trim()
+  return String(id || '').trim().toLowerCase()
 }
 
 async function getSettings(leagueId) {
