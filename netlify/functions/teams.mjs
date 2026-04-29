@@ -22,12 +22,13 @@ function sanitizeTeam(raw) {
   const teamNumber = asInt(raw && raw.teamNumber)
   const player1Email = normalizeEmail(raw && raw.player1Email)
   const player2Email = normalizeEmail(raw && raw.player2Email)
+  const teamName = raw && raw.teamName ? String(raw.teamName).trim() : ''
 
   if (!teamNumber || teamNumber < 1) return null
   if (!player1Email || !player2Email) return null
   if (player1Email === player2Email) return null
 
-  return { teamNumber, player1Email, player2Email }
+  return { teamNumber, teamName, player1Email, player2Email }
 }
 
 async function listTeams(store) {

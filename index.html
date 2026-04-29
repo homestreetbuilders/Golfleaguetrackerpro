@@ -1382,6 +1382,9 @@
         <div class="nav-item" onclick="showPage('manage-players')">
           <span class="nav-icon">👥</span> Manage Players
         </div>
+        <div class="nav-item" onclick="showPage('manage-teams')">
+          <span class="nav-icon">🤝</span> Manage Teams
+        </div>
         <div class="nav-item" onclick="showPage('manage-payments')">
           <span class="nav-icon">💰</span> Manage Payments
         </div>
@@ -1580,7 +1583,7 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>#</th><th>Player</th><th>Rounds</th><th>Avg</th><th>Best</th><th>Hdcp</th><th>Points</th>
+                  <th>#</th><th>Player</th><th>Team</th><th>Rounds</th><th>Avg</th><th>Best</th><th>Hdcp</th><th>Points</th>
                 </tr>
               </thead>
               <tbody id="leaderboard-body"></tbody>
@@ -2054,6 +2057,70 @@
                   <tbody id="hcp-history-body"></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MANAGE TEAMS (Admin) ── -->
+      <div class="page" id="page-manage-teams">
+        <div class="page-header"><h2>Manage Teams</h2><p>Create and edit season 2-man teams</p></div>
+
+        <!-- Add / Edit form -->
+        <div class="card">
+          <div class="card-header" style="padding:10px 16px">
+            <div class="card-title" id="manage-teams-form-title">Add Team</div>
+          </div>
+          <div class="card-body" style="padding:14px 16px">
+            <div style="display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:12px;margin-bottom:14px">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1A4A2E;margin-bottom:4px">Team #</label>
+                <input id="mt-num" type="number" min="1" placeholder="Auto" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box" />
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Team Name <span style="font-weight:400;color:#999">(optional)</span></label>
+                <input id="mt-name" type="text" placeholder="e.g. The Bogey Boys" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box" />
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Player 1</label>
+                <select id="mt-p1" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box">
+                  <option value="">— Select —</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Player 2</label>
+                <select id="mt-p2" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;box-sizing:border-box">
+                  <option value="">— Select —</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn-sm btn-green" onclick="saveTeamFromForm()">Save Team</button>
+              <button class="btn-sm" id="mt-cancel" style="display:none" onclick="resetTeamForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Team roster table -->
+        <div class="card">
+          <div class="card-header" style="padding:10px 16px"><div class="card-title">Team Roster</div></div>
+          <div class="card-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table class="data-table" style="width:100%;min-width:520px">
+                <thead>
+                  <tr>
+                    <th style="width:50px">Team #</th>
+                    <th>Team Name</th>
+                    <th>Player 1</th>
+                    <th>Player 2</th>
+                    <th style="width:100px;text-align:center">Comb. Hdcp</th>
+                    <th style="width:110px"></th>
+                  </tr>
+                </thead>
+                <tbody id="manage-teams-body">
+                  <tr><td colspan="6" style="padding:18px;color:#666;text-align:center">Loading…</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2583,14 +2650,10 @@ function matchupLabel(teamNumber) {
   const n = Number(teamNumber) || 0;
   if (!n) return '';
   const t = (teamsCache || []).find(x => (Number(x && x.teamNumber) || 0) === n) || null;
-  const e1 = t && t.player1Email ? String(t.player1Email) : '';
-  const e2 = t && t.player2Email ? String(t.player2Email) : '';
-  const p1 = e1 ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === e1.toLowerCase()) : null;
-  const p2 = e2 ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === e2.toLowerCase()) : null;
-  const name1 = p1 && p1.name ? p1.name : e1;
-  const name2 = p2 && p2.name ? p2.name : e2;
-  const names = [name1, name2].filter(Boolean).join(' / ');
-  return names ? `Team ${n} (${names})` : `Team ${n}`;
+  if (!t) return `Team ${n}`;
+  const tname = t.teamName ? ` "${t.teamName}"` : '';
+  const names = getTeamNamesOnly(n);
+  return names ? `Team ${n}${tname} (${names})` : `Team ${n}${tname}`;
 }
 
 async function hydrateMatchupSelectorForWeek() {
@@ -2943,12 +3006,10 @@ function getTeamLabel(teamNumber) {
   const n = Number(teamNumber) || 0;
   if (!n) return '';
   const t = (teamsCache || []).find(x => (Number(x && x.teamNumber) || 0) === n) || null;
-  const p1 = t && t.player1Email ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player1Email).toLowerCase()) : null;
-  const p2 = t && t.player2Email ? (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player2Email).toLowerCase()) : null;
-  const name1 = p1 && p1.name ? p1.name : (t && t.player1Email ? t.player1Email : '');
-  const name2 = p2 && p2.name ? p2.name : (t && t.player2Email ? t.player2Email : '');
-  const names = [name1, name2].filter(Boolean).join(' / ');
-  return names ? `Team ${n} — ${names}` : `Team ${n}`;
+  if (!t) return `Team ${n}`;
+  const tname = t.teamName ? ` "${t.teamName}"` : '';
+  const names = getTeamNamesOnly(n);
+  return names ? `Team ${n}${tname} — ${names}` : `Team ${n}${tname}`;
 }
 
 function getTeamNamesOnly(teamNumber) {
@@ -2960,6 +3021,15 @@ function getTeamNamesOnly(teamNumber) {
   const name1 = p1 && p1.name ? p1.name : (t && t.player1Email ? String(t.player1Email) : '');
   const name2 = p2 && p2.name ? p2.name : (t && t.player2Email ? String(t.player2Email) : '');
   return [name1, name2].filter(Boolean).join(' / ');
+}
+
+function getPlayerTeam(email) {
+  const e = String(email || '').toLowerCase();
+  if (!e) return null;
+  return (teamsCache || []).find(t =>
+    String(t.player1Email || '').toLowerCase() === e ||
+    String(t.player2Email || '').toLowerCase() === e
+  ) || null;
 }
 
 function scheduleTeamHintText(teamNumber) {
@@ -3051,6 +3121,18 @@ async function onSchDateChange() {
 }
 
 // ── Regular Match Cards ───────────────────────────────────────────
+function teamOptionsForMatchCard(selectedNum) {
+  const list = [...(teamsCache||[])].sort((a,b) => (a.teamNumber||0)-(b.teamNumber||0));
+  const sel = selectedNum ? Number(selectedNum) : null;
+  return '<option value="">— Team —</option>' + list.map(t => {
+    const n = Number(t.teamNumber);
+    const tname = t.teamName ? ` "${t.teamName}"` : '';
+    const players = getTeamNamesOnly(n);
+    const label = `Team ${n}${tname}${players ? ' — '+players : ''}`;
+    return `<option value="${n}" ${sel===n?'selected':''}>${escapeHtml(label)}</option>`;
+  }).join('');
+}
+
 function renderScheduleMatchCards(matches) {
   const box = document.getElementById('sch-matches');
   if (!box) return;
@@ -3059,7 +3141,12 @@ function renderScheduleMatchCards(matches) {
     box.innerHTML = '<div style="padding:8px 0;color:#888;font-size:13px">No matchups yet — click + Add Match.</div>';
     return;
   }
-  box.innerHTML = list.map((m, idx) => `
+  box.innerHTML = list.map((m, idx) => {
+    const ta = m.teamA || 0;
+    const tb = m.teamB || 0;
+    const taPlayers = ta ? getTeamNamesOnly(ta) : '';
+    const tbPlayers = tb ? getTeamNamesOnly(tb) : '';
+    return `
     <div class="sch-match-card" data-idx="${idx}" style="border:1px solid #e0e0e0;border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fafafa">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:10px">
@@ -3069,21 +3156,31 @@ function renderScheduleMatchCards(matches) {
         </div>
         <button class="btn-sm" onclick="removeScheduleMatchCardFromUI(${idx})" style="padding:2px 9px;font-size:12px">✕</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;align-items:start">
+      <div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;align-items:center">
         <div style="border:1px solid rgba(212,175,55,0.4);border-radius:4px;padding:8px;background:#fff">
-          <div style="font-size:10px;font-weight:700;color:#1A4A2E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Team 1</div>
-          <select class="sch-mc-t1p1" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;margin-bottom:4px">${playerOptionsHtml(m.t1p1 || '')}</select>
-          <select class="sch-mc-t1p2" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px">${playerOptionsHtml(m.t1p2 || '')}</select>
+          <div style="font-size:10px;font-weight:700;color:#1A4A2E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Home Team</div>
+          <select class="sch-mc-ta" onchange="updateMatchCardHint(this,'sch-mc-ta-hint')"
+            style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;margin-bottom:3px">${teamOptionsForMatchCard(ta)}</select>
+          <div class="sch-mc-ta-hint" style="font-size:11px;color:#888;min-height:14px">${escapeHtml(taPlayers)}</div>
         </div>
-        <div style="text-align:center;font-weight:900;font-size:14px;color:#ccc;padding-top:20px">vs</div>
+        <div style="text-align:center;font-weight:900;font-size:14px;color:#ccc">vs</div>
         <div style="border:1px solid rgba(212,175,55,0.4);border-radius:4px;padding:8px;background:#fff">
-          <div style="font-size:10px;font-weight:700;color:#1A4A2E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Team 2</div>
-          <select class="sch-mc-t2p1" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;margin-bottom:4px">${playerOptionsHtml(m.t2p1 || '')}</select>
-          <select class="sch-mc-t2p2" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px">${playerOptionsHtml(m.t2p2 || '')}</select>
+          <div style="font-size:10px;font-weight:700;color:#1A4A2E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Away Team</div>
+          <select class="sch-mc-tb" onchange="updateMatchCardHint(this,'sch-mc-tb-hint')"
+            style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;margin-bottom:3px">${teamOptionsForMatchCard(tb)}</select>
+          <div class="sch-mc-tb-hint" style="font-size:11px;color:#888;min-height:14px">${escapeHtml(tbPlayers)}</div>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+function updateMatchCardHint(selectEl, hintClass) {
+  const card = selectEl.closest('.sch-match-card');
+  if (!card) return;
+  const hint = card.querySelector('.' + hintClass);
+  const n = Number(selectEl.value) || 0;
+  if (hint) hint.textContent = n ? getTeamNamesOnly(n) : '';
 }
 
 function readScheduleMatchCardsFromUI() {
@@ -3091,10 +3188,8 @@ function readScheduleMatchCardsFromUI() {
   if (!box) return [];
   return Array.from(box.querySelectorAll('.sch-match-card')).map(card => ({
     teeTime: (card.querySelector('.sch-mc-tee') || {}).value || '',
-    t1p1: (card.querySelector('.sch-mc-t1p1') || {}).value || '',
-    t1p2: (card.querySelector('.sch-mc-t1p2') || {}).value || '',
-    t2p1: (card.querySelector('.sch-mc-t2p1') || {}).value || '',
-    t2p2: (card.querySelector('.sch-mc-t2p2') || {}).value || '',
+    teamA: Number((card.querySelector('.sch-mc-ta') || {}).value) || 0,
+    teamB: Number((card.querySelector('.sch-mc-tb') || {}).value) || 0,
   }));
 }
 
@@ -3114,19 +3209,9 @@ function removeScheduleMatchCardFromUI(idx) {
   renderScheduleMatchCards(cur);
 }
 
-// Legacy alias so any external references don't break
+// Legacy aliases
 function addScheduleMatchRowFromUI() { addScheduleMatchCardFromUI(); }
-function renderScheduleMatchesEditor(matches) {
-  // Convert old teamA/teamB format to new card format
-  const cards = (Array.isArray(matches) ? matches : []).map(m => {
-    if (m.t1p1 !== undefined) return m;
-    const ta = m.teamA ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamA)) : null;
-    const tb = m.teamB ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamB)) : null;
-    return { teeTime: m.teeTime || '', t1p1: ta ? (ta.player1Email||'') : '', t1p2: ta ? (ta.player2Email||'') : '',
-             t2p1: tb ? (tb.player1Email||'') : '', t2p2: tb ? (tb.player2Email||'') : '', teamA: m.teamA, teamB: m.teamB };
-  });
-  renderScheduleMatchCards(cards);
-}
+function renderScheduleMatchesEditor(matches) { renderScheduleMatchCards(Array.isArray(matches) ? matches : []); }
 function readScheduleMatchesFromUI() { return readScheduleMatchCardsFromUI(); }
 
 // ── Scramble Team Editor ──────────────────────────────────────────
@@ -3337,16 +3422,9 @@ async function loadScheduleWeekIntoAdminEditor() {
 
   const type = (hit && hit.type) || 'match';
   if (type === 'match') {
+    // Use teamA/teamB directly — match cards now show team dropdowns
     const rawMs = hit && Array.isArray(hit.matches) ? hit.matches : [];
-    // Convert old teamA/teamB format to new card format with player dropdowns
-    const cards = rawMs.map(m => {
-      if (m.t1p1 !== undefined) return m;
-      const ta = m.teamA ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamA)) : null;
-      const tb = m.teamB ? (teamsCache || []).find(t => Number(t.teamNumber) === Number(m.teamB)) : null;
-      return { teeTime: m.teeTime || '', t1p1: ta ? (ta.player1Email||'') : '', t1p2: ta ? (ta.player2Email||'') : '',
-               t2p1: tb ? (tb.player1Email||'') : '', t2p2: tb ? (tb.player2Email||'') : '', teamA: m.teamA||0, teamB: m.teamB||0 };
-    });
-    renderScheduleMatchCards(cards);
+    renderScheduleMatchCards(rawMs);
   } else if (type === 'scramble') {
     const teams = hit && Array.isArray(hit.scrambleTeams) ? hit.scrambleTeams : [];
     schScrambleTeams = teams; renderScrambleTeamsEditor(teams);
@@ -3396,13 +3474,15 @@ function readTeamsFromEditor() {
   const out = [];
   for (const r of rows) {
     const numEl = r.querySelector('input.team-num');
+    const nameEl = r.querySelector('input.team-name');
     const p1El = r.querySelector('select.team-p1');
     const p2El = r.querySelector('select.team-p2');
     const teamNumber = numEl && numEl.value !== '' ? parseInt(numEl.value, 10) : null;
+    const teamName = nameEl ? String(nameEl.value || '').trim() : '';
     const player1Email = p1El ? String(p1El.value || '').trim() : '';
     const player2Email = p2El ? String(p2El.value || '').trim() : '';
     if (!teamNumber || !player1Email || !player2Email) continue;
-    out.push({ teamNumber, player1Email, player2Email });
+    out.push({ teamNumber, teamName, player1Email, player2Email });
   }
   out.sort((a, b) => (a.teamNumber || 0) - (b.teamNumber || 0));
   return out;
@@ -3431,6 +3511,138 @@ async function saveTeamsFromUI() {
   teamsAdminDirty = false;
   renderTeamsAdminUI();
   showToast('Teams saved');
+}
+
+// ── Manage Teams Page ─────────────────────────────────────────────
+
+let editingTeamNumber = null; // null = add mode, number = edit mode
+
+function buildTeamsPage() {
+  hydrateTeamFormPlayers();
+  renderTeamsRoster();
+  resetTeamForm();
+}
+
+function hydrateTeamFormPlayers() {
+  const p1 = document.getElementById('mt-p1');
+  const p2 = document.getElementById('mt-p2');
+  const opts = '<option value="">— Select —</option>' +
+    [...(playersCache || [])].sort((a,b) => String(a.name||'').localeCompare(String(b.name||'')))
+      .map(p => `<option value="${escapeHtml(p.email||'')}">${escapeHtml(p.name||p.email)}</option>`).join('');
+  if (p1) p1.innerHTML = opts;
+  if (p2) p2.innerHTML = opts;
+}
+
+function renderTeamsRoster() {
+  const tbody = document.getElementById('manage-teams-body');
+  if (!tbody) return;
+  const teams = [...(teamsCache || [])].sort((a,b) => (a.teamNumber||0)-(b.teamNumber||0));
+  if (!teams.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:18px;color:#666;text-align:center">No teams yet — use the form above.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = teams.map(t => {
+    const n = Number(t.teamNumber);
+    const tname = t.teamName ? escapeHtml(t.teamName) : '<span style="color:#aaa;font-style:italic">—</span>';
+    const p1 = t.player1Email ? (playersCache||[]).find(p => String(p.email||'').toLowerCase()===String(t.player1Email).toLowerCase()) : null;
+    const p2 = t.player2Email ? (playersCache||[]).find(p => String(p.email||'').toLowerCase()===String(t.player2Email).toLowerCase()) : null;
+    const hcp1 = p1 ? Number(p1.handicap !== undefined ? p1.handicap : (p1.hdcp||0)) : 0;
+    const hcp2 = p2 ? Number(p2.handicap !== undefined ? p2.handicap : (p2.hdcp||0)) : 0;
+    const combHcp = Number.isFinite(hcp1+hcp2) ? (hcp1+hcp2).toFixed(1) : '—';
+    return `<tr>
+      <td style="font-weight:700;color:#1A4A2E;text-align:center">${n}</td>
+      <td style="font-weight:600">${tname}</td>
+      <td style="font-size:13px">${escapeHtml(p1 ? p1.name : (t.player1Email||'—'))}</td>
+      <td style="font-size:13px">${escapeHtml(p2 ? p2.name : (t.player2Email||'—'))}</td>
+      <td style="text-align:center;font-size:13px;color:var(--gold-dark);font-weight:700">${combHcp}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-sm" onclick="editTeamFromRoster(${n})" style="padding:3px 9px;font-size:12px;margin-right:4px">Edit</button>
+        <button class="btn-sm" onclick="deleteTeamFromRoster(${n})" style="padding:3px 9px;font-size:12px;color:#c33;border-color:#c33">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function resetTeamForm() {
+  editingTeamNumber = null;
+  const teams = teamsCache || [];
+  const nextNum = teams.length ? (Math.max(...teams.map(t => Number(t.teamNumber)||0))+1) : 1;
+  const numEl = document.getElementById('mt-num');
+  const nameEl = document.getElementById('mt-name');
+  const p1El = document.getElementById('mt-p1');
+  const p2El = document.getElementById('mt-p2');
+  const cancelBtn = document.getElementById('mt-cancel');
+  const title = document.getElementById('manage-teams-form-title');
+  if (numEl) numEl.value = nextNum;
+  if (nameEl) nameEl.value = '';
+  if (p1El) p1El.value = '';
+  if (p2El) p2El.value = '';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (title) title.textContent = 'Add Team';
+}
+
+function editTeamFromRoster(teamNumber) {
+  const t = (teamsCache||[]).find(x => Number(x.teamNumber)===Number(teamNumber));
+  if (!t) return;
+  editingTeamNumber = Number(teamNumber);
+  const numEl = document.getElementById('mt-num');
+  const nameEl = document.getElementById('mt-name');
+  const p1El = document.getElementById('mt-p1');
+  const p2El = document.getElementById('mt-p2');
+  const cancelBtn = document.getElementById('mt-cancel');
+  const title = document.getElementById('manage-teams-form-title');
+  if (numEl) { numEl.value = t.teamNumber; numEl.disabled = true; }
+  if (nameEl) nameEl.value = t.teamName || '';
+  if (p1El) p1El.value = t.player1Email || '';
+  if (p2El) p2El.value = t.player2Email || '';
+  if (cancelBtn) cancelBtn.style.display = '';
+  if (title) title.textContent = 'Edit Team ' + teamNumber;
+  document.getElementById('mt-num') && document.getElementById('mt-num').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+async function saveTeamFromForm() {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  const numEl = document.getElementById('mt-num');
+  const nameEl = document.getElementById('mt-name');
+  const p1El = document.getElementById('mt-p1');
+  const p2El = document.getElementById('mt-p2');
+  const teamNumber = numEl ? parseInt(numEl.value, 10) : null;
+  if (!teamNumber || teamNumber < 1) { showToast('Team number required'); return; }
+  const player1Email = p1El ? p1El.value.trim() : '';
+  const player2Email = p2El ? p2El.value.trim() : '';
+  if (!player1Email || !player2Email) { showToast('Both players required'); return; }
+  if (player1Email === player2Email) { showToast('Players must be different'); return; }
+  const teamName = nameEl ? nameEl.value.trim() : '';
+
+  // If editing, delete old record first if number changed (number locked in edit mode so this is a no-op)
+  // Save individual team (API accepts single object or array)
+  const r = await fetchJsonAllowError('/api/teams', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ teams: [{ teamNumber, teamName, player1Email, player2Email }] })
+  });
+  if (!r.ok) { showToast(r.text || 'Save failed'); return; }
+
+  teamsCache = r.json && Array.isArray(r.json.teams) ? r.json.teams : teamsCache;
+  teamsAdminDirty = false;
+  const numInput = document.getElementById('mt-num');
+  if (numInput) numInput.disabled = false;
+  renderTeamsRoster();
+  resetTeamForm();
+  renderTeamsAdminUI(); // keep legacy league-settings view in sync
+  showToast('Team saved');
+}
+
+async function deleteTeamFromRoster(teamNumber) {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  if (!confirm('Delete Team ' + teamNumber + '?')) return;
+  const r = await fetchJsonAllowError('/api/teams?teamNumber=' + teamNumber, { method: 'DELETE' });
+  if (!r.ok) { showToast('Delete failed'); return; }
+  teamsCache = (teamsCache||[]).filter(t => Number(t.teamNumber) !== Number(teamNumber));
+  renderTeamsRoster();
+  resetTeamForm();
+  renderTeamsAdminUI();
+  showToast('Team deleted');
 }
 
 function setShotTrackingEnabled(enabled) {
@@ -4499,11 +4711,7 @@ async function saveScheduleWeekFromUI() {
   let matches = [], scrambleTeams = null, tournamentField = null;
   if (type === 'match') {
     const cards = readScheduleMatchCardsFromUI();
-    matches = cards.map(m => {
-      const teamA = inferTeamNumber(m.t1p1, m.t1p2);
-      const teamB = inferTeamNumber(m.t2p1, m.t2p2);
-      return { ...m, teamA: teamA || 0, teamB: teamB || 0 };
-    });
+    matches = cards.filter(m => m.teamA && m.teamB && m.teamA !== m.teamB);
   } else if (type === 'scramble') {
     syncScrambleNamesFromUI();
     scrambleTeams = schScrambleTeams;
@@ -4611,8 +4819,10 @@ function applyRoleAccess(role) {
 
   // Admin-only items that currently live under the Scorer group in the UI
   const managePlayersNav = document.querySelector(".nav-item[onclick=\"showPage('manage-players')\"]");
+  const manageTeamsNav = document.querySelector(".nav-item[onclick=\"showPage('manage-teams')\"]");
   const managePaymentsNav = document.querySelector(".nav-item[onclick=\"showPage('manage-payments')\"]");
   if (managePlayersNav) managePlayersNav.style.display = isAdmin ? '' : 'none';
+  if (manageTeamsNav) manageTeamsNav.style.display = isAdmin ? '' : 'none';
   if (managePaymentsNav) managePaymentsNav.style.display = isAdmin ? '' : 'none';
 
   // Guard: if user somehow lands on a restricted page, send to dashboard.
@@ -4620,7 +4830,7 @@ function applyRoleAccess(role) {
   if (activePage) {
     const pid = activePage.id || '';
     const scorerPages = ['page-enter-scores', 'page-scorecards'];
-    const adminPages = ['page-user-roles', 'page-courses', 'page-league-settings', 'page-scramble', 'page-tournaments', 'page-brackets', 'page-rainouts', 'page-manage-players', 'page-manage-payments'];
+    const adminPages = ['page-user-roles', 'page-courses', 'page-league-settings', 'page-scramble', 'page-tournaments', 'page-brackets', 'page-rainouts', 'page-manage-players', 'page-manage-teams', 'page-manage-payments'];
     const scorerOnly = scorerPages.indexOf(pid) !== -1;
     const adminOnly = adminPages.indexOf(pid) !== -1;
     if ((scorerOnly && !isScorer) || (adminOnly && !isAdmin)) {
@@ -4814,6 +5024,9 @@ function showPage(id) {
       hydratePlayerSelectors();
       hydrateHandicapAdminUI();
     });
+  }
+  if (id === 'manage-teams') {
+    Promise.all([loadPlayers().catch(()=>{}), loadTeams().catch(()=>{})]).then(() => buildTeamsPage());
   }
   if (id === 'courses') {
     hydrateCoursesAdminUI();
@@ -5853,12 +6066,12 @@ function setLeaderboardMode(mode) {
   // Clearly distinguish the active button with solid gold fill vs ghost style
   if (g) { g.style.background = leaderboardMode === 'gross' ? '#D4AF37' : 'transparent'; g.style.color = leaderboardMode === 'gross' ? '#1A4A2E' : ''; g.style.fontWeight = leaderboardMode === 'gross' ? '700' : ''; }
   if (n) { n.style.background = leaderboardMode === 'net' ? '#D4AF37' : 'transparent'; n.style.color = leaderboardMode === 'net' ? '#1A4A2E' : ''; n.style.fontWeight = leaderboardMode === 'net' ? '700' : ''; }
-  // Update column headers to reflect active mode
+  // Update column headers to reflect active mode (col 4=Avg, 5=Best now that Team is col 2)
   const thead = document.querySelector('#page-leaderboard table.data-table thead tr');
   if (thead) {
     const ths = thead.querySelectorAll('th');
-    if (ths[3]) ths[3].textContent = leaderboardMode === 'net' ? 'Net Avg' : 'Avg';
-    if (ths[4]) ths[4].textContent = leaderboardMode === 'net' ? 'Net Best' : 'Best';
+    if (ths[4]) ths[4].textContent = leaderboardMode === 'net' ? 'Net Avg' : 'Avg';
+    if (ths[5]) ths[5].textContent = leaderboardMode === 'net' ? 'Net Best' : 'Best';
   }
   buildLeaderboard();
 }
@@ -5890,6 +6103,7 @@ async function buildLeaderboard() {
       return `<tr>
         <td class="rank-num ${rankClass}">${i+1}</td>
         <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
+        <td style="color:#ccc">—</td>
         <td>${p.rounds}</td>
         <td style="color:var(--gold-dark);font-weight:700">${p.avg}</td>
         <td>${p.best}</td>
@@ -5903,6 +6117,9 @@ async function buildLeaderboard() {
   const startTs = leaderboardFilters.start ? Date.parse(leaderboardFilters.start) : null;
   const endTs = leaderboardFilters.end ? Date.parse(leaderboardFilters.end) : null;
 
+  // Ensure teams are loaded for team column
+  if (!(teamsCache && teamsCache.length)) { try { await loadTeams(); } catch(e) {} }
+
   const byPlayer = new Map();
   for (const s of scoreRows) {
     if (!s || !s.player) continue;
@@ -5915,9 +6132,6 @@ async function buildLeaderboard() {
     const name = s.player;
     const gross = typeof s.grossTotal === 'number' ? s.grossTotal : (Array.isArray(s.holes) ? s.holes.reduce((a,b)=>a+(parseInt(b)||0),0) : null);
     if (gross === null || isNaN(gross)) continue;
-    // Fix #4: use the handicap captured AT the time of play (handicapSnapshot) so
-    // net leaderboard history does not change retroactively when handicaps update.
-    // Fall back to current player handicap only if snapshot was never stored.
     const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
     const player = pool.find(p => String(p.name).toLowerCase() === String(name).toLowerCase()) || { name, handicap: 0, hdcp: 0 };
     const h = (typeof s.handicapSnapshot === 'number')
@@ -5925,7 +6139,8 @@ async function buildLeaderboard() {
       : (player.handicap !== undefined ? player.handicap : (player.hdcp !== undefined ? player.hdcp : 0));
     const net = calcNetScore(gross, h);
     const val = leaderboardMode === 'net' ? net : gross;
-    if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: h, values: [] });
+    const playerEmail = s.playerEmail || (player && player.email) || '';
+    if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: h, email: playerEmail, values: [] });
     byPlayer.get(name).values.push(val);
   }
 
@@ -5934,21 +6149,26 @@ async function buildLeaderboard() {
     const avg = rounds ? (p.values.reduce((a,b)=>a+b,0) / rounds) : 0;
     const best = rounds ? Math.min(...p.values) : 0;
     const points = rounds ? Math.max(0, Math.round(100 - avg)) : 0;
-    return { ...p, rounds, avg: avg ? avg.toFixed(1) : '—', best: best || '—', points };
+    // Find team by email or by name match
+    const em = String(p.email || '').toLowerCase();
+    const team = em ? getPlayerTeam(em) : null;
+    const teamLabel = team ? `<span style="font-size:11px;white-space:nowrap">T${team.teamNumber}${team.teamName?' '+escapeHtml(team.teamName):''}</span>` : '<span style="color:#ccc">—</span>';
+    return { ...p, rounds, avg: avg ? avg.toFixed(1) : '—', best: best || '—', points, teamLabel };
   }).sort((a,b) => parseFloat(a.avg) - parseFloat(b.avg));
 
   tbody.innerHTML = rows.map((p,i) => {
     const rankClass = i < 3 ? `rank-${i+1}` : '';
     return `<tr>
       <td class="rank-num ${rankClass}">${i+1}</td>
-      <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
+      <td style="font-weight:600;color:#1a1a1a">${escapeHtml(p.name)}</td>
+      <td style="color:#1A4A2E;font-size:12px">${p.teamLabel}</td>
       <td>${p.rounds}</td>
       <td style="color:var(--gold-dark);font-weight:700">${p.avg}</td>
       <td>${p.best}</td>
       <td>${p.hdcp}</td>
       <td style="color:var(--green);font-weight:700">${p.points}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" style="padding:18px;color:#666;text-align:center">No scores posted yet</td></tr>';
+  }).join('') || '<tr><td colspan="8" style="padding:18px;color:#666;text-align:center">No scores posted yet</td></tr>';
 }
 
 function hydrateLeaderboardFiltersUI() {
