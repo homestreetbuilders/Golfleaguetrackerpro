@@ -3517,7 +3517,10 @@ async function saveTeamsFromUI() {
 
 let editingTeamNumber = null; // null = add mode, number = edit mode
 
-function buildTeamsPage() {
+async function buildTeamsPage() {
+  // Always fetch fresh data so dropdowns are never empty regardless of cache state
+  try { await loadPlayers(); } catch(e) {}
+  try { await loadTeams(); } catch(e) {}
   hydrateTeamFormPlayers();
   renderTeamsRoster();
   resetTeamForm();
@@ -3526,9 +3529,11 @@ function buildTeamsPage() {
 function hydrateTeamFormPlayers() {
   const p1 = document.getElementById('mt-p1');
   const p2 = document.getElementById('mt-p2');
-  const opts = '<option value="">— Select —</option>' +
-    [...(playersCache || [])].sort((a,b) => String(a.name||'').localeCompare(String(b.name||'')))
-      .map(p => `<option value="${escapeHtml(p.email||'')}">${escapeHtml(p.name||p.email)}</option>`).join('');
+  if (!p1 && !p2) return;
+  const players = (playersCache && playersCache.length) ? playersCache : [];
+  const sorted = [...players].sort((a,b) => String(a.name||'').localeCompare(String(b.name||'')));
+  const opts = '<option value="">— Select player —</option>' +
+    sorted.map(p => `<option value="${escapeHtml(p.email||'')}">${escapeHtml(p.name||p.email)}</option>`).join('');
   if (p1) p1.innerHTML = opts;
   if (p2) p2.innerHTML = opts;
 }
@@ -5026,7 +5031,7 @@ function showPage(id) {
     });
   }
   if (id === 'manage-teams') {
-    Promise.all([loadPlayers().catch(()=>{}), loadTeams().catch(()=>{})]).then(() => buildTeamsPage());
+    buildTeamsPage();
   }
   if (id === 'courses') {
     hydrateCoursesAdminUI();
