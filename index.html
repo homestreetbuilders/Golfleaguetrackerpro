@@ -2932,10 +2932,29 @@ async function identitySignup(email, pass, meta) {
   throw new Error('Signup not supported');
 }
 
+async function getIdentityToken() {
+  try {
+    const ident = window.netlifyIdentity;
+    if (!ident) return null;
+    const user = typeof ident.currentUser === 'function' ? ident.currentUser() : null;
+    if (!user) return null;
+    if (typeof user.jwt === 'function') return await user.jwt();
+    return (user.token && user.token.access_token) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function fetchJson(url, options) {
   const leagueId = getActiveLeagueId();
   const finalUrl = attachLeagueIdToUrl(url, leagueId);
-  const res = await fetch(finalUrl, options);
+  const token = await getIdentityToken();
+  const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
+  const mergedOptions = {
+    ...options,
+    headers: { ...authHeaders, ...(options && options.headers) }
+  };
+  const res = await fetch(finalUrl, mergedOptions);
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(text || ('Request failed: ' + res.status));
@@ -2946,7 +2965,13 @@ async function fetchJson(url, options) {
 async function fetchJsonAllowError(url, options) {
   const leagueId = getActiveLeagueId();
   const finalUrl = attachLeagueIdToUrl(url, leagueId);
-  const res = await fetch(finalUrl, options);
+  const token = await getIdentityToken();
+  const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
+  const mergedOptions = {
+    ...options,
+    headers: { ...authHeaders, ...(options && options.headers) }
+  };
+  const res = await fetch(finalUrl, mergedOptions);
   const text = await res.text().catch(() => '');
   let json = null;
   try {
@@ -3530,7 +3555,7 @@ function hydrateTeamFormPlayers() {
   const p1 = document.getElementById('mt-p1');
   const p2 = document.getElementById('mt-p2');
   if (!p1 && !p2) return;
-  const players = (playersCache && playersCache.length) ? playersCache : [];
+  const players = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
   const sorted = [...players].sort((a,b) => String(a.name||'').localeCompare(String(b.name||'')));
   const opts = '<option value="">— Select player —</option>' +
     sorted.map(p => `<option value="${escapeHtml(p.email||'')}">${escapeHtml(p.name||p.email)}</option>`).join('');
@@ -5938,14 +5963,21 @@ async function loadPlayers(includeRoles) {
   try {
     const url = '/api/players' + (includeRoles ? '?includeRoles=1' : '');
     const res = await fetchJson(url);
-    playersCache = Array.isArray(res && res.players) ? res.players : [];
+    const fetched = Array.isArray(res && res.players) ? res.players : [];
+    // Only replace cache if the API returned data, or if cache was already empty.
+    // This prevents a transient empty API response from wiping out good cached data.
+    if (fetched.length > 0 || !playersCache || !playersCache.length) {
+      playersCache = fetched;
+    }
   } catch (e) {
-    playersCache = [...PLAYERS_DATA].map(p => ({
-      name: p.name,
-      email: p.email,
-      phone: p.phone,
-      handicap: p.hdcp
-    }));
+    if (!playersCache || !playersCache.length) {
+      playersCache = [...PLAYERS_DATA].map(p => ({
+        name: p.name,
+        email: p.email,
+        phone: p.phone,
+        handicap: p.hdcp
+      }));
+    }
   }
   return playersCache;
 }
