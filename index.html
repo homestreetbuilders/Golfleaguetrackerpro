@@ -2932,14 +2932,16 @@ async function identitySignup(email, pass, meta) {
   throw new Error('Signup not supported');
 }
 
-async function getIdentityToken() {
+function getIdentityToken() {
+  // Use the already-issued access_token directly (synchronous, never hangs).
+  // Deliberately NOT calling user.jwt() — that makes a network request to
+  // refresh the token and can hang indefinitely if the Identity server is slow
+  // or the refresh token is expired, which would stall every fetchJson call.
   try {
     const ident = window.netlifyIdentity;
     if (!ident) return null;
     const user = typeof ident.currentUser === 'function' ? ident.currentUser() : null;
-    if (!user) return null;
-    if (typeof user.jwt === 'function') return await user.jwt();
-    return (user.token && user.token.access_token) || null;
+    return (user && user.token && user.token.access_token) || null;
   } catch (e) {
     return null;
   }
@@ -2948,7 +2950,7 @@ async function getIdentityToken() {
 async function fetchJson(url, options) {
   const leagueId = getActiveLeagueId();
   const finalUrl = attachLeagueIdToUrl(url, leagueId);
-  const token = await getIdentityToken();
+  const token = getIdentityToken();
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
   const mergedOptions = {
     ...options,
@@ -2965,7 +2967,7 @@ async function fetchJson(url, options) {
 async function fetchJsonAllowError(url, options) {
   const leagueId = getActiveLeagueId();
   const finalUrl = attachLeagueIdToUrl(url, leagueId);
-  const token = await getIdentityToken();
+  const token = getIdentityToken();
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
   const mergedOptions = {
     ...options,
@@ -3543,12 +3545,19 @@ async function saveTeamsFromUI() {
 let editingTeamNumber = null; // null = add mode, number = edit mode
 
 async function buildTeamsPage() {
-  // Always fetch fresh data so dropdowns are never empty regardless of cache state
-  try { await loadPlayers(); } catch(e) {}
-  try { await loadTeams(); } catch(e) {}
+  // Render immediately with whatever is already cached so dropdowns are never
+  // blank while waiting for the API.  initData() calls loadPlayers() at login,
+  // so by the time the user navigates here the cache is usually populated.
   hydrateTeamFormPlayers();
   renderTeamsRoster();
   resetTeamForm();
+
+  // Fetch fresh data, then re-populate dropdowns and roster.
+  // Don't reset the form a second time so we don't clear anything the user typed.
+  try { await loadPlayers(); } catch(e) { console.error('[Manage Teams] loadPlayers failed:', e); }
+  try { await loadTeams(); } catch(e) { console.error('[Manage Teams] loadTeams failed:', e); }
+  hydrateTeamFormPlayers();
+  renderTeamsRoster();
 }
 
 function hydrateTeamFormPlayers() {
