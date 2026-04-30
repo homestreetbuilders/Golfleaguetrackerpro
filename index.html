@@ -5169,7 +5169,26 @@ function closeSidebar() {
 // ═══════════════════════════════
 // DATA INIT
 // ═══════════════════════════════
-function initData() {
+async function initData() {
+  // Auto-detect active league when none is stored in localStorage.
+  // Without this, API calls hit the unscoped (default) Blob store instead of
+  // the league's scoped store, so the leaderboard shows wrong/empty data.
+  if (!getActiveLeagueId()) {
+    try {
+      // /api/leagues is a global store — no leagueId param needed or wanted.
+      const r = await fetch('/api/leagues');
+      const d = await r.json().catch(() => null);
+      const leagues = Array.isArray(d && d.leagues) ? d.leagues : [];
+      if (leagues.length > 0) {
+        // Pick the first league (API returns alphabetical order by name).
+        localStorage.setItem('fc_league_id', leagues[0].id);
+        hydrateLeagueSelectorUI(); // update dropdown label, non-blocking
+      }
+    } catch (e) {
+      // Non-fatal: app still works without a leagueId (demo/legacy mode)
+    }
+  }
+
   buildScoreGrid();
   loadFeatures().then(() => {
     buildScoreGrid();

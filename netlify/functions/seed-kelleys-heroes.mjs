@@ -576,12 +576,44 @@ export default async (req) => {
     })
   }
 
-  // ── Compute side-games ledger for all 6 weeks ─────────────────────────────────
-  // Uses the same internal-fetch pattern as finalize-week.mjs
+  // ── Finalize all 6 weeks (force=true updates handicaps + triggers side-games)
+  //
+  // finalize-week with force=true:
+  //   1. Accepts already-final score records (bypasses lock check)
+  //   2. Recomputes each player's handicap from their rolling score history
+  //   3. Writes updated handicap to the players store
+  //   4. Internally calls side-games-ledger to compute skins + 50/50
+  //
+  // Weeks are processed in order so each week's handicap feeds the next.
   const base = getSiteBaseUrl(req)
+  const finalizeResults = []
   const ledgerResults = []
+
   if (base) {
     for (let w = 1; w <= 6; w++) {
+      // finalize-week (updates handicaps + calls side-games-ledger internally)
+      try {
+        const res = await fetch(
+          `${base}/api/finalize-week?leagueId=${encodeURIComponent(LEAGUE_ID)}`,
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ week: w, force: true, submittedBy: ne(PLAYERS[0].email) })
+          }
+        )
+        const data = await res.json().catch(() => null)
+        finalizeResults.push({
+          week: w,
+          success: !!(data && data.success),
+          finalized: (data && data.finalized) ? data.finalized.length : 0,
+          missing:   (data && data.missing)   ? data.missing           : []
+        })
+      } catch (e) {
+        finalizeResults.push({ week: w, success: false, error: String(e) })
+      }
+
+      // Explicit side-games-ledger recompute after finalize (ensures skins/50-50
+      // use the just-updated handicap values rather than the pre-finalize snapshot)
       try {
         const res = await fetch(
           `${base}/api/side-games-ledger?leagueId=${encodeURIComponent(LEAGUE_ID)}`,
@@ -615,25 +647,24 @@ export default async (req) => {
       scoreRecords:    totalScoreRecords,
       payments:        payments.length,
       chatMessages:    msgs.length,
+      finalizeWeeks:   finalizeResults,
       ledgerWeeks:     ledgerResults
     },
     scoresSummary: {
-      parTotal:     PAR_TOTAL,
-      sidesPlayed:  'front',
+      parTotal:    PAR_TOTAL,
+      sidesPlayed: 'front',
       weeklyResults: [
-        { week: 1, fiftyFiftyWinner: 'Jim Anderson (net 32)',          note: 'T1vT2, T3vT4, T5 bye' },
-        { week: 2, fiftyFiftyWinner: 'Mike Johnson (net 32)',          note: 'T1vT3, T2vT5, T4 bye' },
-        { week: 3, fiftyFiftyWinner: 'Steve Davis (net 32)',           note: 'T1vT4, T3vT5, T2 bye' },
-        { week: 4, fiftyFiftyWinner: '4-way split net 33 (Jim/Mike/Ronald/Chris)', note: 'T1vT5, T2vT4, T3 bye' },
-        { week: 5, fiftyFiftyWinner: 'Jim Anderson (net 32)',          note: 'T2vT3, T4vT5, T1 bye' },
-        { week: 6, fiftyFiftyWinner: '2-way split net 33 (Mike/Steve)', note: 'T1vT2, T3vT5, T4 bye' }
+        { week: 1, fiftyFiftyWinner: 'Jim Anderson (net 32)',                     matchups: 'T1vT2, T3vT4, T5 bye' },
+        { week: 2, fiftyFiftyWinner: 'Mike Johnson (net 32)',                     matchups: 'T1vT3, T2vT5, T4 bye' },
+        { week: 3, fiftyFiftyWinner: 'Steve Davis (net 32)',                      matchups: 'T1vT4, T3vT5, T2 bye' },
+        { week: 4, fiftyFiftyWinner: '4-way split net 33 (Jim/Mike/Ronald/Chris)', matchups: 'T1vT5, T2vT4, T3 bye' },
+        { week: 5, fiftyFiftyWinner: 'Jim Anderson (net 32)',                     matchups: 'T2vT3, T4vT5, T1 bye' },
+        { week: 6, fiftyFiftyWinner: '2-way split net 33 (Mike/Steve)',           matchups: 'T1vT2, T3vT5, T4 bye' }
       ]
     },
-    nextSteps: [
-      'Leaderboard and side-games ledger are fully computed.',
-      `To update handicaps: POST /api/finalize-week?leagueId=${LEAGUE_ID} body: { "week": 1, "force": true } … repeat for weeks 2-6`,
-      'Or visit the app as admin → Finalize Week → select each week'
-    ]
+    leaderboardNote: base
+      ? 'Finalize-week ran for all 6 weeks. Leaderboard should show all 10 players.'
+      : 'Base URL not detected — call POST /api/finalize-week?leagueId=kelleys-heroes with { week, force: true } for weeks 1-6 manually.'
   })
 }
 
