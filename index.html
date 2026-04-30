@@ -3622,7 +3622,7 @@ function resetTeamForm() {
 
 function editTeamFromRoster(teamNumber) {
   const t = (teamsCache||[]).find(x => Number(x.teamNumber)===Number(teamNumber));
-  if (!t) return;
+  if (!t) { showToast('Team not found — try refreshing'); return; }
   editingTeamNumber = Number(teamNumber);
   const numEl = document.getElementById('mt-num');
   const nameEl = document.getElementById('mt-name');
@@ -3632,11 +3632,21 @@ function editTeamFromRoster(teamNumber) {
   const title = document.getElementById('manage-teams-form-title');
   if (numEl) { numEl.value = t.teamNumber; numEl.disabled = true; }
   if (nameEl) nameEl.value = t.teamName || '';
-  if (p1El) p1El.value = t.player1Email || '';
-  if (p2El) p2El.value = t.player2Email || '';
+  // Match player options case-insensitively — teams API normalizes emails to
+  // lowercase but the players dropdown may retain the original signup casing.
+  function setSelectCI(sel, email) {
+    if (!sel) return;
+    const lower = String(email || '').toLowerCase();
+    const opt = Array.from(sel.options).find(o => o.value.toLowerCase() === lower);
+    sel.value = opt ? opt.value : '';
+  }
+  setSelectCI(p1El, t.player1Email);
+  setSelectCI(p2El, t.player2Email);
   if (cancelBtn) cancelBtn.style.display = '';
   if (title) title.textContent = 'Edit Team ' + teamNumber;
-  document.getElementById('mt-num') && document.getElementById('mt-num').scrollIntoView({behavior:'smooth',block:'center'});
+  // Scroll the form card into view so the user sees the populated fields
+  const formCard = document.querySelector('#page-manage-teams .card');
+  if (formCard) formCard.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 async function saveTeamFromForm() {
