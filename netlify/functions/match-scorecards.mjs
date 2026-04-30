@@ -76,8 +76,7 @@ export default async (req) => {
   if (!leagueId) return new Response('Missing leagueId', { status: 400 })
 
   const store = getStore(leagueStoreName('match-scorecards', leagueId))
-  // Fix #1: access scores and locks stores so match scorecard data flows downstream
-  const scoresStore = getStore(leagueStoreName('scores', leagueId))
+  // locksStore is used by the unlock action to release per-player score locks
   const locksStore = getStore(leagueStoreName('scorecard-locks', leagueId))
 
   if (req.method === 'GET') {
@@ -177,45 +176,10 @@ export default async (req) => {
 
     await store.setJSON(key, updated)
 
-    // Fix #1: when finalized, write individual score records into the scores store
-    // so leaderboard, analytics, handicaps, and side games all work correctly.
-    if (updated.status === 'final') {
-      const now = updated.submittedAt
-      for (const p of updated.players) {
-        if (!p || !p.name) continue
-        const nameLower = String(p.name).toLowerCase()
-        const emailLower = p.email ? String(p.email).toLowerCase() : null
-
-        // Deterministic key prevents duplicate final records on re-submit
-        const scoreKey = `week-${week}-${nameLower}-match`
-
-        await scoresStore.setJSON(scoreKey, {
-          player: p.name,
-          playerEmail: emailLower,       // Fix #2: email present so side-games lookup works
-          week,
-          date: updated.date,
-          course: updated.course,
-          tee: updated.tee,
-          side: updated.side,
-          holes: p.holes,
-          grossTotal: p.grossTotal,
-          handicapSnapshot: p.handicapSnapshot,  // Fix #9: stored per-player
-          parTotal,                               // Fix #6: stored for handicap diff calc
-          stats: null,
-          status: 'final',
-          submittedBy: updated.submittedBy,
-          submittedAt: now,
-          fromMatchScorecard: key
-        }).catch(() => null)
-
-        // Fix #7: set both name-based and email-based lock keys
-        const lockData = { locked: true, lockedAt: now, reason: 'match_scorecard' }
-        await locksStore.setJSON(`lock-${nameLower}-week-${week}`, lockData).catch(() => null)
-        if (emailLower) {
-          await locksStore.setJSON(`lock-email-${emailLower}-week-${week}`, lockData).catch(() => null)
-        }
-      }
-    }
+    // Individual score records are written directly by the frontend via POST /api/scores
+    // after a successful match scorecard save (see saveMatchScorecard in index.html).
+    // That keeps the write path explicit, observable in DevTools, and consistent with
+    // how individual (non-match) scores are stored — including lock management.
 
     return Response.json({ success: true, scorecard: updated })
   }

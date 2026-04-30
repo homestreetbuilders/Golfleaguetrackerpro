@@ -2851,6 +2851,42 @@ async function saveMatchScorecard(status) {
     showToast(msg || ('Save failed' + (res && res.status ? (' (' + res.status + ')') : '')));
     return;
   }
+
+  // Bug #1 fix: write each player's score directly to /api/scores so the
+  // leaderboard, analytics, handicaps, and side games all see match play data.
+  // Doing this from the frontend (rather than inside the match-scorecards function)
+  // makes the write path explicit and consistent with individual score submission.
+  // A 423 response means the score was already locked from a prior submission — fine.
+  if (status === 'final') {
+    const scoreParTotal = (activeParsCache && activeParsCache.length === 9)
+      ? activeParsCache.reduce((a, b) => a + b, 0)
+      : PAR_TOTAL;
+    for (const p of playersPayload) {
+      await fetchJsonAllowError('/api/scores', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          player: p.name,
+          playerEmail: p.email,
+          week,
+          date,
+          course,
+          tee,
+          side,
+          holes: p.holes,
+          grossTotal: p.grossTotal,
+          handicapSnapshot: p.handicapSnapshot,
+          parTotal: scoreParTotal,
+          stats: null,
+          status: 'final',
+          submittedBy: currentUser ? currentUser.email : null
+        })
+      });
+    }
+    await refreshScorecardLockStatus();
+    buildLeaderboard();
+  }
+
   showToast(status === 'final' ? 'Match scorecard submitted' : 'Match draft saved');
 }
 
