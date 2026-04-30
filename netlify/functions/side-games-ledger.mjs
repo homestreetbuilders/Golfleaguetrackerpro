@@ -298,7 +298,8 @@ export default async (req) => {
       if (!s || !s.player) continue
       if (String(s.side || 'front') !== (side === 'back' ? 'back' : 'front')) continue
 
-      const email = findPlayerEmailByName(players, s.player)
+      // Bug #2: use playerEmail stored in the score record first, fall back to name lookup
+      const email = (s.playerEmail ? String(s.playerEmail).trim().toLowerCase() : null) || findPlayerEmailByName(players, s.player)
       if (!email) continue
 
       const course = findCourseByName(courses, s.course)
@@ -391,7 +392,8 @@ export default async (req) => {
       const side = String(s.side || 'front')
       if (side !== 'front' && side !== 'back') continue
 
-      const email = findPlayerEmailByName(players, s.player)
+      // Bug #2: use playerEmail stored in the score record first, fall back to name lookup
+      const email = (s.playerEmail ? String(s.playerEmail).trim().toLowerCase() : null) || findPlayerEmailByName(players, s.player)
       if (!email) continue
       if (!isEligible(email, 'fiftyFifty')) continue
 
@@ -426,7 +428,8 @@ export default async (req) => {
       if (!s || !s.player) continue
       if (String(s.side || 'front') !== wantSide) continue
 
-      const email = findPlayerEmailByName(players, s.player)
+      // Bug #2: use playerEmail stored in the score record first, fall back to name lookup
+      const email = (s.playerEmail ? String(s.playerEmail).trim().toLowerCase() : null) || findPlayerEmailByName(players, s.player)
       if (!email) continue
       if (!isEligible(email, 'fiftyFifty')) continue
 

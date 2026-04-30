@@ -2148,9 +2148,6 @@
                 <label>Pot Category</label>
                 <select id="pay-analytics-category" onchange="loadPaymentAnalytics()">
                   <option value="">Select category...</option>
-                  <option value="50/50">50/50</option>
-                  <option value="skins">Skins</option>
-                  <option value="gross skins">Gross Skins</option>
                 </select>
               </div>
             </div>
@@ -6188,6 +6185,17 @@ async function buildLeaderboard() {
     if (leaderboardFilters.week) qs.push('week=' + encodeURIComponent(leaderboardFilters.week));
     const res = await fetchJson('/api/scores' + (qs.length ? ('?' + qs.join('&')) : ''));
     scoreRows = Array.isArray(res.scores) ? res.scores : [];
+    // De-dup: keep only the latest submission per player per week.
+    // An unlock+resubmit creates multiple final records for the same player+week;
+    // without de-dup, all of them count as separate rounds on the leaderboard.
+    scoreRows.sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
+    const _seenPW = new Set();
+    scoreRows = scoreRows.filter(s => {
+      const k = String(s.player || '').toLowerCase() + '|' + String(s.week || '');
+      if (_seenPW.has(k)) return false;
+      _seenPW.add(k);
+      return true;
+    });
   } catch (e) {
     const sorted = [...PLAYERS_DATA].sort((a,b) => a.avg - b.avg);
     tbody.innerHTML = sorted.map((p,i) => {
