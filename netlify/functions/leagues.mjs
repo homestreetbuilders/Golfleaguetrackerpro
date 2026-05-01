@@ -16,6 +16,27 @@ export default async (req) => {
       const l = await store.get(b.key, { type: 'json' }).catch(() => null)
       if (l) leagues.push(l)
     }
+
+    // Auto-discover well-known seeded leagues whose blob data exists but whose
+    // league record was never written (e.g. seeder timed out before completing).
+    // Probes the scores store for each candidate; if data is present, synthesizes
+    // and persists the league record so the leaderboard auto-detect finds it.
+    const knownSeededLeagues = [
+      { id: 'kelleys-heroes',      name: 'Kelleys Heroes'      },
+      { id: 'mud-run-golf-league', name: 'Mud Run Golf League'  }
+    ]
+    const existingIds = new Set(leagues.map(l => l.id))
+    for (const kl of knownSeededLeagues) {
+      if (existingIds.has(kl.id)) continue
+      const probeStore = getStore(`scores-${kl.id}`)
+      const { blobs: pb } = await probeStore.list({ limit: 1 }).catch(() => ({ blobs: [] }))
+      if (pb && pb.length > 0) {
+        const record = { id: kl.id, name: kl.name, createdAt: new Date().toISOString() }
+        await store.setJSON(`league-${kl.id}`, record).catch(() => null)
+        leagues.push(record)
+      }
+    }
+
     leagues.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
     return Response.json({ leagues })
   }

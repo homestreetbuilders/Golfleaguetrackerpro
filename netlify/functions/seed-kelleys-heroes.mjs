@@ -2,19 +2,20 @@
  * seed-kelleys-heroes.mjs
  * POST /api/seed-kelleys-heroes
  *
- * Seeds the complete "Kelleys Heroes" golf league into Netlify Blob:
- *   - 10 players, 5 two-man teams (Birdie Kings / Eagles / Par Busters /
- *     Bogeys / Fairway Warriors)
- *   - Goodpark G.C. — front-9, par 35
- *   - 6 completed weeks of 9-hole match-play scores (all final)
- *   - Weekly side games: 50/50 ($5/player/wk), Net Skins ($2/player/wk),
- *     Gross Skins ($2/player/wk)
- *   - Payment categories + full payment records
- *   - Side-games ledger computed for all 6 weeks
- *   - Handicap formula (best 4 of last 8, ×0.96)
+ * Chunked seeder to avoid 504 timeouts. Use the `action` field in the body:
  *
- * Body: { reset: true }   (optional, default true)
- * Optional env: SEED_SAMPLE_KEY  — send as x-seed-key header.
+ *   { action: 'init', reset: true }
+ *     → Seeds league record, settings, course, players, teams, schedule,
+ *       pairings, side-game opt-ins, payments, chat. Fast (<3 s).
+ *
+ *   { action: 'week', week: N }   (N = 1..6)
+ *     → Seeds match scorecards + score records + locks for week N, then
+ *       calls finalize-week and side-games-ledger for that week. Fast (<3 s).
+ *
+ * Backward-compatible: omitting `action` defaults to 'init'.
+ * Old callers passing { reset: true } with no action still run init only.
+ *
+ * Optional env: SEED_SAMPLE_KEY — send as x-seed-key header.
  */
 
 import { getStore } from '@netlify/blobs'
@@ -125,9 +126,6 @@ const TEAMS = [
 //   Bob Miller    (hdcp 19, strokes10): 45/46/46/45/45/46  nets: 35/36/36/35/35/36
 //   Dave Wilson   (hdcp 22, strokes11): 48/48/49/47/48/48  nets: 37/37/38/36/37/37
 //   Rick Martinez (hdcp 24, strokes12): 51/52/51/52/50/51  nets: 39/40/39/40/38/39
-//
-// 50/50 winners (low net, 9 holes): W1=Jim(32), W2=Mike(32), W3=Steve(32),
-//   W4=Jim+Mike+Ronald+Chris(33, 4-way), W5=Jim(32), W6=Mike+Steve(33, 2-way)
 
 const HOLE_SCORES = {
   'Jim Anderson': [
@@ -223,39 +221,42 @@ const MATCH_SCHEDULE = [
   { week: 6, matches: [{ teamA: 1, teamB: 2 }, { teamA: 3, teamB: 5 }], byeTeam: 4 }
 ]
 
-// ─── Main handler ─────────────────────────────────────────────────────────────
+// ─── Shared store references ──────────────────────────────────────────────────
 
-export default async (req) => {
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
-
-  const requiredKey = process.env.SEED_SAMPLE_KEY
-  if (requiredKey) {
-    const provided = req.headers.get('x-seed-key')
-    if (!provided || provided !== requiredKey) return new Response('Unauthorized', { status: 401 })
+function getStores() {
+  return {
+    leaguesStore:    getStore('leagues'),
+    playersStore:    getStore(leagueStoreName('players',           LEAGUE_ID)),
+    rolesStore:      getStore(leagueStoreName('user-roles',        LEAGUE_ID)),
+    coursesStore:    getStore(leagueStoreName('courses',           LEAGUE_ID)),
+    scheduleStore:   getStore(leagueStoreName('schedule',          LEAGUE_ID)),
+    teamsStore:      getStore(leagueStoreName('teams',             LEAGUE_ID)),
+    pairingsStore:   getStore(leagueStoreName('pairings',          LEAGUE_ID)),
+    scoresStore:     getStore(leagueStoreName('scores',            LEAGUE_ID)),
+    locksStore:      getStore(leagueStoreName('scorecard-locks',   LEAGUE_ID)),
+    matchStore:      getStore(leagueStoreName('match-scorecards',  LEAGUE_ID)),
+    optinsStore:     getStore(leagueStoreName('side-game-optins',  LEAGUE_ID)),
+    ledgerStore:     getStore(leagueStoreName('side-games-ledger', LEAGUE_ID)),
+    leagueSettStore: getStore(leagueStoreName('league-settings',   LEAGUE_ID)),
+    hcpConfigStore:  getStore(leagueStoreName('handicap-config',   LEAGUE_ID)),
+    paymentsStore:   getStore(leagueStoreName('payments',          LEAGUE_ID)),
+    paySettStore:    getStore(leagueStoreName('payment-settings',  LEAGUE_ID)),
+    chatStore:       getStore(leagueStoreName('chat',              LEAGUE_ID))
   }
+}
 
-  const body  = await req.json().catch(() => ({}))
-  const reset = body && body.reset !== undefined ? Boolean(body.reset) : true
-  const now   = new Date().toISOString()
+// ─── Handler: init ────────────────────────────────────────────────────────────
+// Seeds everything except per-week scores and finalize calls.
 
-  // ── Stores ───────────────────────────────────────────────────────────────────
-  const leaguesStore    = getStore('leagues')
-  const playersStore    = getStore(leagueStoreName('players',           LEAGUE_ID))
-  const rolesStore      = getStore(leagueStoreName('user-roles',        LEAGUE_ID))
-  const coursesStore    = getStore(leagueStoreName('courses',           LEAGUE_ID))
-  const scheduleStore   = getStore(leagueStoreName('schedule',          LEAGUE_ID))
-  const teamsStore      = getStore(leagueStoreName('teams',             LEAGUE_ID))
-  const pairingsStore   = getStore(leagueStoreName('pairings',          LEAGUE_ID))
-  const scoresStore     = getStore(leagueStoreName('scores',            LEAGUE_ID))
-  const locksStore      = getStore(leagueStoreName('scorecard-locks',   LEAGUE_ID))
-  const matchStore      = getStore(leagueStoreName('match-scorecards',  LEAGUE_ID))
-  const optinsStore     = getStore(leagueStoreName('side-game-optins',  LEAGUE_ID))
-  const ledgerStore     = getStore(leagueStoreName('side-games-ledger', LEAGUE_ID))
-  const leagueSettStore = getStore(leagueStoreName('league-settings',   LEAGUE_ID))
-  const hcpConfigStore  = getStore(leagueStoreName('handicap-config',   LEAGUE_ID))
-  const paymentsStore   = getStore(leagueStoreName('payments',          LEAGUE_ID))
-  const paySettStore    = getStore(leagueStoreName('payment-settings',  LEAGUE_ID))
-  const chatStore       = getStore(leagueStoreName('chat',              LEAGUE_ID))
+async function handleInit(reset) {
+  const {
+    leaguesStore, playersStore, rolesStore, coursesStore, scheduleStore,
+    teamsStore, pairingsStore, optinsStore, leagueSettStore, hcpConfigStore,
+    paymentsStore, paySettStore, chatStore, scoresStore, locksStore,
+    matchStore, ledgerStore
+  } = getStores()
+
+  const now = new Date().toISOString()
 
   if (reset) {
     await Promise.all([
@@ -269,43 +270,37 @@ export default async (req) => {
     ])
   }
 
-  // ── Global league record ──────────────────────────────────────────────────────
+  // Global league record
   await leaguesStore.setJSON(`league-${LEAGUE_ID}`, {
     id: LEAGUE_ID, name: LEAGUE_NAME, createdAt: now
   })
 
-  // ── League settings ──────────────────────────────────────────────────────────
-  // 50/50: $5/player/week × 6 weeks = $30/player season buy-in
-  //   → fiftySeasonPot = 30 × 10 players = $300
-  //   → weeklyAlloc = $300 / 6 = $50; winner gets $25
-  // Net & Gross Skins: $2/player/week × 10 players × 6 weeks = $120 total pot each
-  //   → weeklyAlloc = $120 / 6 = $20/week
+  // League settings
   await leagueSettStore.setJSON('settings', {
     leagueName:              LEAGUE_NAME,
     seasonStart:             WEEK_DATES[0],
     seasonEnd:               WEEK_DATES[5],
     handicapMode:            'custom',
     customFormulaText:       'Best 4 of last 8 rounds × 0.96, max 36',
-    netSkinsSeasonPot:       120,   // $2/player/wk × 10 × 6wks
+    netSkinsSeasonPot:       120,
     grossSkinsSeasonPot:     120,
-    fiftyFiftySeasonBuyIn:   30,    // $5/wk × 6 wks per player
+    fiftyFiftySeasonBuyIn:   30,
     updatedAt: now
   })
 
-  // ── Handicap formula ─────────────────────────────────────────────────────────
+  // Handicap formula
   await hcpConfigStore.setJSON('formula', {
     bestN: 4, lastN: 8, multiplier: 0.96,
     maxHcp: 36, minRounds: 3, updatedAt: now
   })
 
-  // ── Course ───────────────────────────────────────────────────────────────────
+  // Course
   await coursesStore.setJSON(`course-${COURSE_ID}`, buildCourse())
 
-  // ── Player lookup map (name → player object) ──────────────────────────────────
   const playerByName = new Map(PLAYERS.map(p => [p.name, p]))
   const teamByNumber = new Map(TEAMS.map(t => [t.teamNumber, t]))
 
-  // ── Players + roles ───────────────────────────────────────────────────────────
+  // Players + roles
   for (const p of PLAYERS) {
     const email = ne(p.email)
     await playersStore.setJSON(`player-${email}`, {
@@ -315,7 +310,7 @@ export default async (req) => {
     await rolesStore.set(`role-${email}`, p.role)
   }
 
-  // ── Teams ────────────────────────────────────────────────────────────────────
+  // Teams
   for (const t of TEAMS) {
     const p1 = playerByName.get(t.p1)
     const p2 = playerByName.get(t.p2)
@@ -328,7 +323,7 @@ export default async (req) => {
     })
   }
 
-  // ── Schedule (6 match-play weeks, front 9) ───────────────────────────────────
+  // Schedule (6 weeks)
   for (let w = 1; w <= 6; w++) {
     await scheduleStore.setJSON(`week-${w}`, {
       week: w,
@@ -342,7 +337,7 @@ export default async (req) => {
     })
   }
 
-  // ── Pairings (all 6 weeks) ────────────────────────────────────────────────────
+  // Pairings (all 6 weeks)
   for (const wk of MATCH_SCHEDULE) {
     const groups = []
     for (let gi = 0; gi < wk.matches.length; gi++) {
@@ -355,7 +350,6 @@ export default async (req) => {
       })
       groups.push({ id: `w${wk.week}-g${gi + 1}`, players: members })
     }
-    // Bye team also listed as a group
     const byeT = teamByNumber.get(wk.byeTeam)
     groups.push({
       id: `w${wk.week}-bye`,
@@ -370,7 +364,7 @@ export default async (req) => {
     })
   }
 
-  // ── Side-game opt-ins (all 10 players, all 3 games, joined week 1) ────────────
+  // Side-game opt-ins (all 10 players)
   for (const p of PLAYERS) {
     await optinsStore.setJSON(`optin-${ne(p.email)}`, {
       email: ne(p.email),
@@ -381,118 +375,7 @@ export default async (req) => {
     })
   }
 
-  // ── Match scorecards + score records + locks (all 6 weeks, all final) ─────────
-  //
-  // For each match: write match-scorecard record + mirror each player's score into
-  // scores store (the same path live scoring uses — fixes the "scores never reach
-  // leaderboard" bug for seeded data).
-  // For bye teams: write individual score records directly.
-
-  let totalMatchCards = 0
-  let totalScoreRecords = 0
-
-  for (const wk of MATCH_SCHEDULE) {
-    const week        = wk.week
-    const date        = WEEK_DATES[week - 1]
-    const status      = 'final'
-    // Back-date submittedAt so week order is correct in queries
-    const submittedAt = new Date(Date.now() - (7 - week) * 7 * 86_400_000).toISOString()
-
-    // ── Match scorecards ────────────────────────────────────────────────────────
-    for (const { teamA, teamB } of wk.matches) {
-      const tA = teamByNumber.get(teamA)
-      const tB = teamByNumber.get(teamB)
-      const allMembers = [tA.p1, tA.p2, tB.p1, tB.p2]
-
-      const playerPayloads = allMembers.map(name => {
-        const p    = playerByName.get(name)
-        const hArr = HOLE_SCORES[name] ? HOLE_SCORES[name][week - 1] : null
-        const gross = hArr ? hArr.reduce((a, b) => a + b, 0) : null
-        return {
-          email: ne(p.email),
-          name: p.name,
-          holes: hArr || new Array(9).fill(null),
-          grossTotal: gross,
-          handicapSnapshot: p.handicap
-        }
-      })
-
-      const a = Math.min(teamA, teamB)
-      const b = Math.max(teamA, teamB)
-      const matchKey = `week-${week}-match-${a}-vs-${b}`
-
-      await matchStore.setJSON(matchKey, {
-        key: matchKey, week, teamA, teamB,
-        date, course: COURSE_NAME, tee: 'White', side: 'front',
-        players: playerPayloads, parTotal: PAR_TOTAL, status,
-        submittedBy: ne(PLAYERS[0].email), submittedAt
-      })
-      totalMatchCards++
-
-      // Mirror each player into scores store
-      for (const pp of playerPayloads) {
-        if (pp.grossTotal === null) continue
-        const nameLower  = String(pp.name).toLowerCase()
-        const emailLower = ne(pp.email)
-        const scoreKey   = `week-${week}-${nameLower}-match`
-
-        await scoresStore.setJSON(scoreKey, {
-          player:           pp.name,
-          playerEmail:      emailLower,
-          week, date,
-          course: COURSE_NAME, tee: 'White', side: 'front',
-          holes:            pp.holes,
-          grossTotal:       pp.grossTotal,
-          handicapSnapshot: pp.handicapSnapshot,
-          parTotal:         PAR_TOTAL,
-          stats: null, status,
-          submittedBy: ne(PLAYERS[0].email),
-          submittedAt,
-          fromMatchScorecard: matchKey
-        })
-        totalScoreRecords++
-
-        // Both name-based and email-based lock keys (fixes lock-mismatch bug)
-        const lock = { locked: true, lockedAt: submittedAt, reason: 'match_scorecard_seeded' }
-        await locksStore.setJSON(`lock-${nameLower}-week-${week}`, lock)
-        await locksStore.setJSON(`lock-email-${emailLower}-week-${week}`, lock)
-      }
-    }
-
-    // ── Bye-team individual rounds ──────────────────────────────────────────────
-    const byeT = teamByNumber.get(wk.byeTeam)
-    for (const name of [byeT.p1, byeT.p2]) {
-      const p      = playerByName.get(name)
-      const hArr   = HOLE_SCORES[name] ? HOLE_SCORES[name][week - 1] : null
-      if (!hArr) continue
-      const gross      = hArr.reduce((a, b) => a + b, 0)
-      const nameLower  = String(p.name).toLowerCase()
-      const emailLower = ne(p.email)
-      const scoreKey   = `week-${week}-${nameLower}-individual`
-
-      await scoresStore.setJSON(scoreKey, {
-        player:           p.name,
-        playerEmail:      emailLower,
-        week, date,
-        course: COURSE_NAME, tee: 'White', side: 'front',
-        holes:            hArr,
-        grossTotal:       gross,
-        handicapSnapshot: p.handicap,
-        parTotal:         PAR_TOTAL,
-        stats: null, status,
-        submittedBy: ne(PLAYERS[0].email),
-        submittedAt
-      })
-      totalScoreRecords++
-
-      const lock = { locked: true, lockedAt: submittedAt, reason: 'individual_seeded' }
-      await locksStore.setJSON(`lock-${nameLower}-week-${week}`, lock)
-      await locksStore.setJSON(`lock-email-${emailLower}-week-${week}`, lock)
-    }
-  }
-
-  // ── Payment settings ──────────────────────────────────────────────────────────
-  // Categories match the side-game opt-in costs and league dues
+  // Payment settings
   const payCategories = [
     { id: 'league_dues',  name: 'League Dues',  amount: 9,   active: true  },
     { id: 'fifty_fifty',  name: '50/50',         amount: 30,  active: true  },
@@ -501,9 +384,8 @@ export default async (req) => {
   ]
   await paySettStore.setJSON('settings', { categories: payCategories, updatedAt: now })
 
-  // ── Payment records (most players paid; a couple partial/unpaid) ───────────────
+  // Payment records
   const payments = [
-    // Dues ($9)
     { email: 'ronald@kelleysheros.golf', cat: 'league_dues', amt: 9,  method: 'venmo', note: 'Paid in full' },
     { email: 'tom@kelleysheros.golf',    cat: 'league_dues', amt: 9,  method: 'venmo', note: '' },
     { email: 'mike@kelleysheros.golf',   cat: 'league_dues', amt: 9,  method: 'cash',  note: '' },
@@ -514,8 +396,6 @@ export default async (req) => {
     { email: 'jim@kelleysheros.golf',    cat: 'league_dues', amt: 9,  method: 'venmo', note: '' },
     { email: 'gary@kelleysheros.golf',   cat: 'league_dues', amt: 9,  method: 'venmo', note: '' },
     // Rick hasn't paid dues yet (no record)
-
-    // 50/50 ($30 season buy-in)
     { email: 'ronald@kelleysheros.golf', cat: 'fifty_fifty', amt: 30, method: 'venmo', note: '' },
     { email: 'tom@kelleysheros.golf',    cat: 'fifty_fifty', amt: 30, method: 'venmo', note: '' },
     { email: 'mike@kelleysheros.golf',   cat: 'fifty_fifty', amt: 30, method: 'cash',  note: '' },
@@ -526,8 +406,6 @@ export default async (req) => {
     { email: 'jim@kelleysheros.golf',    cat: 'fifty_fifty', amt: 30, method: 'venmo', note: '' },
     { email: 'gary@kelleysheros.golf',   cat: 'fifty_fifty', amt: 30, method: 'venmo', note: '' },
     { email: 'rick@kelleysheros.golf',   cat: 'fifty_fifty', amt: 30, method: 'cash',  note: '' },
-
-    // Net Skins ($12 season buy-in)
     { email: 'ronald@kelleysheros.golf', cat: 'net_skins', amt: 12, method: 'venmo', note: '' },
     { email: 'tom@kelleysheros.golf',    cat: 'net_skins', amt: 12, method: 'venmo', note: '' },
     { email: 'mike@kelleysheros.golf',   cat: 'net_skins', amt: 12, method: 'cash',  note: '' },
@@ -538,8 +416,6 @@ export default async (req) => {
     { email: 'jim@kelleysheros.golf',    cat: 'net_skins', amt: 12, method: 'venmo', note: '' },
     { email: 'gary@kelleysheros.golf',   cat: 'net_skins', amt: 12, method: 'venmo', note: '' },
     { email: 'rick@kelleysheros.golf',   cat: 'net_skins', amt: 12, method: 'cash',  note: '' },
-
-    // Gross Skins ($12 season buy-in)
     { email: 'ronald@kelleysheros.golf', cat: 'gross_skins', amt: 12, method: 'venmo', note: '' },
     { email: 'tom@kelleysheros.golf',    cat: 'gross_skins', amt: 12, method: 'venmo', note: '' },
     { email: 'mike@kelleysheros.golf',   cat: 'gross_skins', amt: 12, method: 'cash',  note: '' },
@@ -551,7 +427,6 @@ export default async (req) => {
     { email: 'gary@kelleysheros.golf',   cat: 'gross_skins', amt: 12, method: 'venmo', note: '' },
     { email: 'rick@kelleysheros.golf',   cat: 'gross_skins', amt: 12, method: 'cash',  note: '' }
   ]
-
   for (const t of payments) {
     const k = `payment-${ne(t.email)}-${Date.now()}-${Math.random().toString(16).slice(2)}`
     await paymentsStore.setJSON(k, {
@@ -561,13 +436,13 @@ export default async (req) => {
     })
   }
 
-  // ── Chat messages ─────────────────────────────────────────────────────────────
+  // Chat messages
   const msgs = [
     { user: 'Ronald McCoy',  email: 'ronald@kelleysheros.golf', msg: `Welcome to ${LEAGUE_NAME}! Season is underway — 6 weeks down, check the leaderboard for standings.` },
     { user: 'Jim Anderson',  email: 'jim@kelleysheros.golf',    msg: 'Shot par on week 1 and week 5! Best rounds of my life at Goodpark.' },
     { user: 'Mike Johnson',  email: 'mike@kelleysheros.golf',   msg: 'Week 2 was mine. 36 gross, low net. Eagles flying high!' },
     { user: 'Steve Davis',   email: 'steve@kelleysheros.golf',  msg: 'Week 3 low net — Par Busters coming on strong.' },
-    { user: 'Tom Harris',    email: 'tom@kelleysheros.golf',    msg: 'Consistent rounds every week. Birdie Kings aren\'t done yet.' }
+    { user: 'Tom Harris',    email: 'tom@kelleysheros.golf',    msg: "Consistent rounds every week. Birdie Kings aren't done yet." }
   ]
   for (const m of msgs) {
     const k = `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -576,96 +451,215 @@ export default async (req) => {
     })
   }
 
-  // ── Finalize all 6 weeks (force=true updates handicaps + triggers side-games)
-  //
-  // finalize-week with force=true:
-  //   1. Accepts already-final score records (bypasses lock check)
-  //   2. Recomputes each player's handicap from their rolling score history
-  //   3. Writes updated handicap to the players store
-  //   4. Internally calls side-games-ledger to compute skins + 50/50
-  //
-  // Weeks are processed in order so each week's handicap feeds the next.
-  const base = getSiteBaseUrl(req)
-  const finalizeResults = []
-  const ledgerResults = []
+  return Response.json({
+    success: true,
+    action: 'init',
+    leagueId: LEAGUE_ID,
+    leagueName: LEAGUE_NAME,
+    seeded: {
+      players: PLAYERS.length,
+      teams:   TEAMS.length,
+      course:  COURSE_NAME,
+      scheduleWeeks: 6,
+      pairingsSeeded: 6,
+      sideGameOptIns: PLAYERS.length,
+      payments: payments.length,
+      chatMessages: msgs.length
+    },
+    next: 'Call POST /api/seed-kelleys-heroes with { action: "week", week: N } for N = 1..6'
+  })
+}
 
-  if (base) {
-    for (let w = 1; w <= 6; w++) {
-      // finalize-week (updates handicaps + calls side-games-ledger internally)
-      try {
-        const res = await fetch(
-          `${base}/api/finalize-week?leagueId=${encodeURIComponent(LEAGUE_ID)}`,
-          {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ week: w, force: true, submittedBy: ne(PLAYERS[0].email) })
-          }
-        )
-        const data = await res.json().catch(() => null)
-        finalizeResults.push({
-          week: w,
-          success: !!(data && data.success),
-          finalized: (data && data.finalized) ? data.finalized.length : 0,
-          missing:   (data && data.missing)   ? data.missing           : []
-        })
-      } catch (e) {
-        finalizeResults.push({ week: w, success: false, error: String(e) })
-      }
+// ─── Handler: week ────────────────────────────────────────────────────────────
+// Seeds one week's scores + calls finalize-week + side-games-ledger.
 
-      // Explicit side-games-ledger recompute after finalize (ensures skins/50-50
-      // use the just-updated handicap values rather than the pre-finalize snapshot)
-      try {
-        const res = await fetch(
-          `${base}/api/side-games-ledger?leagueId=${encodeURIComponent(LEAGUE_ID)}`,
-          {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ action: 'compute', week: w })
-          }
-        )
-        const data = await res.json().catch(() => null)
-        ledgerResults.push({ week: w, success: !!(data && data.success) })
-      } catch (e) {
-        ledgerResults.push({ week: w, success: false, error: String(e) })
+async function handleWeek(req, week) {
+  const { scoresStore, locksStore, matchStore } = getStores()
+  const teamByNumber = new Map(TEAMS.map(t => [t.teamNumber, t]))
+  const playerByName = new Map(PLAYERS.map(p => [p.name, p]))
+
+  const now         = new Date().toISOString()
+  const date        = WEEK_DATES[week - 1]
+  const status      = 'final'
+  const submittedAt = new Date(Date.now() - (7 - week) * 7 * 86_400_000).toISOString()
+  const wk          = MATCH_SCHEDULE[week - 1]
+
+  let totalMatchCards  = 0
+  let totalScoreRecords = 0
+
+  // Match scorecards + mirrored score records + locks
+  for (const { teamA, teamB } of wk.matches) {
+    const tA = teamByNumber.get(teamA)
+    const tB = teamByNumber.get(teamB)
+    const allMembers = [tA.p1, tA.p2, tB.p1, tB.p2]
+
+    const playerPayloads = allMembers.map(name => {
+      const p    = playerByName.get(name)
+      const hArr = HOLE_SCORES[name] ? HOLE_SCORES[name][week - 1] : null
+      const gross = hArr ? hArr.reduce((a, b) => a + b, 0) : null
+      return {
+        email: ne(p.email),
+        name: p.name,
+        holes: hArr || new Array(9).fill(null),
+        grossTotal: gross,
+        handicapSnapshot: p.handicap
       }
+    })
+
+    const a = Math.min(teamA, teamB)
+    const b = Math.max(teamA, teamB)
+    const matchKey = `week-${week}-match-${a}-vs-${b}`
+
+    await matchStore.setJSON(matchKey, {
+      key: matchKey, week, teamA, teamB,
+      date, course: COURSE_NAME, tee: 'White', side: 'front',
+      players: playerPayloads, parTotal: PAR_TOTAL, status,
+      submittedBy: ne(PLAYERS[0].email), submittedAt
+    })
+    totalMatchCards++
+
+    for (const pp of playerPayloads) {
+      if (pp.grossTotal === null) continue
+      const nameLower  = String(pp.name).toLowerCase()
+      const emailLower = ne(pp.email)
+      const scoreKey   = `week-${week}-${nameLower}-match`
+
+      await scoresStore.setJSON(scoreKey, {
+        player:           pp.name,
+        playerEmail:      emailLower,
+        week, date,
+        course: COURSE_NAME, tee: 'White', side: 'front',
+        holes:            pp.holes,
+        grossTotal:       pp.grossTotal,
+        handicapSnapshot: pp.handicapSnapshot,
+        parTotal:         PAR_TOTAL,
+        stats: null, status,
+        submittedBy: ne(PLAYERS[0].email),
+        submittedAt,
+        fromMatchScorecard: matchKey
+      })
+      totalScoreRecords++
+
+      const lock = { locked: true, lockedAt: submittedAt, reason: 'match_scorecard_seeded' }
+      await locksStore.setJSON(`lock-${nameLower}-week-${week}`, lock)
+      await locksStore.setJSON(`lock-email-${emailLower}-week-${week}`, lock)
     }
   }
 
-  // ── Summary ───────────────────────────────────────────────────────────────────
+  // Bye-team individual rounds
+  const byeT = teamByNumber.get(wk.byeTeam)
+  for (const name of [byeT.p1, byeT.p2]) {
+    const p      = playerByName.get(name)
+    const hArr   = HOLE_SCORES[name] ? HOLE_SCORES[name][week - 1] : null
+    if (!hArr) continue
+    const gross      = hArr.reduce((a, b) => a + b, 0)
+    const nameLower  = String(p.name).toLowerCase()
+    const emailLower = ne(p.email)
+    const scoreKey   = `week-${week}-${nameLower}-individual`
+
+    await scoresStore.setJSON(scoreKey, {
+      player:           p.name,
+      playerEmail:      emailLower,
+      week, date,
+      course: COURSE_NAME, tee: 'White', side: 'front',
+      holes:            hArr,
+      grossTotal:       gross,
+      handicapSnapshot: p.handicap,
+      parTotal:         PAR_TOTAL,
+      stats: null, status,
+      submittedBy: ne(PLAYERS[0].email),
+      submittedAt
+    })
+    totalScoreRecords++
+
+    const lock = { locked: true, lockedAt: submittedAt, reason: 'individual_seeded' }
+    await locksStore.setJSON(`lock-${nameLower}-week-${week}`, lock)
+    await locksStore.setJSON(`lock-email-${emailLower}-week-${week}`, lock)
+  }
+
+  // Finalize-week + side-games-ledger
+  const base = getSiteBaseUrl(req)
+  let finalizeResult = null
+  let ledgerResult   = null
+
+  if (base) {
+    try {
+      const res = await fetch(
+        `${base}/api/finalize-week?leagueId=${encodeURIComponent(LEAGUE_ID)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ week, force: true, submittedBy: ne(PLAYERS[0].email) })
+        }
+      )
+      const data = await res.json().catch(() => null)
+      finalizeResult = {
+        success:   !!(data && data.success),
+        finalized: (data && data.finalized) ? data.finalized.length : 0,
+        missing:   (data && data.missing)   ? data.missing          : []
+      }
+    } catch (e) {
+      finalizeResult = { success: false, error: String(e) }
+    }
+
+    try {
+      const res = await fetch(
+        `${base}/api/side-games-ledger?leagueId=${encodeURIComponent(LEAGUE_ID)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action: 'compute', week })
+        }
+      )
+      const data = await res.json().catch(() => null)
+      ledgerResult = { success: !!(data && data.success) }
+    } catch (e) {
+      ledgerResult = { success: false, error: String(e) }
+    }
+  }
+
   return Response.json({
     success: true,
-    leagueId:   LEAGUE_ID,
-    leagueName: LEAGUE_NAME,
+    action: 'week',
+    leagueId: LEAGUE_ID,
+    week,
     seeded: {
-      players:         PLAYERS.length,
-      teams:           TEAMS.length,
-      course:          COURSE_NAME,
-      scheduleWeeks:   6,
-      pairingsSeeded:  6,
-      sideGameOptIns:  PLAYERS.length,
       matchScorecards: totalMatchCards,
-      scoreRecords:    totalScoreRecords,
-      payments:        payments.length,
-      chatMessages:    msgs.length,
-      finalizeWeeks:   finalizeResults,
-      ledgerWeeks:     ledgerResults
+      scoreRecords:    totalScoreRecords
     },
-    scoresSummary: {
-      parTotal:    PAR_TOTAL,
-      sidesPlayed: 'front',
-      weeklyResults: [
-        { week: 1, fiftyFiftyWinner: 'Jim Anderson (net 32)',                     matchups: 'T1vT2, T3vT4, T5 bye' },
-        { week: 2, fiftyFiftyWinner: 'Mike Johnson (net 32)',                     matchups: 'T1vT3, T2vT5, T4 bye' },
-        { week: 3, fiftyFiftyWinner: 'Steve Davis (net 32)',                      matchups: 'T1vT4, T3vT5, T2 bye' },
-        { week: 4, fiftyFiftyWinner: '4-way split net 33 (Jim/Mike/Ronald/Chris)', matchups: 'T1vT5, T2vT4, T3 bye' },
-        { week: 5, fiftyFiftyWinner: 'Jim Anderson (net 32)',                     matchups: 'T2vT3, T4vT5, T1 bye' },
-        { week: 6, fiftyFiftyWinner: '2-way split net 33 (Mike/Steve)',           matchups: 'T1vT2, T3vT5, T4 bye' }
-      ]
-    },
-    leaderboardNote: base
-      ? 'Finalize-week ran for all 6 weeks. Leaderboard should show all 10 players.'
-      : 'Base URL not detected — call POST /api/finalize-week?leagueId=kelleys-heroes with { week, force: true } for weeks 1-6 manually.'
+    finalize: finalizeResult,
+    ledger:   ledgerResult,
+    next: week < 6
+      ? `Call POST /api/seed-kelleys-heroes with { action: "week", week: ${week + 1} }`
+      : 'All 6 weeks seeded. Leaderboard is ready.'
   })
+}
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
+
+export default async (req) => {
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
+
+  const requiredKey = process.env.SEED_SAMPLE_KEY
+  if (requiredKey) {
+    const provided = req.headers.get('x-seed-key')
+    if (!provided || provided !== requiredKey) return new Response('Unauthorized', { status: 401 })
+  }
+
+  const body   = await req.json().catch(() => ({}))
+  const action = body && body.action ? String(body.action) : 'init'
+
+  if (action === 'week') {
+    const week = body && body.week ? parseInt(body.week, 10) : null
+    if (!week || week < 1 || week > 6) {
+      return new Response('Invalid week — must be 1..6', { status: 400 })
+    }
+    return await handleWeek(req, week)
+  }
+
+  // Default: action === 'init'
+  const reset = body && body.reset !== undefined ? Boolean(body.reset) : true
+  return await handleInit(reset)
 }
 
 export const config = {
