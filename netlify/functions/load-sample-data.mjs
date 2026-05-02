@@ -151,7 +151,7 @@ export default async (req) => {
   }
 
   const body        = await req.json().catch(() => ({}))
-  const leagueId    = body.leagueId   ? String(body.leagueId).trim()   : 'MudRun2026'
+  const leagueId    = body.leagueId   ? String(body.leagueId).trim()   : 'kelleys-heroes'
   const leagueName  = body.leagueName ? String(body.leagueName).trim()  : 'Mud Run Golf League'
   const reset       = body.reset !== undefined ? Boolean(body.reset) : true
   const now         = new Date().toISOString()
