@@ -9,7 +9,8 @@
       "Bash(winget upgrade:*)",
       "Bash(ls -1 /c/golfleaguetrackerpro/netlify/functions/*.mjs)",
       "Bash(git pull:*)",
-      "Bash(npx netlify:*)"
+      "Bash(npx netlify:*)",
+      "Bash(git remote:*)"
     ]
   }
 }

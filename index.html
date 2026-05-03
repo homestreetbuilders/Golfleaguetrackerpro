@@ -1463,11 +1463,8 @@
                   <th>Date</th><th>Course</th><th>Score</th><th>+/-</th><th>Putts</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td>Jun 17</td><td>Kelleys Heroes</td><td>38</td><td style="color:#4CAF50">+2</td><td>14</td></tr>
-                <tr><td>Jun 10</td><td>Kelleys Heroes</td><td>44</td><td style="color:#f66">+8</td><td>18</td></tr>
-                <tr><td>Jun 3</td><td>Kelleys Heroes</td><td>41</td><td style="color:#f66">+5</td><td>16</td></tr>
-                <tr><td>May 27</td><td>Kelleys Heroes</td><td>39</td><td style="color:#4CAF50">+3</td><td>15</td></tr>
+              <tbody id="recent-rounds-body">
+                <tr><td colspan="5" style="color:#999;text-align:center">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -4380,6 +4377,38 @@ function canSeeAnnouncement(scope) {
   return true;
 }
 
+async function loadRecentRounds() {
+  const tbody = document.getElementById('recent-rounds-body');
+  if (!tbody) return;
+  try {
+    const qs = [];
+    if (currentUser && currentUser.name)  qs.push('player='      + encodeURIComponent(currentUser.name));
+    if (currentUser && currentUser.email) qs.push('playerEmail=' + encodeURIComponent(currentUser.email));
+    qs.push('includeDraft=0');
+    const res = await fetchJson('/api/scores?' + qs.join('&'));
+    const rows = Array.isArray(res && res.scores) ? res.scores : [];
+    rows.sort((a, b) => String(b.date || b.submittedAt || '').localeCompare(String(a.date || a.submittedAt || '')));
+    const recent = rows.slice(0, 4);
+    if (!recent.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:#999;text-align:center">No rounds yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = recent.map(r => {
+      const dateStr = r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+      const course  = r.course || '—';
+      const gross   = typeof r.grossTotal === 'number' ? r.grossTotal : (Array.isArray(r.holes) ? r.holes.reduce((a, b) => a + (parseInt(b) || 0), 0) : null);
+      const par     = typeof r.parTotal === 'number' ? r.parTotal : null;
+      const diff    = (gross !== null && par !== null) ? gross - par : null;
+      const diffStr = diff === null ? '—' : (diff > 0 ? `<span style="color:#f66">+${diff}</span>` : diff === 0 ? 'E' : `<span style="color:#4CAF50">${diff}</span>`);
+      const round   = r.stats && r.stats.round ? r.stats.round : null;
+      const putts   = round && typeof round.putts === 'number' ? round.putts : (round && typeof round.totalPutts === 'number' ? round.totalPutts : '—');
+      return `<tr><td>${dateStr}</td><td>${course}</td><td>${gross !== null ? gross : '—'}</td><td>${diffStr}</td><td>${putts}</td></tr>`;
+    }).join('');
+  } catch (e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="color:#999;text-align:center">—</td></tr>';
+  }
+}
+
 async function loadAnnouncements() {
   const list = document.getElementById('ann-list');
   const pinned = document.getElementById('ann-pinned');
@@ -5087,6 +5116,7 @@ function showPage(id) {
   if (id === 'dashboard') {
     loadAnnouncements();
     loadWeatherWidget();
+    loadRecentRounds();
   }
   if (id === 'profile') {
     loadMyProfile();
@@ -5216,6 +5246,7 @@ async function initData() {
   buildSchedule();
   loadAnnouncements();
   loadWeatherWidget();
+  loadRecentRounds();
   loadPaymentSettings();
   buildPaymentTable();
   loadMyPayments();
