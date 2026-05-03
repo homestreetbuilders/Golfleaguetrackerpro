@@ -71,8 +71,8 @@ const BACK_HCP   = [10, 2, 16, 6, 14, 18, 4, 12, 8]
 const FRONT_PAR_TOTAL = FRONT_PARS.reduce((a, b) => a + b, 0)  // 34
 const BACK_PAR_TOTAL  = BACK_PARS.reduce((a, b) => a + b, 0)   // 36
 
-const COURSE_NAME = 'Mud Run Golf Club'
-const COURSE_ID   = 'mud-run-gc'
+const COURSE_NAME = "Kelley's Heroes Golf Club"
+const COURSE_ID   = 'kelleys-heroes-gc'
 
 function buildCourse() {
   const holes = [

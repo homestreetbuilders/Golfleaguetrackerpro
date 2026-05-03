@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"continue\" /c/golfleaguetrackerpro/netlify/functions/*.mjs)",
+      "Bash(grep -n \"const.*await.*store\\\\.get\" /c/golfleaguetrackerpro/netlify/functions/*.mjs)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(winget upgrade:*)",
+      "Bash(ls -1 /c/golfleaguetrackerpro/netlify/functions/*.mjs)",
+      "Bash(git pull:*)",
+      "Bash(npx netlify:*)"
+    ]
+  }
+}

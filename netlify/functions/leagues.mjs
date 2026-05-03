@@ -22,8 +22,7 @@ export default async (req) => {
     // Probes the scores store for each candidate; if data is present, synthesizes
     // and persists the league record so the leaderboard auto-detect finds it.
     const knownSeededLeagues = [
-      { id: 'kelleys-heroes',      name: 'Kelleys Heroes'      },
-      { id: 'mud-run-golf-league', name: 'Mud Run Golf League'  }
+      { id: 'kelleys-heroes', name: 'Kelleys Heroes' }
     ]
     const existingIds = new Set(leagues.map(l => l.id))
     for (const kl of knownSeededLeagues) {
