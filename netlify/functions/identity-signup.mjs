@@ -12,16 +12,28 @@ export default async (req) => {
   }
 
   const store = getStore('user-roles')
+  const key = `role-${String(email).toLowerCase()}`
 
-  const { blobs } = await store.list().catch(() => ({ blobs: [] }))
-  const isFirstUser = !blobs || blobs.length === 0
-  const role = isFirstUser ? 'admin' : 'player'
-
-  const key = `role-${email.toLowerCase()}`
+  // Don't overwrite an existing role assignment
   const existing = await store.get(key, { type: 'text' }).catch(() => null)
-  if (!existing) {
-    await store.set(key, role)
+  if (existing) {
+    return Response.json({ success: true, email, role: existing })
   }
 
-  return Response.json({ success: true, email, role: existing || role })
+  // Determine role for new user.
+  // If ADMIN_EMAIL is set, only that address gets admin on first signup.
+  // Otherwise fall back to first-user-wins (legacy behaviour).
+  const adminEmail = process.env.ADMIN_EMAIL ? String(process.env.ADMIN_EMAIL).trim().toLowerCase() : null
+  let role
+
+  if (adminEmail) {
+    role = String(email).trim().toLowerCase() === adminEmail ? 'admin' : 'player'
+  } else {
+    const { blobs } = await store.list().catch(() => ({ blobs: [] }))
+    const hasAnyRole = (blobs || []).some(b => b && b.key && String(b.key).startsWith('role-'))
+    role = hasAnyRole ? 'player' : 'admin'
+  }
+
+  await store.set(key, role)
+  return Response.json({ success: true, email, role })
 }

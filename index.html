@@ -2318,6 +2318,13 @@
                   <option value="custom">Custom</option>
                 </select>
               </div>
+              <div class="form-field">
+                <label>9-Hole Net Strokes</label>
+                <select id="ls-nine-hole-stroke-method">
+                  <option value="half">Half handicap (18-hole index ÷ 2)</option>
+                  <option value="full">Full handicap (9-hole course hdcp)</option>
+                </select>
+              </div>
               <div class="form-field" id="ls-custom-wrap" style="display:none">
                 <label>Custom Formula (notes)</label>
                 <textarea id="ls-custom-formula" style="width:100%;min-height:44px;background:#fff;border:1px solid #ccc;border-radius:3px;padding:10px 14px;color:#1a1a1a;font-family:'Barlow',sans-serif;font-size:14px;outline:none;"></textarea>
@@ -2620,6 +2627,7 @@ let scores = new Array(9).fill('');
 let scoreShots = new Array(9).fill('');
 let scorePutts = new Array(9).fill('');
 let scoreStatsPerHole = new Array(9).fill(null).map(() => ({ fw: false, gir: false, scramblePar: false }));
+let leagueSettingsGlobal = null;
 
 let activeMatchScorecard = null;
 let activeMatchPlayers = [];
@@ -4661,6 +4669,15 @@ function toggleCustomFormulaUI() {
   wrap.style.display = modeEl.value === 'custom' ? '' : 'none';
 }
 
+async function fetchLeagueSettingsGlobal() {
+  try {
+    const res = await fetchJson('/api/league-settings');
+    leagueSettingsGlobal = (res && res.settings) ? res.settings : null;
+  } catch (e) {
+    // Non-fatal — leaderboard falls back to 'half' method if unavailable
+  }
+}
+
 async function loadLeagueSettings() {
   if (!currentUser || currentUser.role !== 'admin') return;
   await hydrateLeagueSelectorUI();
@@ -4690,7 +4707,10 @@ async function loadLeagueSettings() {
       if (fiftyEl) fiftyEl.value = s.fiftyFiftySeasonBuyIn || 0;
       if (modeEl) modeEl.value = s.handicapMode || 'usga';
       if (customEl) customEl.value = s.customFormulaText || '';
+      const strokeMethodEl = document.getElementById('ls-nine-hole-stroke-method');
+      if (strokeMethodEl) strokeMethodEl.value = s.nineHoleStrokeMethod || 'half';
       toggleCustomFormulaUI();
+      leagueSettingsGlobal = s; // keep global cache in sync
     }
   } catch (e) {
     // ignore
@@ -4750,6 +4770,7 @@ async function saveLeagueSettingsFromUI() {
   const fiftyEl = document.getElementById('ls-fifty-buyin');
   const modeEl = document.getElementById('ls-handicap-mode');
   const customEl = document.getElementById('ls-custom-formula');
+  const strokeMethodEl = document.getElementById('ls-nine-hole-stroke-method');
 
   const payload = {
     leagueName: nameEl ? nameEl.value.trim() : '',
@@ -4760,7 +4781,8 @@ async function saveLeagueSettingsFromUI() {
     grossSkinsSeasonPot: grossSkinsEl ? Number(grossSkinsEl.value) : 0,
     fiftyFiftySeasonBuyIn: fiftyEl ? Number(fiftyEl.value) : 0,
     handicapMode: modeEl ? modeEl.value : 'usga',
-    customFormulaText: customEl ? customEl.value : ''
+    customFormulaText: customEl ? customEl.value : '',
+    nineHoleStrokeMethod: strokeMethodEl ? strokeMethodEl.value : 'half'
   };
 
   try {
@@ -5247,6 +5269,7 @@ async function initData() {
   loadAnnouncements();
   loadWeatherWidget();
   loadRecentRounds();
+  fetchLeagueSettingsGlobal();
   loadPaymentSettings();
   buildPaymentTable();
   loadMyPayments();
@@ -6224,7 +6247,10 @@ function setLeaderboardMode(mode) {
 function calcNetScore(gross, hdcp) {
   const h = typeof hdcp === 'number' ? hdcp : parseFloat(hdcp);
   if (!gross || isNaN(gross) || isNaN(h)) return gross;
-  const strokes = Math.max(0, Math.round(h / 2));
+  // 'half': stored handicap is an 18-hole index — divide by 2 for 9-hole strokes (USGA default)
+  // 'full': stored handicap is already a 9-hole course handicap — use directly
+  const method = leagueSettingsGlobal && leagueSettingsGlobal.nineHoleStrokeMethod === 'full' ? 'full' : 'half';
+  const strokes = method === 'full' ? Math.max(0, Math.round(h)) : Math.max(0, Math.round(h / 2));
   return gross - strokes;
 }
 
@@ -7473,6 +7499,14 @@ async function saveScore(status) {
   if (filled.length !== 9) {
     showToast('Enter all 9 holes');
     return;
+  }
+  // Validate each hole: must be a positive integer (catches 0, negatives, and non-numeric input)
+  for (let i = 0; i < scores.length; i++) {
+    const v = scores[i];
+    if (!Number.isInteger(v) || v < 1) {
+      showToast('Hole ' + (i + 1) + ': score must be 1 or higher');
+      return;
+    }
   }
   const grossTotal = filled.reduce((a,b) => a + b, 0);
   const shotEnabled = !!(featuresCache && featuresCache.shotTracking);

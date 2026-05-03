@@ -25,7 +25,10 @@ export default async (req) => {
     customFormulaText: '',
     netSkinsSeasonPot: 0,
     grossSkinsSeasonPot: 0,
-    fiftyFiftySeasonBuyIn: 0
+    fiftyFiftySeasonBuyIn: 0,
+    // 'half' = stored handicap is an 18-hole index; divide by 2 for 9-hole strokes (USGA default)
+    // 'full' = stored handicap is already a 9-hole course handicap; use directly
+    nineHoleStrokeMethod: 'half'
   }
 
   if (req.method === 'GET') {
@@ -49,6 +52,10 @@ export default async (req) => {
     const fiftyRaw = incoming.fiftyFiftySeasonBuyIn !== undefined ? Number(incoming.fiftyFiftySeasonBuyIn) : 0
     const fiftyFiftySeasonBuyIn = Number.isFinite(fiftyRaw) ? Math.max(0, fiftyRaw) : 0
 
+    const nineHoleStrokeMethod = ['half', 'full'].includes(incoming.nineHoleStrokeMethod)
+      ? incoming.nineHoleStrokeMethod
+      : 'half'
+
     const normalized = {
       leagueName: incoming.leagueName ? String(incoming.leagueName) : 'Fairway Command League',
       seasonStart: incoming.seasonStart ? String(incoming.seasonStart) : null,
@@ -59,6 +66,7 @@ export default async (req) => {
       netSkinsSeasonPot,
       grossSkinsSeasonPot,
       fiftyFiftySeasonBuyIn,
+      nineHoleStrokeMethod,
       updatedAt: new Date().toISOString()
     }
 
