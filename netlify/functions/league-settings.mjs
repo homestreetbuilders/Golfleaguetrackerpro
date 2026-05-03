@@ -1,4 +1,5 @@
 import { getStore } from '@netlify/blobs'
+import { requireAdmin } from './_auth.mjs'
 
 function normalizeLeagueId(v) {
   return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
@@ -35,6 +36,8 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
+    const authErr = requireAdmin(req)
+    if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const incoming = body && typeof body === 'object' ? body : {}
 

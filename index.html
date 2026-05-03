@@ -6073,12 +6073,18 @@ async function loadPlayers(includeRoles) {
     }
   } catch (e) {
     if (!playersCache || !playersCache.length) {
-      playersCache = [...PLAYERS_DATA].map(p => ({
-        name: p.name,
-        email: p.email,
-        phone: p.phone,
-        handicap: p.hdcp
-      }));
+      // Only fall back to demo data when there is no active league (pure demo/preview mode).
+      // In a real league session a failed API call should never silently inject fake players.
+      if (!getActiveLeagueId()) {
+        playersCache = [...PLAYERS_DATA].map(p => ({
+          name: p.name,
+          email: p.email,
+          phone: p.phone,
+          handicap: p.hdcp
+        }));
+      } else {
+        playersCache = [];
+      }
     }
   }
   return playersCache;

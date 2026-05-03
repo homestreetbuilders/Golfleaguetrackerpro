@@ -1,4 +1,5 @@
 import { getStore } from '@netlify/blobs'
+import { requireAdmin } from './_auth.mjs'
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
@@ -16,6 +17,7 @@ function leagueStoreName(base, leagueId) {
 export default async (req) => {
   const url = new URL(req.url)
   const leagueId = url.searchParams.get('leagueId')
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
   const store = getStore(leagueStoreName('players', leagueId))
 
   if (req.method === 'GET') {
@@ -52,6 +54,8 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
+    const authErr = requireAdmin(req)
+    if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const email = normalizeEmail(body && body.email)
     const name = body && body.name ? String(body.name).trim() : ''
@@ -80,6 +84,8 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
+    const authErr = requireAdmin(req)
+    if (authErr) return authErr
     const email = normalizeEmail(url.searchParams.get('email'))
     if (!email) {
       return new Response('Missing email', { status: 400 })

@@ -1,4 +1,5 @@
 import { getStore } from '@netlify/blobs'
+import { requireAdmin } from './_auth.mjs'
 
 function normalizeLeagueId(v) {
   return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
@@ -68,6 +69,7 @@ async function listWeeks(store) {
 export default async (req) => {
   const url = new URL(req.url)
   const leagueId = url.searchParams.get('leagueId')
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
   const store = getStore(leagueStoreName('schedule', leagueId))
   const rainoutStore = getStore(leagueStoreName('rainouts', leagueId))
   const proposalStore = getStore(leagueStoreName('schedule-proposals', leagueId))
@@ -75,6 +77,8 @@ export default async (req) => {
   const action = (url.searchParams.get('action') || '').toLowerCase()
 
   if (req.method === 'POST') {
+    const authErr = requireAdmin(req)
+    if (authErr) return authErr
     const body = await req.json().catch(() => null)
 
     if (action === 'propose_rainout') {
@@ -189,6 +193,8 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
+    const authErr = requireAdmin(req)
+    if (authErr) return authErr
     const week = asInt(url.searchParams.get('week'))
     if (!week) {
       return new Response('Missing week', { status: 400 })

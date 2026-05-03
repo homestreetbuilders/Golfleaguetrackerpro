@@ -1,4 +1,5 @@
 import { getStore } from '@netlify/blobs'
+import { requireAdmin } from './_auth.mjs'
 
 function normalizeLeagueId(v) {
   return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
@@ -77,6 +78,8 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
+    const authErr = requireAdmin(req)
+    if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const name = body && body.name ? String(body.name).trim() : ''
     if (!name) return new Response('Missing name', { status: 400 })
@@ -102,6 +105,8 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
+    const authErr = requireAdmin(req)
+    if (authErr) return authErr
     const id = normalizeId(url.searchParams.get('id'))
     if (!id) return new Response('Missing id', { status: 400 })
     await store.delete(`course-${id}`).catch(() => null)
