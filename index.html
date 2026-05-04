@@ -6451,7 +6451,9 @@ async function savePlayerFromForm() {
     clearPlayerForm();
     showToast('Player saved');
   } catch (e) {
-    showToast('Save failed');
+    console.error('savePlayerFromForm error:', e);
+    const msg = (e && e.message) ? e.message : String(e);
+    showToast('Save failed: ' + msg);
   }
 }
 
