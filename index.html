@@ -3193,16 +3193,20 @@ async function identitySignup(email, pass, meta) {
   throw new Error('Signup not supported');
 }
 
-function getIdentityToken() {
-  // Use the already-issued access_token directly (synchronous, never hangs).
-  // Deliberately NOT calling user.jwt() — that makes a network request to
-  // refresh the token and can hang indefinitely if the Identity server is slow
-  // or the refresh token is expired, which would stall every fetchJson call.
+async function getIdentityToken() {
+  // Calls user.jwt() so Netlify Identity can refresh an expired access token.
+  // Races against a 3-second timeout and falls back to the cached access_token
+  // so a slow Identity server never stalls API calls indefinitely.
   try {
     const ident = window.netlifyIdentity;
     if (!ident) return null;
     const user = typeof ident.currentUser === 'function' ? ident.currentUser() : null;
-    return (user && user.token && user.token.access_token) || null;
+    if (!user) return null;
+    const fresh = await Promise.race([
+      user.jwt(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('jwt timeout')), 3000))
+    ]).catch(() => null);
+    return fresh || (user.token && user.token.access_token) || null;
   } catch (e) {
     return null;
   }
@@ -3211,7 +3215,7 @@ function getIdentityToken() {
 async function fetchJson(url, options) {
   const leagueId = getActiveLeagueId();
   const finalUrl = attachLeagueIdToUrl(url, leagueId);
-  const token = getIdentityToken();
+  const token = await getIdentityToken();
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
   const mergedOptions = {
     ...options,
@@ -3228,7 +3232,7 @@ async function fetchJson(url, options) {
 async function fetchJsonAllowError(url, options) {
   const leagueId = getActiveLeagueId();
   const finalUrl = attachLeagueIdToUrl(url, leagueId);
-  const token = getIdentityToken();
+  const token = await getIdentityToken();
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
   const mergedOptions = {
     ...options,
@@ -6453,7 +6457,11 @@ async function savePlayerFromForm() {
   } catch (e) {
     console.error('savePlayerFromForm error:', e);
     const msg = (e && e.message) ? e.message : String(e);
-    showToast('Save failed: ' + msg);
+    if (msg.toLowerCase().includes('forbidden') || msg.includes('403')) {
+      showToast('You must be an Admin to save players');
+    } else {
+      showToast('Save failed: ' + msg);
+    }
   }
 }
 
