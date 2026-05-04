@@ -1982,6 +1982,7 @@
               <button class="btn-sm" onclick="generateScorecardPreview()">Preview</button>
               <button class="btn-sm btn-green" onclick="printScorecard()">🖨️ Print 5×7</button>
               <button class="btn-sm" onclick="printAllScorecardsForWeek()">🖨️ Print All Week Matches</button>
+              <button class="btn-sm btn-green" onclick="(function(){var w=parseInt((document.getElementById('sc-week')||{}).value||'0',10);if(!w){showToast('Select a week first');return;}printWeekMatchScorecards(w);})()">🖨️ Print 5×7 Match Cards</button>
               <div style="font-size:12px;color:#666">Stroke dots are computed from player handicap + hole handicap indexes</div>
             </div>
             <div class="scorecard-preview-wrap">
@@ -5168,6 +5169,9 @@ function showPage(id) {
   }
   if (id === 'guides') {
     renderRoleGuides();
+  }
+  if (id === 'schedule') {
+    buildSchedule();
   }
   if (id === 'rainouts') {
     buildSchedule();
