@@ -2788,6 +2788,31 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Password Recovery Modal — shown when user arrives via recovery email link -->
+<div id="pw-recovery-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;">
+  <div style="background:#1e1e1e;border:1px solid #D4AF37;border-radius:12px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:28px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:#D4AF37;">Reset Password</div>
+      <div style="font-size:13px;color:#aaa;margin-top:6px;" id="pw-recovery-email"></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:6px;">New Password</label>
+      <input id="pw-recovery-new" type="password" placeholder="Min 8 characters"
+        style="width:100%;padding:10px 12px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#fff;font-size:14px;box-sizing:border-box;" />
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:6px;">Confirm Password</label>
+      <input id="pw-recovery-confirm" type="password" placeholder="Repeat new password"
+        style="width:100%;padding:10px 12px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#fff;font-size:14px;box-sizing:border-box;" />
+    </div>
+    <div id="pw-recovery-error" style="display:none;color:#e55;font-size:12px;margin-bottom:12px;text-align:center;"></div>
+    <button id="pw-recovery-submit" onclick="submitPasswordRecovery()"
+      style="width:100%;padding:12px;background:#D4AF37;color:#000;font-weight:700;font-size:14px;border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;">
+      SET NEW PASSWORD
+    </button>
+  </div>
+</div>
+
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
 <script>
@@ -5329,6 +5354,50 @@ function loginSuccess(user) {
     // keep login working even if a later feature throws
   }
   showPage('dashboard');
+}
+
+async function submitPasswordRecovery() {
+  const newPass    = (document.getElementById('pw-recovery-new')     || {}).value || '';
+  const confirm    = (document.getElementById('pw-recovery-confirm') || {}).value || '';
+  const errorEl    = document.getElementById('pw-recovery-error');
+  const submitBtn  = document.getElementById('pw-recovery-submit');
+  const overlay    = document.getElementById('pw-recovery-overlay');
+
+  const showErr = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; } };
+  const clearErr = () => { if (errorEl) errorEl.style.display = 'none'; };
+
+  clearErr();
+  if (newPass.length < 8) { showErr('Password must be at least 8 characters.'); return; }
+  if (newPass !== confirm) { showErr('Passwords do not match.'); return; }
+
+  const user = window._pwRecoveryUser;
+  if (!user || typeof user.update !== 'function') {
+    showErr('Session expired — please request a new recovery email.');
+    return;
+  }
+
+  if (submitBtn) submitBtn.disabled = true;
+  try {
+    const updated = await user.update({ password: newPass });
+    // Password set — log the user in properly
+    if (overlay) overlay.style.display = 'none';
+    window._pwRecoveryUser = null;
+    // Clear the recovery token hash from the URL without reloading
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    const role = await resolveUserRole(updated || user);
+    const name = ((updated || user).user_metadata && (updated || user).user_metadata.full_name)
+      ? (updated || user).user_metadata.full_name
+      : ((updated || user).email || 'User');
+    loginSuccess({ name, email: (updated || user).email, role });
+    showToast('Password updated — you are now logged in');
+  } catch (e) {
+    console.error('[pw-recovery] update failed:', e);
+    showErr('Failed to set password: ' + (e && e.message ? e.message : String(e)));
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
 }
 
 function doLogout() {
@@ -9015,6 +9084,20 @@ async function sendReminderToAll() {
       } catch (e) { /* ignore */ }
       showToast('Session expired — please log in again');
     }
+  });
+
+  ident.on('password_recovery', (user) => {
+    // Fired when the page loads with #recovery_token= in the URL.
+    // The widget has already exchanged the token for a limited-scope session.
+    // Store the user so submitPasswordRecovery() can call user.update().
+    window._pwRecoveryUser = user;
+    const overlay = document.getElementById('pw-recovery-overlay');
+    const emailEl = document.getElementById('pw-recovery-email');
+    if (emailEl) emailEl.textContent = user && user.email ? 'Account: ' + user.email : '';
+    if (overlay) overlay.style.display = 'flex';
+    // Make sure the login screen is hidden while the reset form is shown
+    const ls = document.getElementById('login-screen');
+    if (ls) ls.style.display = 'none';
   });
 
   ident.on('init', async (user) => {
