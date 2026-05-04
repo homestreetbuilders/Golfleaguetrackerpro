@@ -11,8 +11,54 @@
 <link rel="icon" href="fairwaycommandshortcut.png" />
 <link rel="apple-touch-icon" href="fc_icon_512.png" />
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/public/scorecard-print.css">
 <style>
+  /* ── FC Match Scorecard — inlined from scorecard-print.css ───────────── */
+  .sc-card,.sc-card *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sc-card{width:7in;height:5in;padding:0.375in;box-sizing:border-box;font-family:'Barlow Condensed','Barlow','Arial Narrow',Arial,sans-serif;font-size:8pt;display:flex;flex-direction:column;overflow:hidden;background:#ffffff}
+  @media screen{.sc-card{box-shadow:0 4px 28px rgba(0,0,0,0.18);border-radius:4px;border:1px solid #d0d0d0;margin:24px auto}}
+  @media print{.sc-card{page-break-after:always;break-after:page}}
+  .sc-header{background:#2E6B47;display:flex;align-items:stretch;flex-shrink:0;height:0.64in;border-radius:2px 2px 0 0;overflow:hidden}
+  .sc-logo-wrap{display:flex;align-items:center;justify-content:center;background:#2E6B47;padding:5pt;flex-shrink:0;width:0.72in}
+  .sc-logo{height:100%;max-height:0.54in;width:auto;object-fit:contain;mix-blend-mode:screen;display:block}
+  .sc-header-info{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4pt 10pt 4pt 4pt;gap:2pt}
+  .sc-league-name{font-family:'Bebas Neue','Impact','Arial Narrow',Arial,sans-serif;color:#D4AF37;font-size:13pt;font-weight:700;letter-spacing:2.5pt;line-height:1;text-transform:uppercase}
+  .sc-matchup{color:#ffffff;font-size:8.5pt;font-weight:700;line-height:1.15}
+  .sc-course-date{color:#a8c8b5;font-size:7pt;line-height:1}
+  .sc-side-badge{border:0.75pt solid #D4AF37;color:#D4AF37;font-size:6.5pt;font-weight:700;padding:1.5pt 7pt;border-radius:8pt;letter-spacing:0.5pt;line-height:1;margin-top:1.5pt}
+  .sc-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1}
+  .sc-lbl-col{width:18%}.sc-h-col{width:8.2222%}.sc-tot-col{width:8%}
+  .sc-hole-hdr th{background:#2E6B47;color:#ffffff;font-size:7.5pt;font-weight:700;text-align:center;padding:3pt 1pt;border:0.5pt solid rgba(255,255,255,0.2);line-height:1}
+  .sc-hole-hdr .sc-lbl-col{text-align:left;padding-left:5pt;font-size:7.5pt}
+  .sc-hole-hdr .sc-tot-col{background:#1a4a2e;color:#D4AF37;font-weight:900}
+  .sc-par-row td{background:#e6e6e6;font-size:7.5pt;font-weight:600;text-align:center;padding:2.5pt 1pt;border:0.5pt solid #cccccc;color:#1a1a1a;line-height:1}
+  .sc-par-row .sc-lbl{text-align:left;padding-left:5pt;font-weight:700}
+  .sc-par-row .sc-par-tot{color:#1a4a2e;font-weight:900}
+  .sc-hcp-row td{background:#f4f4f4;font-size:7pt;color:#666;text-align:center;padding:2pt 1pt;border:0.5pt solid #ddd;line-height:1}
+  .sc-hcp-row .sc-lbl{text-align:left;padding-left:5pt;font-weight:600;color:#555}
+  .sc-sec-bar td{font-size:7pt;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.6pt;padding:3pt 5pt;border:none;line-height:1}
+  .sc-sec-low td{background:#3a7d54}.sc-sec-high td{background:#1e3a7b}
+  .sc-p-row td{border:0.5pt solid #ddd;padding:2pt 1pt;font-size:7.5pt;vertical-align:middle;line-height:1}
+  .sc-p-white td{background:#ffffff}.sc-p-stripe td{background:#f5f5f5}
+  .sc-p-row .sc-p-label{text-align:left;padding:2.5pt 4pt !important}
+  .sc-p-name{display:block;font-size:8pt;font-weight:700;line-height:1.2}
+  .sc-p-white .sc-p-name{color:#1a4a2e}.sc-p-stripe .sc-p-name{color:#1e3a7b}
+  .sc-p-hcp{font-weight:400;font-size:7pt;color:#666}
+  .sc-p-team{display:block;font-size:6pt;color:#aaa;line-height:1}
+  .sc-score-cell{text-align:center;vertical-align:middle;background:#ffffff !important;border:0.5pt solid #cccccc !important}
+  .sc-p-stripe .sc-score-cell{background:#f5f5f5 !important}
+  .sc-tot-p1{background:rgba(46,107,71,0.13) !important}.sc-tot-p2{background:rgba(30,58,123,0.11) !important}
+  .sc-tot-pts{background:rgba(212,175,55,0.20) !important;border-color:rgba(212,175,55,0.55) !important}
+  .sc-pts-row td{background:#fffaf0 !important;border:0.5pt solid #e8d880;padding:2pt 1pt;font-size:7pt;vertical-align:middle}
+  .sc-pts-row .sc-pts-lbl{text-align:left;padding-left:5pt !important;font-weight:700;color:#7a5800}
+  .sc-pts-row .sc-score-cell{background:#fffaf0 !important;border-color:#e8d880 !important}
+  .sc-divider td{height:4pt;background:#cccccc;padding:0;border:none}
+  .sc-footer{display:flex;align-items:stretch;border-top:1.5pt solid #D4AF37;background:#fffaf0;flex-shrink:0;min-height:0.40in}
+  .sc-foot-team{flex:1;display:flex;align-items:center;gap:8pt;padding:5pt 8pt;flex-wrap:wrap}
+  .sc-foot-team-name{font-size:8.5pt;font-weight:700;color:#1a4a2e}
+  .sc-foot-pts-label{font-size:7.5pt;color:#555;white-space:nowrap}
+  .sc-foot-pts-line{display:inline-block;width:55pt;border-bottom:0.75pt solid #666;vertical-align:bottom;margin-left:2pt}
+  .sc-foot-divider{width:0.75pt;background:#D4AF37;margin:5pt 0;flex-shrink:0}
+
   /* Font fallbacks if Google Fonts blocked */
   @font-face { font-family: 'Bebas Neue'; src: local('Impact'), local('Arial Narrow'); }
 </style>
@@ -2007,17 +2053,6 @@
               <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                 <button class="btn-sm btn-green" style="font-size:13px;padding:6px 16px;font-weight:700" onclick="(function(){var w=parseInt((document.getElementById('sc-week')||{}).value||'0',10);if(!w){showToast('Select a week first');return;}if(typeof printWeekMatchScorecards!=='function'){showToast('Print module loading — try again');return;}printWeekMatchScorecards(w);})()">🖨️ Print FC Match Scorecards</button>
                 <span style="font-size:12px;color:#1A4A2E">Low &amp; High HCP pairings · blank score cells · prints one 5×7 card per match</span>
-              </div>
-            </div>
-
-            <!-- ── Individual player scorecards (old format) ── -->
-            <div style="margin-bottom:16px">
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:8px">Individual Player Scorecards (select player above)</div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-                <button class="btn-sm" onclick="generateScorecardPreview()">Preview</button>
-                <button class="btn-sm" onclick="printScorecard()">🖨️ Print Individual Card</button>
-                <button class="btn-sm" onclick="printAllScorecardsForWeek()">🖨️ Print All Players (Old Format)</button>
-                <span style="font-size:12px;color:#888">Stroke dots pre-filled from handicap</span>
               </div>
             </div>
             <div class="scorecard-preview-wrap">
@@ -8780,7 +8815,225 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 </script>
-<script src="/public/scorecard-print.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   FC Match Scorecard — inlined from scorecard-print.js
+   Generates landscape 5×7 match scorecards with Low / High HCP pairings.
+   ══════════════════════════════════════════════════════════════════════ */
+(function (global) {
+  'use strict';
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? String(iso)
+      : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function sideLabel(side) {
+    if (side === 'back') return 'Back 9';
+    if (side === 'both' || side === 'full' || side === '18') return '18 Hole';
+    return 'Front 9';
+  }
+
+  function leagueName() {
+    const s = (typeof leagueSettingsGlobal !== 'undefined') ? leagueSettingsGlobal : null;
+    return (s && s.leagueName) ? s.leagueName : 'Fairway Command League';
+  }
+
+  function getPlayer(email) {
+    if (!email) return null;
+    const pool = (typeof playersCache !== 'undefined' && Array.isArray(playersCache)) ? playersCache : [];
+    const e = String(email).trim().toLowerCase();
+    return pool.find(p => p && String(p.email || '').trim().toLowerCase() === e) || null;
+  }
+
+  function getTeam(num) {
+    if (!num) return null;
+    const pool = (typeof teamsCache !== 'undefined' && Array.isArray(teamsCache)) ? teamsCache : [];
+    return pool.find(t => t && Number(t.teamNumber) === Number(num)) || null;
+  }
+
+  function teamDisplayName(team, num) {
+    if (!team) return 'Team ' + num;
+    return team.teamName ? team.teamName : ('Team ' + team.teamNumber);
+  }
+
+  function playerHcp(player) {
+    if (!player) return 0;
+    const h = player.handicap !== undefined ? player.handicap
+            : player.hdcp    !== undefined ? player.hdcp : 0;
+    return Number(h) || 0;
+  }
+
+  function pairTeam(team) {
+    if (!team) return { low: null, high: null };
+    const p1 = getPlayer(team.player1Email);
+    const p2 = getPlayer(team.player2Email);
+    if (!p1 && !p2) return { low: null, high: null };
+    if (!p1) return { low: p2, high: null };
+    if (!p2) return { low: p1, high: null };
+    return playerHcp(p1) <= playerHcp(p2)
+      ? { low: p1, high: p2 }
+      : { low: p2, high: p1 };
+  }
+
+  function nineData(courseName, teeName, side) {
+    if (typeof getActiveNineCourseData === 'function' && courseName) {
+      try { return getActiveNineCourseData(courseName, teeName || '', side || 'front'); }
+      catch (e) { /* fall through */ }
+    }
+    return null;
+  }
+
+  async function ensureData() {
+    const loaders = ['loadPlayers', 'loadTeams', 'loadScheduleCache', 'loadCourses', 'fetchLeagueSettingsGlobal'];
+    for (const fn of loaders) {
+      if (typeof global[fn] === 'function') {
+        try { await global[fn](); } catch (_) { /* non-fatal */ }
+      }
+    }
+  }
+
+  const DFLT_PARS = [4, 3, 5, 4, 3, 4, 4, 3, 4];
+  const DFLT_HCP  = [5, 9, 1, 7, 3, 8, 2, 6, 4];
+  const HOLES     = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  function buildHtml(opts) {
+    const { lname, teamAName, teamBName, week, courseName, date, side, tee, lowA, lowB, highA, highB } = opts;
+    const nine   = nineData(courseName, tee, side);
+    const pars   = (nine && nine.pars   && nine.pars.length   === 9) ? nine.pars   : DFLT_PARS;
+    const hcpIdx = (nine && nine.hcpIdx && nine.hcpIdx.length === 9) ? nine.hcpIdx : DFLT_HCP;
+    const parTot = pars.reduce((a, b) => a + b, 0);
+    const hdrCells = HOLES.map(h => `<th class="sc-h-col">${h}</th>`).join('') + '<th class="sc-tot-col">Tot</th>';
+    const parCells = pars.map(p => `<td>${p}</td>`).join('') + `<td class="sc-par-tot">${parTot}</td>`;
+    const hcpCells = hcpIdx.map(h => `<td>${h}</td>`).join('') + '<td></td>';
+
+    function playerRow(player, tname, rowCls, totCls) {
+      const name  = player ? esc(player.name || player.email || '—') : '—';
+      const hcp   = playerHcp(player);
+      const cells = HOLES.map(() => '<td class="sc-score-cell"></td>').join('');
+      return `<tr class="sc-p-row ${rowCls}"><td class="sc-p-label"><span class="sc-p-name">${name}<span class="sc-p-hcp"> (${hcp})</span></span><span class="sc-p-team">${esc(tname)}</span></td>${cells}<td class="sc-score-cell ${totCls}"></td></tr>`;
+    }
+
+    function ptsRow(totCls) {
+      const cells = HOLES.map(() => '<td class="sc-score-cell"></td>').join('');
+      return `<tr class="sc-pts-row"><td class="sc-lbl sc-pts-lbl">Points</td>${cells}<td class="sc-score-cell ${totCls}"></td></tr>`;
+    }
+
+    return `<div class="sc-card">
+  <div class="sc-header">
+    <div class="sc-logo-wrap"><img class="sc-logo" src="/FairwayCommand_logo_transparent.png" alt="FC" /></div>
+    <div class="sc-header-info">
+      <div class="sc-league-name">${esc(lname.toUpperCase())}</div>
+      <div class="sc-matchup">${esc(teamAName)} vs ${esc(teamBName)} &nbsp;&middot;&nbsp; Week&nbsp;${week}</div>
+      <div class="sc-course-date">${esc(courseName || '—')} &nbsp;&middot;&nbsp; ${esc(fmtDate(date))}</div>
+      <div class="sc-side-badge">${esc(sideLabel(side))}</div>
+    </div>
+  </div>
+  <table class="sc-table">
+    <thead><tr class="sc-hole-hdr"><th class="sc-lbl-col">Hole</th>${hdrCells}</tr></thead>
+    <tbody>
+      <tr class="sc-par-row"><td class="sc-lbl">Par</td>${parCells}</tr>
+      <tr class="sc-hcp-row"><td class="sc-lbl">HCP</td>${hcpCells}</tr>
+      <tr class="sc-sec-bar sc-sec-low"><td colspan="11">Low Handicap Pairing</td></tr>
+      ${playerRow(lowA, teamAName, 'sc-p-white',  'sc-tot-p1')}
+      ${playerRow(lowB, teamBName, 'sc-p-stripe', 'sc-tot-p2')}
+      ${ptsRow('sc-tot-pts')}
+      <tr class="sc-divider"><td colspan="11"></td></tr>
+      <tr class="sc-sec-bar sc-sec-high"><td colspan="11">High Handicap Pairing</td></tr>
+      ${playerRow(highA, teamAName, 'sc-p-white',  'sc-tot-p1')}
+      ${playerRow(highB, teamBName, 'sc-p-stripe', 'sc-tot-p2')}
+      ${ptsRow('sc-tot-pts')}
+    </tbody>
+  </table>
+  <div class="sc-footer">
+    <div class="sc-foot-team"><span class="sc-foot-team-name">${esc(teamAName)}</span><span class="sc-foot-pts-label">Points<span class="sc-foot-pts-line"></span></span></div>
+    <div class="sc-foot-divider"></div>
+    <div class="sc-foot-team"><span class="sc-foot-team-name">${esc(teamBName)}</span><span class="sc-foot-pts-label">Points<span class="sc-foot-pts-line"></span></span></div>
+  </div>
+</div>`;
+  }
+
+  function buildWeekHtml(sw) {
+    const lname   = leagueName();
+    const side    = (sw && sw.side)    || 'front';
+    const course  = (sw && sw.course)  || '';
+    const date    = (sw && sw.date)    || '';
+    const tee     = (sw && sw.tee)     || '';
+    const week    = (sw && sw.week)    || '—';
+    const matches = (sw && Array.isArray(sw.matches))
+      ? sw.matches.filter(m => m && m.teamA && m.teamB) : [];
+    if (!matches.length) return null;
+    return matches.map(m => {
+      const teamA = getTeam(m.teamA);
+      const teamB = getTeam(m.teamB);
+      const { low: lowA, high: highA } = pairTeam(teamA);
+      const { low: lowB, high: highB } = pairTeam(teamB);
+      return buildHtml({ lname, teamAName: teamDisplayName(teamA, m.teamA), teamBName: teamDisplayName(teamB, m.teamB), week, courseName: course, date, side, tee, lowA, lowB, highA, highB });
+    }).join('');
+  }
+
+  global.printWeekMatchScorecards = async function (week) {
+    const root = document.getElementById('print-root');
+    if (!root) { console.error('sc-print: #print-root not found'); return; }
+    if (typeof showToast === 'function') showToast('Building scorecards…');
+    await ensureData();
+    const cache = (typeof scheduleCache !== 'undefined' && Array.isArray(scheduleCache)) ? scheduleCache : [];
+    const sw = cache.find(w => w && Number(w.week) === Number(week)) || null;
+    if (!sw || (sw.type && sw.type !== 'match')) {
+      if (typeof showToast === 'function') showToast('No match schedule for Week ' + week);
+      return;
+    }
+    let swResolved = sw;
+    const hasMatches = Array.isArray(sw.matches) && sw.matches.some(m => m && m.teamA && m.teamB);
+    if (!hasMatches && typeof fetchJson === 'function') {
+      try {
+        const res = await fetchJson('/api/match-scorecards?week=' + encodeURIComponent(week));
+        const scorecards = res && Array.isArray(res.scorecards) ? res.scorecards : [];
+        const fallbackMatches = scorecards
+          .map(sc => ({ teamA: sc && sc.teamA ? Number(sc.teamA) : 0, teamB: sc && sc.teamB ? Number(sc.teamB) : 0 }))
+          .filter(m => m.teamA && m.teamB);
+        if (fallbackMatches.length) swResolved = Object.assign({}, sw, { matches: fallbackMatches });
+      } catch (_) { /* non-fatal */ }
+    }
+    const html = buildWeekHtml(swResolved);
+    if (!html) {
+      if (typeof showToast === 'function') showToast('No team matchups for Week ' + week + '. Add matches in Schedule first.');
+      return;
+    }
+    root.innerHTML = html;
+    setTimeout(() => { window.print(); }, 150);
+  };
+
+  global.printMatchScorecard = async function (week, teamANum, teamBNum) {
+    const root = document.getElementById('print-root');
+    if (!root) { console.error('sc-print: #print-root not found'); return; }
+    if (typeof showToast === 'function') showToast('Building scorecard…');
+    await ensureData();
+    const cache = (typeof scheduleCache !== 'undefined' && Array.isArray(scheduleCache)) ? scheduleCache : [];
+    const sw    = cache.find(w => w && Number(w.week) === Number(week)) || null;
+    const lname  = leagueName();
+    const side   = (sw && sw.side)   || 'front';
+    const course = (sw && sw.course) || '';
+    const date   = (sw && sw.date)   || '';
+    const tee    = (sw && sw.tee)    || '';
+    const teamA = getTeam(teamANum);
+    const teamB = getTeam(teamBNum);
+    const { low: lowA, high: highA } = pairTeam(teamA);
+    const { low: lowB, high: highB } = pairTeam(teamB);
+    root.innerHTML = buildHtml({ lname, teamAName: teamDisplayName(teamA, teamANum), teamBName: teamDisplayName(teamB, teamBNum), week, courseName: course, date, side, tee, lowA, lowB, highA, highB });
+    setTimeout(() => { window.print(); }, 150);
+  };
+
+})(window);
+</script>
 </body>
 </html>
 </html>
