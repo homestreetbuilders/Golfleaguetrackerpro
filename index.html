@@ -1692,6 +1692,29 @@
           </div>
         </div>
 
+        <!-- ── Print 5×7 Match Scorecards ── -->
+        <div class="card" id="match-print-card">
+          <div class="card-header" style="padding:10px 16px">
+            <div class="card-title">Print 5&times;7 Match Scorecards</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:#666;margin-bottom:4px">Week</label>
+                <select id="match-print-week" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff;min-width:140px">
+                  <option value="">Select week...</option>
+                  <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
+                  <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
+                  <option value="7">Week 7</option><option value="8">Week 8</option><option value="9">Week 9</option>
+                  <option value="10">Week 10</option><option value="11">Week 11</option><option value="12">Week 12</option>
+                </select>
+              </div>
+              <button class="btn-sm btn-green" onclick="(function(){var w=parseInt(document.getElementById('match-print-week').value||'0',10);if(!w){showToast('Select a week first');return;}if(typeof printWeekMatchScorecards!=='function'){showToast('Print module loading — try again in a moment');return;}printWeekMatchScorecards(w);})()">&#x1F5A8; Print Match Cards</button>
+            </div>
+            <p style="margin:8px 0 0;font-size:12px;color:#888">Landscape 5&times;7 cards &mdash; Low &amp; High handicap pairings, blank score cells for hand entry.</p>
+          </div>
+        </div>
+
         <!-- ── Full Schedule (compact table) ── -->
         <div class="card">
           <div class="card-header" style="padding:10px 16px"><div class="card-title">Full Schedule</div></div>
