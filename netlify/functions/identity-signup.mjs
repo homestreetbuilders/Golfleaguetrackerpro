@@ -1,4 +1,6 @@
-import { getStore } from '@netlify/blobs'
+// identity-signup.mjs — Netlify Identity event trigger on new user signup.
+// Sets the user's role in app_metadata via the GoTrue admin API so it
+// appears in the JWT on their first login.
 
 export default async (req) => {
   if (req.method !== 'POST') {
@@ -6,34 +8,55 @@ export default async (req) => {
   }
 
   const body = await req.json().catch(() => null)
-  const email = body && body.email
-  if (!email) {
-    return new Response('Missing email', { status: 400 })
+  const user     = body && body.user
+  const identity = body && body.identity
+
+  if (!user || !user.email || !user.id) {
+    return new Response('Missing user data', { status: 400 })
   }
 
-  const store = getStore('user-roles')
-  const key = `role-${String(email).toLowerCase()}`
+  // Determine role for this new user
+  const adminEmail = process.env.ADMIN_EMAIL
+    ? String(process.env.ADMIN_EMAIL).trim().toLowerCase()
+    : null
 
-  // Don't overwrite an existing role assignment
-  const existing = await store.get(key, { type: 'text' }).catch(() => null)
-  if (existing) {
-    return Response.json({ success: true, email, role: existing })
-  }
-
-  // Determine role for new user.
-  // If ADMIN_EMAIL is set, only that address gets admin on first signup.
-  // Otherwise fall back to first-user-wins (legacy behaviour).
-  const adminEmail = process.env.ADMIN_EMAIL ? String(process.env.ADMIN_EMAIL).trim().toLowerCase() : null
   let role
-
   if (adminEmail) {
-    role = String(email).trim().toLowerCase() === adminEmail ? 'admin' : 'player'
+    role = String(user.email).trim().toLowerCase() === adminEmail ? 'admin' : 'player'
   } else {
-    const { blobs } = await store.list().catch(() => ({ blobs: [] }))
-    const hasAnyRole = (blobs || []).some(b => b && b.key && String(b.key).startsWith('role-'))
-    role = hasAnyRole ? 'player' : 'admin'
+    // First-user-wins: check if any admin already exists via the Identity admin API
+    role = 'player'
+    if (identity && identity.url && identity.token) {
+      try {
+        const listRes = await fetch(`${identity.url}/admin/users?per_page=100`, {
+          headers: { Authorization: `Bearer ${identity.token}` }
+        })
+        if (listRes.ok) {
+          const data = await listRes.json()
+          const anyAdmin = (data.users || []).some(u =>
+            u.id !== user.id &&
+            Array.isArray(u.app_metadata && u.app_metadata.roles) &&
+            u.app_metadata.roles.includes('admin')
+          )
+          if (!anyAdmin) role = 'admin'
+        }
+      } catch (e) { /* fallback to player */ }
+    }
   }
 
-  await store.set(key, role)
-  return Response.json({ success: true, email, role })
+  // Write role to app_metadata via GoTrue admin API
+  if (identity && identity.url && identity.token) {
+    try {
+      await fetch(`${identity.url}/admin/users/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${identity.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ app_metadata: { roles: [role] } })
+      })
+    } catch (e) { /* non-fatal — user can be assigned role manually */ }
+  }
+
+  return Response.json({ success: true, email: user.email, role })
 }

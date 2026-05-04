@@ -1,12 +1,8 @@
 // _auth.mjs — Shared auth helper for Netlify serverless functions.
 //
-// Netlify Identity JWTs do NOT carry app_metadata.roles — roles are stored
-// exclusively in Netlify Blobs ('user-roles' store, key: 'role-{email}').
-// We decode the JWT only to extract the caller's email, then look up their
-// role in Blobs. Signature verification is skipped intentionally: tokens are
-// short-lived (1 h), issued by Netlify Identity. Expiry is still checked.
-
-import { getStore } from '@netlify/blobs'
+// Roles are stored in each user's app_metadata.roles via the Netlify
+// Identity admin API and are included in every JWT Netlify Identity issues.
+// We read the role directly from the token — no Blobs lookup needed.
 
 function decodeJwtPayload(token) {
   try {
@@ -22,69 +18,38 @@ function decodeJwtPayload(token) {
 export function emailFromReq(req) {
   try {
     const auth = req.headers.get('authorization') || ''
-    console.log('[auth] Authorization header present:', !!auth, '| starts with Bearer:', auth.startsWith('Bearer '))
     const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
-    if (!token) {
-      console.log('[auth] No bearer token found in Authorization header')
-      return null
-    }
+    if (!token) return null
     const payload = decodeJwtPayload(token)
-    if (!payload) {
-      console.log('[auth] JWT decode failed — payload is null')
-      return null
-    }
-    const now = Math.floor(Date.now() / 1000)
-    console.log('[auth] JWT exp:', payload.exp, '| now:', now, '| expired:', payload.exp ? payload.exp < now : 'no exp field')
-    if (payload.exp && payload.exp < now) {
-      console.log('[auth] Token is expired — rejecting')
-      return null
-    }
-    const email = payload.email ? String(payload.email).trim().toLowerCase() : null
-    console.log('[auth] Email from JWT:', email)
-    return email || null
+    if (!payload) return null
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null
+    return payload.email ? String(payload.email).trim().toLowerCase() : null
   } catch (e) {
-    console.log('[auth] emailFromReq threw:', e && e.message)
     return null
   }
 }
 
-export async function getCallerRole(req) {
-  const email = emailFromReq(req)
-  if (!email) {
-    console.log('[auth] getCallerRole: no email — returning null')
-    return null
-  }
+export function getCallerRole(req) {
   try {
-    const store = getStore('user-roles')
-    const role = await store.get(`role-${email}`, { type: 'text' }).catch(() => null)
-    console.log('[auth] Blobs role lookup for', email, '→', role)
-
-    if (role) return role
-
-    // Bootstrap: account existed before Blobs-based role tracking was introduced.
-    // If the email matches ADMIN_EMAIL and no role record exists yet, write 'admin'
-    // to Blobs now so all future requests find it without hitting this branch again.
-    const adminEmail = process.env.ADMIN_EMAIL
-      ? String(process.env.ADMIN_EMAIL).trim().toLowerCase()
-      : null
-    console.log('[auth] ADMIN_EMAIL env var:', adminEmail || '(not set)')
-    if (adminEmail && email === adminEmail) {
-      console.log('[auth] Bootstrap: writing admin role for', email)
-      await store.set(`role-${email}`, 'admin').catch(() => null)
-      return 'admin'
-    }
-
-    console.log('[auth] No role in Blobs + no ADMIN_EMAIL match — returning player')
+    const auth = req.headers.get('authorization') || ''
+    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+    if (!token) return null
+    const payload = decodeJwtPayload(token)
+    if (!payload) return null
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null
+    const roles = Array.isArray(payload.app_metadata && payload.app_metadata.roles)
+      ? payload.app_metadata.roles : []
+    if (roles.includes('admin')) return 'admin'
+    if (roles.includes('scorer')) return 'scorer'
     return 'player'
   } catch (e) {
-    console.log('[auth] getCallerRole threw:', e && e.message)
     return null
   }
 }
 
 // Returns a 403 Response if caller is not admin, otherwise null (allowed).
 export async function requireAdmin(req) {
-  const role = await getCallerRole(req)
+  const role = getCallerRole(req)
   if (role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
@@ -96,7 +61,7 @@ export async function requireAdmin(req) {
 
 // Returns a 403 Response if caller is neither admin nor scorer, otherwise null.
 export async function requireAdminOrScorer(req) {
-  const role = await getCallerRole(req)
+  const role = getCallerRole(req)
   if (role !== 'admin' && role !== 'scorer') {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
