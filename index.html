@@ -3216,6 +3216,17 @@ async function fetchJson(url, options) {
   const leagueId = getActiveLeagueId();
   const finalUrl = attachLeagueIdToUrl(url, leagueId);
   const token = await getIdentityToken();
+
+  // If no real JWT and this is a write operation, fail fast with a clear message
+  // instead of sending the request and getting a cryptic 403 Forbidden.
+  const isWrite = options && options.method && options.method !== 'GET';
+  if (!token && isWrite) {
+    const isDemoSession = currentUser && currentUser.demo;
+    if (isDemoSession) {
+      throw new Error('demo-mode');
+    }
+  }
+
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
   const mergedOptions = {
     ...options,
@@ -5216,10 +5227,11 @@ function doLogin() {
     }
     if (!user) {
       document.getElementById('login-error').style.display = 'block';
-      return;
+      return false;
     }
     document.getElementById('login-error').style.display = 'none';
     loginSuccess(user);
+    return true;
   };
 
   if (ident) {
@@ -5228,7 +5240,13 @@ function doLogin() {
       const role = await resolveUserRole(u);
       loginSuccess({ name: (u.user_metadata && u.user_metadata.full_name) ? u.user_metadata.full_name : (u.email || email), email: u.email || email, role });
     }).catch(() => {
-      localLogin();
+      // Netlify Identity login failed — fall back to local demo session.
+      // In demo mode there is no JWT so admin write operations (save player,
+      // save course, etc.) will be blocked by the backend. Show a banner.
+      const matched = localLogin();
+      if (matched) {
+        showToast('Demo mode — read-only. Log in via Netlify Identity to save data.');
+      }
     });
     return;
   }
@@ -6457,8 +6475,10 @@ async function savePlayerFromForm() {
   } catch (e) {
     console.error('savePlayerFromForm error:', e);
     const msg = (e && e.message) ? e.message : String(e);
-    if (msg.toLowerCase().includes('forbidden') || msg.includes('403')) {
-      showToast('You must be an Admin to save players');
+    if (msg === 'demo-mode') {
+      showToast('Demo mode — log in with your Netlify Identity account to save data');
+    } else if (msg.toLowerCase().includes('forbidden') || msg.includes('403')) {
+      showToast('Access denied — your account does not have Admin role');
     } else {
       showToast('Save failed: ' + msg);
     }
