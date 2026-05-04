@@ -19,6 +19,18 @@ function asInt(v) {
   return Number.isFinite(n) ? n : null
 }
 
+function asNum(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v)
+  return Number.isFinite(n) ? n : null
+}
+
+function parseRatingField(body, key) {
+  const v = body && body[key]
+  if (v === undefined || v === null || String(v).trim() === '') return null
+  const n = asNum(v)
+  return n !== null ? n : null
+}
+
 function sanitizeHoles(holes) {
   const list = Array.isArray(holes) ? holes : []
   const out = []
@@ -97,6 +109,16 @@ export default async (req) => {
       lon: Number.isFinite(lon) ? lon : null,
       tees: sanitizeTees(body && body.tees),
       holes: sanitizeHoles(body && body.holes),
+      // Rating / slope / par for handicap calculation
+      frontPar:    parseRatingField(body, 'frontPar'),
+      frontRating: parseRatingField(body, 'frontRating'),
+      frontSlope:  parseRatingField(body, 'frontSlope'),
+      backPar:     parseRatingField(body, 'backPar'),
+      backRating:  parseRatingField(body, 'backRating'),
+      backSlope:   parseRatingField(body, 'backSlope'),
+      fullPar:     parseRatingField(body, 'fullPar'),
+      fullRating:  parseRatingField(body, 'fullRating'),
+      fullSlope:   parseRatingField(body, 'fullSlope'),
       updatedAt: new Date().toISOString()
     }
 

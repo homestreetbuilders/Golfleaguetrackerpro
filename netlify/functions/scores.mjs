@@ -47,7 +47,8 @@ export default async (req) => {
     const grossTotal = body && typeof body.grossTotal === 'number' ? body.grossTotal : null
     const tee = (body && body.tee) || null
     const course = (body && body.course) || null
-    const side = (body && body.side) === 'back' ? 'back' : 'front'
+    const rawSide = body && body.side ? String(body.side).toLowerCase() : 'front'
+    const side = rawSide === 'back' ? 'back' : (rawSide === 'both' || rawSide === '18' || rawSide === 'full') ? '18' : 'front'
     const handicapSnapshot = body && typeof body.handicapSnapshot === 'number' ? body.handicapSnapshot : null
     // Fix #6: store parTotal so finalize-week can use actual course par in handicap diff
     const parTotal = body && typeof body.parTotal === 'number' && Number.isFinite(body.parTotal)

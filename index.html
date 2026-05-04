@@ -1897,6 +1897,38 @@
             </table>
           </div>
         </div>
+
+        <!-- Handicap History — 3 separate type tables -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">Front 9 Handicap History</div></div>
+          <div class="card-body" style="padding:0">
+            <div id="hcp-front9-summary" style="padding:12px 16px;font-size:13px;color:#555;border-bottom:1px solid #eee"></div>
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Course</th><th>Gross</th><th>Rating</th><th>Slope</th><th>Differential</th><th>Used</th></tr></thead>
+              <tbody id="hcp-front9-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Back 9 Handicap History</div></div>
+          <div class="card-body" style="padding:0">
+            <div id="hcp-back9-summary" style="padding:12px 16px;font-size:13px;color:#555;border-bottom:1px solid #eee"></div>
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Course</th><th>Gross</th><th>Rating</th><th>Slope</th><th>Differential</th><th>Used</th></tr></thead>
+              <tbody id="hcp-back9-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">18 Hole Handicap History</div></div>
+          <div class="card-body" style="padding:0">
+            <div id="hcp-18-summary" style="padding:12px 16px;font-size:13px;color:#555;border-bottom:1px solid #eee"></div>
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Course</th><th>Gross</th><th>Rating</th><th>Slope</th><th>Differential</th><th>Used</th></tr></thead>
+              <tbody id="hcp-18-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- ── SHOT TRACKING (Premium) ── -->
@@ -2146,9 +2178,35 @@
               <div class="form-field"><label>Full Name</label><input id="pm-name" placeholder="John Smith" /></div>
               <div class="form-field"><label>Email</label><input id="pm-email" type="email" placeholder="john@email.com" /></div>
               <div class="form-field"><label>Phone</label><input id="pm-phone" placeholder="(555) 000-0000" /></div>
-              <div class="form-field"><label>Handicap (overall)</label><input id="pm-handicap" type="number" placeholder="0.0" step="0.1" /></div>
-              <div class="form-field"><label>9-Hole Handicap</label><input id="pm-hdcp9" type="number" placeholder="0.0" step="0.1" /></div>
-              <div class="form-field"><label>18-Hole Handicap</label><input id="pm-hdcp18" type="number" placeholder="0.0" step="0.1" /></div>
+              <div class="form-field" style="grid-column:1/-1">
+                <label>Handicaps (auto-calculated — override per type below)</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:6px">
+                  <div style="background:#f0f8f0;border:1px solid #cce0cc;border-radius:4px;padding:10px">
+                    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1A4A2E;margin-bottom:4px">Front 9 HCP</div>
+                    <div id="pm-hcpfront9-display" style="font-size:18px;font-weight:700;color:#1A4A2E">—</div>
+                    <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:#555;font-weight:600;text-transform:none;letter-spacing:0">
+                      <input type="checkbox" id="pm-hcpfront9-override-chk" onchange="toggleHcpOverrideInput('front9')" /> Override
+                    </label>
+                    <input id="pm-hcpfront9-override-val" type="number" step="0.1" placeholder="e.g. 8.4" style="display:none;width:100%;margin-top:6px;padding:6px 8px;border:1px solid #ccc;border-radius:3px;font-size:14px;background:#fff;box-sizing:border-box" />
+                  </div>
+                  <div style="background:#f0f4ff;border:1px solid #ccd0ee;border-radius:4px;padding:10px">
+                    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1e3a7b;margin-bottom:4px">Back 9 HCP</div>
+                    <div id="pm-hcpback9-display" style="font-size:18px;font-weight:700;color:#1e3a7b">—</div>
+                    <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:#555;font-weight:600;text-transform:none;letter-spacing:0">
+                      <input type="checkbox" id="pm-hcpback9-override-chk" onchange="toggleHcpOverrideInput('back9')" /> Override
+                    </label>
+                    <input id="pm-hcpback9-override-val" type="number" step="0.1" placeholder="e.g. 9.1" style="display:none;width:100%;margin-top:6px;padding:6px 8px;border:1px solid #ccc;border-radius:3px;font-size:14px;background:#fff;box-sizing:border-box" />
+                  </div>
+                  <div style="background:#fffaf0;border:1px solid #e8d880;border-radius:4px;padding:10px">
+                    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#7a5800;margin-bottom:4px">18 Hole HCP</div>
+                    <div id="pm-hcp18-display" style="font-size:18px;font-weight:700;color:#7a5800">—</div>
+                    <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:#555;font-weight:600;text-transform:none;letter-spacing:0">
+                      <input type="checkbox" id="pm-hcp18-override-chk" onchange="toggleHcpOverrideInput('hcp18')" /> Override
+                    </label>
+                    <input id="pm-hcp18-override-val" type="number" step="0.1" placeholder="e.g. 17.2" style="display:none;width:100%;margin-top:6px;padding:6px 8px;border:1px solid #ccc;border-radius:3px;font-size:14px;background:#fff;box-sizing:border-box" />
+                  </div>
+                </div>
+              </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button class="btn-sm btn-green" onclick="savePlayerFromForm()">Save Player</button>
@@ -2160,7 +2218,7 @@
           <div class="card-header"><div class="card-title">Player Roster</div></div>
           <div class="card-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Hdcp</th><th>9-HCP</th><th>18-HCP</th><th>Net Skins</th><th>Gross Skins</th><th>50/50</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>F9 HCP</th><th>B9 HCP</th><th>18 HCP</th><th>Net Skins</th><th>Gross Skins</th><th>50/50</th><th>Actions</th></tr></thead>
               <tbody id="player-roster"></tbody>
             </table>
           </div>
@@ -2366,6 +2424,25 @@
               <div class="form-field"><label>Tee 2 Name</label><input id="cm-tee-2" placeholder="Blue" /></div>
               <div class="form-field"><label>Tee 3 Name</label><input id="cm-tee-3" placeholder="Red" /></div>
               <div class="form-field"><label>Tee 4 Name</label><input id="cm-tee-4" placeholder="(optional)" /></div>
+            </div>
+
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:10px">Front 9 Rating &amp; Slope</p>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field"><label>Front 9 Par</label><input id="cm-front-par" type="number" placeholder="36" step="1" /></div>
+              <div class="form-field"><label>Front 9 Rating</label><input id="cm-front-rating" type="number" placeholder="34.5" step="0.1" /></div>
+              <div class="form-field"><label>Front 9 Slope</label><input id="cm-front-slope" type="number" placeholder="118" step="1" /></div>
+            </div>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:10px">Back 9 Rating &amp; Slope</p>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field"><label>Back 9 Par</label><input id="cm-back-par" type="number" placeholder="36" step="1" /></div>
+              <div class="form-field"><label>Back 9 Rating</label><input id="cm-back-rating" type="number" placeholder="35.1" step="0.1" /></div>
+              <div class="form-field"><label>Back 9 Slope</label><input id="cm-back-slope" type="number" placeholder="121" step="1" /></div>
+            </div>
+            <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);font-weight:700;margin-bottom:10px">Full 18 Rating &amp; Slope</p>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div class="form-field"><label>Full 18 Par</label><input id="cm-full-par" type="number" placeholder="72" step="1" /></div>
+              <div class="form-field"><label>Full 18 Rating</label><input id="cm-full-rating" type="number" placeholder="69.6" step="0.1" /></div>
+              <div class="form-field"><label>Full 18 Slope</label><input id="cm-full-slope" type="number" placeholder="119" step="1" /></div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button class="btn-sm btn-green" onclick="saveCourseFromUI()">Save Course</button>
@@ -6296,22 +6373,37 @@ function hydratePlayerSelectors() {
   }
 }
 
+function toggleHcpOverrideInput(type) {
+  const chkId = type === 'front9' ? 'pm-hcpfront9-override-chk' : type === 'back9' ? 'pm-hcpback9-override-chk' : 'pm-hcp18-override-chk';
+  const valId = type === 'front9' ? 'pm-hcpfront9-override-val' : type === 'back9' ? 'pm-hcpback9-override-val' : 'pm-hcp18-override-val';
+  const chk = document.getElementById(chkId);
+  const inp = document.getElementById(valId);
+  if (inp) inp.style.display = (chk && chk.checked) ? '' : 'none';
+}
+
+function setHcpDisplay(id, value, isOverride) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (value !== null && value !== undefined && Number.isFinite(Number(value))) {
+    el.textContent = Number(value).toFixed(1) + (isOverride ? ' (M)' : '');
+  } else {
+    el.textContent = 'Pending';
+  }
+}
+
 function clearPlayerForm() {
   const nameEl = document.getElementById('pm-name');
   const emailEl = document.getElementById('pm-email');
   const phoneEl = document.getElementById('pm-phone');
-  const hcEl = document.getElementById('pm-handicap');
-  const hc9El = document.getElementById('pm-hdcp9');
-  const hc18El = document.getElementById('pm-hdcp18');
   const cancel = document.getElementById('pm-cancel');
   if (nameEl) nameEl.value = '';
-  if (emailEl) emailEl.value = '';
+  if (emailEl) { emailEl.value = ''; emailEl.disabled = false; }
   if (phoneEl) phoneEl.value = '';
-  if (hcEl) hcEl.value = '';
-  if (hc9El) hc9El.value = '';
-  if (hc18El) hc18El.value = '';
-  if (emailEl) emailEl.disabled = false;
   if (cancel) cancel.style.display = 'none';
+  // Reset handicap displays
+  ['pm-hcpfront9-display','pm-hcpback9-display','pm-hcp18-display'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+  ['pm-hcpfront9-override-chk','pm-hcpback9-override-chk','pm-hcp18-override-chk'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
+  ['pm-hcpfront9-override-val','pm-hcpback9-override-val','pm-hcp18-override-val'].forEach(id => { const el = document.getElementById(id); if (el) { el.value = ''; el.style.display = 'none'; } });
   editingPlayerEmail = null;
 }
 
@@ -6323,26 +6415,35 @@ async function savePlayerFromForm() {
   const nameEl  = document.getElementById('pm-name');
   const emailEl = document.getElementById('pm-email');
   const phoneEl = document.getElementById('pm-phone');
-  const hcEl    = document.getElementById('pm-handicap');
-  const hc9El   = document.getElementById('pm-hdcp9');
-  const hc18El  = document.getElementById('pm-hdcp18');
-  const name     = nameEl  ? nameEl.value.trim()  : '';
-  const email    = emailEl ? emailEl.value.trim()  : '';
-  const phone    = phoneEl ? phoneEl.value.trim()  : '';
-  const handicap = hcEl    ? hcEl.value            : '';
-  const hdcp9    = hc9El   ? hc9El.value           : '';
-  const hdcp18   = hc18El  ? hc18El.value          : '';
+  const name  = nameEl  ? nameEl.value.trim()  : '';
+  const email = emailEl ? emailEl.value.trim()  : '';
+  const phone = phoneEl ? phoneEl.value.trim()  : '';
 
   if (!name || !email) {
     showToast('Name and email required');
     return;
   }
 
+  // Collect override values for the 3 handicap types
+  const f9Chk  = document.getElementById('pm-hcpfront9-override-chk');
+  const f9Val  = document.getElementById('pm-hcpfront9-override-val');
+  const b9Chk  = document.getElementById('pm-hcpback9-override-chk');
+  const b9Val  = document.getElementById('pm-hcpback9-override-val');
+  const h18Chk = document.getElementById('pm-hcp18-override-chk');
+  const h18Val = document.getElementById('pm-hcp18-override-val');
+
+  const hcpFront9Override      = !!(f9Chk  && f9Chk.checked);
+  const hcpFront9OverrideValue = (hcpFront9Override && f9Val  && f9Val.value.trim()  !== '') ? Number(f9Val.value)  : null;
+  const hcpBack9Override       = !!(b9Chk  && b9Chk.checked);
+  const hcpBack9OverrideValue  = (hcpBack9Override  && b9Val  && b9Val.value.trim()  !== '') ? Number(b9Val.value)  : null;
+  const hcp18Override          = !!(h18Chk && h18Chk.checked);
+  const hcp18OverrideValue     = (hcp18Override     && h18Val && h18Val.value.trim() !== '') ? Number(h18Val.value) : null;
+
   try {
     await fetchJson('/api/players', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, handicap, hdcp9, hdcp18 })
+      body: JSON.stringify({ name, email, phone, hcpFront9Override, hcpFront9OverrideValue, hcpBack9Override, hcpBack9OverrideValue, hcp18Override, hcp18OverrideValue })
     });
     await loadPlayers();
     buildPlayerRoster();
@@ -6360,21 +6461,33 @@ function editPlayer(email) {
   const nameEl  = document.getElementById('pm-name');
   const emailEl = document.getElementById('pm-email');
   const phoneEl = document.getElementById('pm-phone');
-  const hcEl    = document.getElementById('pm-handicap');
-  const hc9El   = document.getElementById('pm-hdcp9');
-  const hc18El  = document.getElementById('pm-hdcp18');
   const cancel  = document.getElementById('pm-cancel');
   if (nameEl) nameEl.value = p.name || '';
-  if (emailEl) {
-    emailEl.value = p.email || '';
-    emailEl.disabled = true;
-  }
+  if (emailEl) { emailEl.value = p.email || ''; emailEl.disabled = true; }
   if (phoneEl) phoneEl.value = p.phone || '';
-  if (hcEl)   hcEl.value   = (p.handicap !== null && p.handicap !== undefined) ? p.handicap : '';
-  if (hc9El)  hc9El.value  = (p.hdcp9   !== null && p.hdcp9   !== undefined) ? p.hdcp9   : '';
-  if (hc18El) hc18El.value = (p.hdcp18  !== null && p.hdcp18  !== undefined) ? p.hdcp18  : '';
   if (cancel) cancel.style.display = '';
   editingPlayerEmail = p.email;
+
+  // Populate handicap displays
+  setHcpDisplay('pm-hcpfront9-display', p.hcpFront9, p.hcpFront9Override);
+  setHcpDisplay('pm-hcpback9-display',  p.hcpBack9,  p.hcpBack9Override);
+  // Fallback: show old hcp18 or legacy handicap for 18-hole display
+  const h18val = p.hcp18 !== null && p.hcp18 !== undefined ? p.hcp18 : p.handicap;
+  setHcpDisplay('pm-hcp18-display', h18val, p.hcp18Override);
+
+  // Set override checkboxes and inputs
+  const setOv = (chkId, valId, ovFlag, ovVal) => {
+    const chk = document.getElementById(chkId);
+    const inp = document.getElementById(valId);
+    if (chk) chk.checked = !!ovFlag;
+    if (inp) {
+      inp.style.display = ovFlag ? '' : 'none';
+      inp.value = (ovFlag && ovVal !== null && ovVal !== undefined) ? String(ovVal) : '';
+    }
+  };
+  setOv('pm-hcpfront9-override-chk', 'pm-hcpfront9-override-val', p.hcpFront9Override, p.hcpFront9OverrideValue);
+  setOv('pm-hcpback9-override-chk',  'pm-hcpback9-override-val',  p.hcpBack9Override,  p.hcpBack9OverrideValue);
+  setOv('pm-hcp18-override-chk',     'pm-hcp18-override-val',     p.hcp18Override,     p.hcp18OverrideValue);
 }
 
 async function deletePlayer(email) {
@@ -7982,6 +8095,18 @@ function loadCourseIntoEditor() {
   if (t3) t3.value = tees[2] ? tees[2].name : '';
   if (t4) t4.value = tees[3] ? tees[3].name : '';
 
+  // Rating / slope / par fields
+  const rFld = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val !== null && val !== undefined) ? String(val) : ''; };
+  rFld('cm-front-par',    course && course.frontPar);
+  rFld('cm-front-rating', course && course.frontRating);
+  rFld('cm-front-slope',  course && course.frontSlope);
+  rFld('cm-back-par',     course && course.backPar);
+  rFld('cm-back-rating',  course && course.backRating);
+  rFld('cm-back-slope',   course && course.backSlope);
+  rFld('cm-full-par',     course && course.fullPar);
+  rFld('cm-full-rating',  course && course.fullRating);
+  rFld('cm-full-slope',   course && course.fullSlope);
+
   buildCourseHolesTable(tees);
 
   const holes = course && Array.isArray(course.holes) ? course.holes : buildEmptyCourseHoles();
@@ -8021,6 +8146,7 @@ function newCourseEditor() {
   if (t2) t2.value = 'Blue';
   if (t3) t3.value = 'Red';
   if (t4) t4.value = '';
+  ['cm-front-par','cm-front-rating','cm-front-slope','cm-back-par','cm-back-rating','cm-back-slope','cm-full-par','cm-full-rating','cm-full-slope'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   buildCourseHolesTable([{ name: 'White' }, { name: 'Blue' }, { name: 'Red' }]);
   for (let i = 0; i < 18; i++) {
     const parEl = document.querySelector(`input[data-hole="${i}"][data-field="par"]`);
@@ -8071,11 +8197,15 @@ async function saveCourseFromUI() {
       hcpIndex: hcpEl ? Number(hcpEl.value) : (i + 1)
     };
   });
+  const rNum = (id) => { const el = document.getElementById(id); const v = el ? el.value.trim() : ''; return v !== '' ? Number(v) : null; };
+  const frontPar = rNum('cm-front-par'); const frontRating = rNum('cm-front-rating'); const frontSlope = rNum('cm-front-slope');
+  const backPar  = rNum('cm-back-par');  const backRating  = rNum('cm-back-rating');  const backSlope  = rNum('cm-back-slope');
+  const fullPar  = rNum('cm-full-par');  const fullRating  = rNum('cm-full-rating');  const fullSlope  = rNum('cm-full-slope');
   try {
     const res = await fetchJson('/api/courses', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id, name, address, lat, lon, tees, holes })
+      body: JSON.stringify({ id, name, address, lat, lon, tees, holes, frontPar, frontRating, frontSlope, backPar, backRating, backSlope, fullPar, fullRating, fullSlope })
     });
     showToast('Course saved');
     await loadCourses();
@@ -8209,9 +8339,106 @@ async function buildMyAnalytics() {
         `;
       }
     }
+    // Build per-type handicap history tables
+    buildHcpHistoryTables(rows);
+
   } catch (e) {
     if (roundsBody) roundsBody.innerHTML = '<tr><td colspan="10" style="padding:18px;color:#666;text-align:center">Failed to load</td></tr>';
   }
+}
+
+function buildHcpHistoryTables(scores) {
+  // USGA differential helper (client-side mirror of backend logic)
+  const uDiff = (gross, rating, slope) => {
+    if (!Number.isFinite(gross) || !Number.isFinite(rating) || !Number.isFinite(slope) || slope <= 0) return null;
+    return Math.round(((gross - rating) * (113 / slope)) * 10) / 10;
+  };
+
+  const getCRS = (courseName, sideFilter) => {
+    const c = (coursesCache || []).find(x => String(x.name || '').trim().toLowerCase() === String(courseName || '').trim().toLowerCase());
+    if (!c) return { rating: null, slope: null };
+    if (sideFilter === '18') return { rating: c.fullRating || null, slope: c.fullSlope || null };
+    if (sideFilter === 'back') {
+      return {
+        rating: Number.isFinite(c.backRating) ? c.backRating : (Number.isFinite(c.fullRating) ? c.fullRating / 2 : null),
+        slope:  Number.isFinite(c.backSlope)  ? c.backSlope  : (Number.isFinite(c.fullSlope)  ? c.fullSlope  : null)
+      };
+    }
+    return {
+      rating: Number.isFinite(c.frontRating) ? c.frontRating : (Number.isFinite(c.fullRating) ? c.fullRating / 2 : null),
+      slope:  Number.isFinite(c.frontSlope)  ? c.frontSlope  : (Number.isFinite(c.fullSlope)  ? c.fullSlope  : null)
+    };
+  };
+
+  const usgaSelect = (diffs) => {
+    if (!diffs || diffs.length < 3) return { hcp: null, usedCount: 0, take: 0 };
+    const n = diffs.length;
+    let count, take;
+    if (n >= 20) { count = 20; take = 8; }
+    else if (n >= 10) { count = 10; take = 4; }
+    else if (n >= 6) { count = n; take = 2; }
+    else { count = n; take = 1; }
+    const recent = diffs.slice(0, count).map(d => d.diff);
+    const sorted = [...recent].sort((a, b) => a - b);
+    const best = sorted.slice(0, take);
+    const avg = best.reduce((a, b) => a + b, 0) / best.length;
+    return { hcp: Math.round(avg * 0.96 * 10) / 10, usedCount: take, threshold: best[take - 1] };
+  };
+
+  const buildTable = (sideFilter, bodyId, summaryId) => {
+    const body = document.getElementById(bodyId);
+    const summary = document.getElementById(summaryId);
+    if (!body) return;
+
+    const filtered = (scores || []).filter(s => {
+      const ss = String(s.side || '').toLowerCase();
+      if (sideFilter === '18') return ss === '18' || ss === 'both' || ss === 'full';
+      if (sideFilter === 'back') return ss === 'back';
+      return ss === 'front' || (!['back','18','both','full'].includes(ss));
+    }).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+    const diffs = filtered.map(s => {
+      const gross = Number(s.grossTotal);
+      if (!Number.isFinite(gross)) return null;
+      const { rating, slope } = getCRS(s.course, sideFilter);
+      const d = (Number.isFinite(rating) && Number.isFinite(slope)) ? uDiff(gross, rating, slope) : (gross - (Number(s.parTotal) || 36));
+      return { date: s.date, course: s.course, gross, rating, slope, diff: d };
+    }).filter(x => x !== null && x.diff !== null);
+
+    const { hcp, usedCount, threshold } = usgaSelect(diffs);
+
+    if (summary) {
+      const trendArr = () => {
+        if (diffs.length < 2) return '';
+        const last5 = diffs.slice(0, 5);
+        const first = last5[last5.length - 1].diff;
+        const last  = last5[0].diff;
+        return last < first ? ' ↓ trending lower' : last > first ? ' ↑ trending higher' : '';
+      };
+      const label = sideFilter === '18' ? '18 Hole' : sideFilter === 'back' ? 'Back 9' : 'Front 9';
+      summary.innerHTML = hcp !== null
+        ? `<strong>Current ${label} HCP: ${hcp.toFixed(1)}</strong>${trendArr()} &nbsp;·&nbsp; ${diffs.length} rounds, best ${usedCount} used`
+        : `<strong>Current ${label} HCP: Pending</strong> — need at least 3 rounds (have ${diffs.length})`;
+    }
+
+    body.innerHTML = diffs.length ? diffs.map((r, i) => {
+      const used = usedCount > 0 && r.diff <= threshold ? 'Yes' : (i < usedCount ? 'Yes' : 'No');
+      const rColor = used === 'Yes' ? '#1A4A2E' : '#aaa';
+      return `<tr>
+        <td>${r.date || '—'}</td>
+        <td>${escapeHtml(r.course || '—')}</td>
+        <td style="text-align:center;font-weight:700">${r.gross}</td>
+        <td style="text-align:center">${Number.isFinite(r.rating) ? r.rating.toFixed(1) : '—'}</td>
+        <td style="text-align:center">${Number.isFinite(r.slope) ? r.slope : '—'}</td>
+        <td style="text-align:center;font-weight:700;color:var(--gold-dark)">${Number.isFinite(r.diff) ? r.diff.toFixed(1) : '—'}</td>
+        <td style="text-align:center;font-weight:700;color:${rColor}">${used}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" style="padding:18px;color:#666;text-align:center">No rounds yet</td></tr>';
+  };
+
+  buildTable('front', 'hcp-front9-body', 'hcp-front9-summary');
+  buildTable('back',  'hcp-back9-body',  'hcp-back9-summary');
+  buildTable('18',    'hcp-18-body',      'hcp-18-summary');
 }
 
 async function loadScoringMode() {
@@ -8387,9 +8614,11 @@ function buildPlayerRoster() {
   const tbody = document.getElementById('player-roster');
   const rows = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA.map(p => ({ name: p.name, email: p.email, phone: p.phone, handicap: p.hdcp }));
   tbody.innerHTML = rows.map(p => {
-    const hc   = (p.handicap !== undefined && p.handicap !== null) ? p.handicap : (p.hdcp !== undefined ? p.hdcp : '');
-    const hc9  = (p.hdcp9  !== null && p.hdcp9  !== undefined) ? p.hdcp9  : '—';
-    const hc18 = (p.hdcp18 !== null && p.hdcp18 !== undefined) ? p.hdcp18 : '—';
+    const fmtH = (v, isOv) => (v !== null && v !== undefined && Number.isFinite(Number(v))) ? Number(v).toFixed(1) + (isOv ? '<span style="color:var(--gold-dark);font-size:10px"> M</span>' : '') : '—';
+    const f9  = fmtH(p.hcpFront9, p.hcpFront9Override);
+    const b9  = fmtH(p.hcpBack9,  p.hcpBack9Override);
+    const h18v = (p.hcp18 !== null && p.hcp18 !== undefined) ? p.hcp18 : p.handicap; // fallback
+    const h18 = fmtH(h18v, p.hcp18Override);
     const opt = p.email ? getOptInForEmail(p.email) : null;
     const netOn = !!(opt && opt.netSkins && opt.netSkins.enabled);
     const grossOn = !!(opt && opt.grossSkins && opt.grossSkins.enabled);
@@ -8399,9 +8628,9 @@ function buildPlayerRoster() {
         <td style="font-weight:600;color:#1a1a1a">${p.name || ''}</td>
         <td>${p.email || ''}</td>
         <td>${p.phone || ''}</td>
-        <td>${(hc === null || hc === undefined || hc === '') ? '—' : hc}</td>
-        <td style="text-align:center">${hc9}</td>
-        <td style="text-align:center">${hc18}</td>
+        <td style="text-align:center">${f9}</td>
+        <td style="text-align:center">${b9}</td>
+        <td style="text-align:center">${h18}</td>
         <td style="text-align:center"><input type="checkbox" ${netOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'net_skins', this.checked)" /></td>
         <td style="text-align:center"><input type="checkbox" ${grossOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'gross_skins', this.checked)" /></td>
         <td style="text-align:center"><input type="checkbox" ${fiftyOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'fifty_fifty', this.checked)" /></td>
@@ -8944,13 +9173,15 @@ async function buildTeamLeaderboard() {
       const rankClass = i < 3 ? 'rank-' + (i + 1) : '';
       const p1 = (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player1Email || '').toLowerCase());
       const p2 = (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player2Email || '').toLowerCase());
-      const p1Name  = p1 ? p1.name : (t.player1Email || '—');
-      const p2Name  = p2 ? p2.name : (t.player2Email || '—');
-      const fmtHcp = (val) => (val !== null && val !== undefined) ? Number(val).toFixed(1) : '—';
-      const p1Hcp9  = p1 ? fmtHcp(p1.hdcp9)  : '—';
-      const p1Hcp18 = p1 ? fmtHcp(p1.hdcp18) : '—';
-      const p2Hcp9  = p2 ? fmtHcp(p2.hdcp9)  : '—';
-      const p2Hcp18 = p2 ? fmtHcp(p2.hdcp18) : '—';
+      const p1Name = p1 ? p1.name : (t.player1Email || '—');
+      const p2Name = p2 ? p2.name : (t.player2Email || '—');
+      const fH = (v) => (v !== null && v !== undefined && Number.isFinite(Number(v))) ? Number(v).toFixed(1) : '—';
+      const p1F9  = p1 ? fH(p1.hcpFront9) : '—';
+      const p1B9  = p1 ? fH(p1.hcpBack9)  : '—';
+      const p1H18 = p1 ? fH(p1.hcp18 !== null && p1.hcp18 !== undefined ? p1.hcp18 : p1.handicap) : '—';
+      const p2F9  = p2 ? fH(p2.hcpFront9) : '—';
+      const p2B9  = p2 ? fH(p2.hcpBack9)  : '—';
+      const p2H18 = p2 ? fH(p2.hcp18 !== null && p2.hcp18 !== undefined ? p2.hcp18 : p2.handicap) : '—';
       const tname = t.teamName ? t.teamName : 'Team ' + t.teamNumber;
       const record = t.wins + '-' + t.losses + '-' + t.ties;
       const totalPts = typeof t.totalPoints === 'number' ? t.totalPoints.toFixed(1) : '—';
@@ -8964,11 +9195,11 @@ async function buildTeamLeaderboard() {
         </td>
         <td>
           <div style="font-weight:600">${escapeHtml(p1Name)}</div>
-          <div style="font-size:11px;color:#888">9-HCP: ${p1Hcp9} &nbsp;|&nbsp; 18-HCP: ${p1Hcp18}</div>
+          <div style="font-size:11px;color:#888">F9: ${p1F9} &nbsp;|&nbsp; B9: ${p1B9} &nbsp;|&nbsp; 18: ${p1H18}</div>
         </td>
         <td>
           <div style="font-weight:600">${escapeHtml(p2Name)}</div>
-          <div style="font-size:11px;color:#888">9-HCP: ${p2Hcp9} &nbsp;|&nbsp; 18-HCP: ${p2Hcp18}</div>
+          <div style="font-size:11px;color:#888">F9: ${p2F9} &nbsp;|&nbsp; B9: ${p2B9} &nbsp;|&nbsp; 18: ${p2H18}</div>
         </td>
         <td style="text-align:center;color:var(--green);font-weight:700">${p1Pts}</td>
         <td style="text-align:center;color:var(--green);font-weight:700">${p2Pts}</td>
@@ -9085,17 +9316,33 @@ function showTeamHistory(teamNum) {
 
   function playerHcp(player, side) {
     if (!player) return 0;
-    const is18 = side === 'both' || side === 'full' || side === '18';
+    const is18   = side === 'both' || side === 'full' || side === '18';
+    const isBack = side === 'back';
+    // Use new typed handicap fields first
+    if (is18 && player.hcp18 !== undefined && player.hcp18 !== null) return Number(player.hcp18) || 0;
+    if (isBack && player.hcpBack9 !== undefined && player.hcpBack9 !== null) return Number(player.hcpBack9) || 0;
+    if (!is18 && !isBack && player.hcpFront9 !== undefined && player.hcpFront9 !== null) return Number(player.hcpFront9) || 0;
+    // Legacy fallbacks
     if (is18 && player.hdcp18 !== undefined && player.hdcp18 !== null) return Number(player.hdcp18) || 0;
     if (!is18 && player.hdcp9 !== undefined && player.hdcp9 !== null) return Number(player.hdcp9) || 0;
-    // fallback to overall handicap
     const h = player.handicap !== undefined ? player.handicap
             : player.hdcp    !== undefined ? player.hdcp : 0;
     return Number(h) || 0;
   }
 
   function hcpLabel(side) {
-    return (side === 'both' || side === 'full' || side === '18') ? 'HCP 18' : 'HCP 9';
+    if (side === 'both' || side === 'full' || side === '18') return '18 HCP';
+    if (side === 'back') return 'B9 HCP';
+    return 'F9 HCP';
+  }
+
+  // Compute which holes get strokes (by hcpIndex, lowest = hardest = first stroke)
+  function strokeHoles(hcpIdx, numStrokes) {
+    if (!numStrokes || numStrokes <= 0) return new Set();
+    const pairs = hcpIdx.map((hcp, i) => ({ i, hcp })).sort((a, b) => a.hcp - b.hcp);
+    const result = new Set();
+    pairs.slice(0, numStrokes).forEach(p => result.add(p.i));
+    return result;
   }
 
   function pairTeam(team, side) {
@@ -9141,12 +9388,30 @@ function showTeamHistory(teamNum) {
     const parCells = pars.map(p => `<td>${p}</td>`).join('') + `<td class="sc-par-tot">${parTot}</td>`;
     const hcpCells = hcpIdx.map(h => `<td>${h}</td>`).join('') + '<td></td>';
 
+    // Stroke allocation per pairing
+    const strokeRow = (receiverHoles) => {
+      const cells = HOLES.map((_, i) => receiverHoles.has(i) ? '<td style="text-align:center;font-size:7pt;color:#8B1D2C;font-weight:900">&#x25CF;</td>' : '<td></td>').join('');
+      return `<tr style="height:10pt;background:#fff9ee"><td style="font-size:6.5pt;color:#888;padding-left:5pt;font-weight:600">Strokes</td>${cells}<td></td></tr>`;
+    };
+
+    function pairStrokeRow(pA, pB) {
+      const hA = playerHcp(pA, side), hB = playerHcp(pB, side);
+      const diff = Math.abs(hA - hB);
+      const receiverIsA = hA > hB; // A gets strokes if A has higher hcp
+      const holes = strokeHoles(hcpIdx, diff);
+      if (!diff) return '';
+      const receiverHoles = receiverIsA ? holes : holes; // same holes, just label differs
+      return strokeRow(holes); // mark the hard holes
+    }
+
     function playerRow(player, tname, rowCls, totCls) {
       const name  = player ? esc(player.name || player.email || '—') : '—';
       const hcp   = playerHcp(player, side);
       const label = hcpLabel(side);
+      const pending = (player && (player.hcpFront9 === null || player.hcpFront9 === undefined) && (player.hcpBack9 === null || player.hcpBack9 === undefined) && !player.handicap);
+      const hcpStr = pending ? 'HCP: Pending' : `${label}: ${hcp}`;
       const cells = HOLES.map(() => '<td class="sc-score-cell"></td>').join('');
-      return `<tr class="sc-p-row ${rowCls}"><td class="sc-p-label"><span class="sc-p-name">${name}<span class="sc-p-hcp"> (${label}: ${hcp})</span></span><span class="sc-p-team">${esc(tname)}</span></td>${cells}<td class="sc-score-cell ${totCls}"></td></tr>`;
+      return `<tr class="sc-p-row ${rowCls}"><td class="sc-p-label"><span class="sc-p-name">${name}<span class="sc-p-hcp"> (${hcpStr})</span></span><span class="sc-p-team">${esc(tname)}</span></td>${cells}<td class="sc-score-cell ${totCls}"></td></tr>`;
     }
 
     function ptsRow(totCls) {
@@ -9172,11 +9437,13 @@ function showTeamHistory(teamNum) {
       <tr class="sc-sec-bar sc-sec-low"><td colspan="11">Low Handicap Pairing</td></tr>
       ${playerRow(lowA, teamAName, 'sc-p-white',  'sc-tot-p1')}
       ${playerRow(lowB, teamBName, 'sc-p-stripe', 'sc-tot-p2')}
+      ${pairStrokeRow(lowA, lowB)}
       ${ptsRow('sc-tot-pts')}
       <tr class="sc-divider"><td colspan="11"></td></tr>
       <tr class="sc-sec-bar sc-sec-high"><td colspan="11">High Handicap Pairing</td></tr>
       ${playerRow(highA, teamAName, 'sc-p-white',  'sc-tot-p1')}
       ${playerRow(highB, teamBName, 'sc-p-stripe', 'sc-tot-p2')}
+      ${pairStrokeRow(highA, highB)}
       ${ptsRow('sc-tot-pts')}
     </tbody>
   </table>

@@ -31,13 +31,27 @@ export default async (req) => {
       const data = await store.get(blob.key, { type: 'json' }).catch(() => null)
       if (!data || !data.email) continue
 
+      const pNum = (v) => (v !== undefined && v !== null) ? parseFloat(v) : null
+      const pNumFin = (v) => { const n = pNum(v); return Number.isFinite(n) ? n : null }
       const p = {
         name: data.name || '',
         email: normalizeEmail(data.email),
         phone: data.phone || '',
-        handicap: typeof data.handicap === 'number' ? data.handicap : (data.handicap ? parseFloat(data.handicap) : null),
-        hdcp9:  data.hdcp9  !== undefined && data.hdcp9  !== null ? parseFloat(data.hdcp9)  : null,
-        hdcp18: data.hdcp18 !== undefined && data.hdcp18 !== null ? parseFloat(data.hdcp18) : null,
+        handicap: pNumFin(data.handicap),
+        // Legacy 9/18 hole fields (from previous session)
+        hdcp9:  pNumFin(data.hdcp9),
+        hdcp18: pNumFin(data.hdcp18),
+        // New typed handicaps (auto-calculated via USGA formula)
+        hcpFront9: pNumFin(data.hcpFront9),
+        hcpBack9:  pNumFin(data.hcpBack9),
+        hcp18:     pNumFin(data.hcp18),
+        // Override flags and values
+        hcpFront9Override:      Boolean(data.hcpFront9Override),
+        hcpFront9OverrideValue: pNumFin(data.hcpFront9OverrideValue),
+        hcpBack9Override:       Boolean(data.hcpBack9Override),
+        hcpBack9OverrideValue:  pNumFin(data.hcpBack9OverrideValue),
+        hcp18Override:          Boolean(data.hcp18Override),
+        hcp18OverrideValue:     pNumFin(data.hcp18OverrideValue),
         updatedAt: data.updatedAt || null,
         createdAt: data.createdAt || null
       }
@@ -73,6 +87,15 @@ export default async (req) => {
       val !== undefined && val !== null && String(val).trim() !== ''
         ? parseFloat(val) : fallback
 
+    // Per-type handicap override handling
+    const parseBool = (v, fallback) => v !== undefined ? Boolean(v) : fallback
+    const hcpFront9Override      = parseBool(body && body.hcpFront9Override,      !!(existing && existing.hcpFront9Override))
+    const hcpBack9Override       = parseBool(body && body.hcpBack9Override,       !!(existing && existing.hcpBack9Override))
+    const hcp18Override          = parseBool(body && body.hcp18Override,          !!(existing && existing.hcp18Override))
+    const hcpFront9OverrideValue = parseOptional(body && body.hcpFront9OverrideValue, (existing && existing.hcpFront9OverrideValue) ?? null)
+    const hcpBack9OverrideValue  = parseOptional(body && body.hcpBack9OverrideValue,  (existing && existing.hcpBack9OverrideValue)  ?? null)
+    const hcp18OverrideValue     = parseOptional(body && body.hcp18OverrideValue,     (existing && existing.hcp18OverrideValue)     ?? null)
+
     const updated = {
       ...(existing || {}),
       name,
@@ -81,6 +104,13 @@ export default async (req) => {
       handicap: parseOptional(body && body.handicap, (existing && existing.handicap) ?? null),
       hdcp9:    parseOptional(body && body.hdcp9,    (existing && existing.hdcp9)    ?? null),
       hdcp18:   parseOptional(body && body.hdcp18,   (existing && existing.hdcp18)   ?? null),
+      // New typed handicap overrides (auto-calculated values set by finalize-week)
+      hcpFront9Override,
+      hcpFront9OverrideValue: hcpFront9Override ? hcpFront9OverrideValue : null,
+      hcpBack9Override,
+      hcpBack9OverrideValue:  hcpBack9Override  ? hcpBack9OverrideValue  : null,
+      hcp18Override,
+      hcp18OverrideValue:     hcp18Override     ? hcp18OverrideValue     : null,
       updatedAt: new Date().toISOString(),
       createdAt: (existing && existing.createdAt) || new Date().toISOString()
     }

@@ -28,6 +28,85 @@ function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n))
 }
 
+// ── USGA Differential: (Gross - Rating) × (113 / Slope) ──────────────
+function usgaDiff(gross, rating, slope) {
+  if (!Number.isFinite(gross) || !Number.isFinite(rating) || !Number.isFinite(slope) || slope <= 0) return null
+  return Math.round(((gross - rating) * (113 / slope)) * 10) / 10
+}
+
+// ── USGA Handicap Index from a list of differentials (newest-first) ───
+// Selection table:
+//   ≥20 rounds → avg of best 8 from last 20
+//   10-19      → avg of best 4 from last 10
+//   6-9        → avg of best 2
+//   3-5        → lowest 1
+//   <3         → null (Pending)
+function usgaHandicapIndex(diffs) {
+  if (!Array.isArray(diffs) || diffs.length < 3) return null
+  const n = diffs.length
+  let count, take
+  if (n >= 20) { count = 20; take = 8 }
+  else if (n >= 10) { count = 10; take = 4 }
+  else if (n >= 6) { count = n; take = 2 }
+  else { count = n; take = 1 } // 3-5
+  const recent = diffs.slice(0, count) // already newest-first from listScoresForPlayer
+  const sorted = [...recent].sort((a, b) => a - b)
+  const best = sorted.slice(0, take)
+  const avg = best.reduce((a, b) => a + b, 0) / best.length
+  return Math.round(avg * 0.96 * 10) / 10
+}
+
+// ── Get course rating/slope for a given side ──────────────────────────
+function getRatingSlope(coursesMap, courseName, side) {
+  const c = coursesMap ? coursesMap.get(String(courseName || '').trim().toLowerCase()) : null
+  if (!c) return { rating: null, slope: null, par: null }
+  if (side === '18') {
+    return {
+      rating: c.fullRating || null,
+      slope:  c.fullSlope  || null,
+      par:    c.fullPar    || null
+    }
+  }
+  if (side === 'back') {
+    return {
+      rating: Number.isFinite(c.backRating) ? c.backRating : (Number.isFinite(c.fullRating) ? c.fullRating / 2 : null),
+      slope:  Number.isFinite(c.backSlope)  ? c.backSlope  : (Number.isFinite(c.fullSlope)  ? c.fullSlope  : null),
+      par:    Number.isFinite(c.backPar)    ? c.backPar    : null
+    }
+  }
+  // front
+  return {
+    rating: Number.isFinite(c.frontRating) ? c.frontRating : (Number.isFinite(c.fullRating) ? c.fullRating / 2 : null),
+    slope:  Number.isFinite(c.frontSlope)  ? c.frontSlope  : (Number.isFinite(c.fullSlope)  ? c.fullSlope  : null),
+    par:    Number.isFinite(c.frontPar)    ? c.frontPar    : null
+  }
+}
+
+// ── Compute one of the 3 typed handicaps from all player scores ───────
+function computeTypedHcp(allScores, sideFilter, coursesMap) {
+  const filtered = (allScores || []).filter(s => {
+    const ss = String(s.side || '').toLowerCase()
+    if (sideFilter === '18') return ss === '18' || ss === 'both' || ss === 'full'
+    if (sideFilter === 'back') return ss === 'back'
+    return ss === 'front' || (ss !== 'back' && ss !== '18' && ss !== 'both' && ss !== 'full')
+  })
+  const diffs = []
+  for (const s of filtered) {
+    const gross = asNum(s.grossTotal)
+    if (!Number.isFinite(gross)) continue
+    const { rating, slope, par: cpar } = getRatingSlope(coursesMap, s.course, sideFilter)
+    if (Number.isFinite(rating) && Number.isFinite(slope) && slope > 0) {
+      const d = usgaDiff(gross, rating, slope)
+      if (d !== null) diffs.push(d)
+    } else {
+      // Fallback when course has no rating/slope: use gross - par
+      const par = Number.isFinite(cpar) ? cpar : (asNum(s.parTotal) || 36)
+      diffs.push(gross - par)
+    }
+  }
+  return usgaHandicapIndex(diffs)
+}
+
 function getSiteBaseUrl(req) {
   const envUrl = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.DEPLOY_URL
   if (envUrl) return String(envUrl).replace(/\/$/, '')
@@ -94,6 +173,7 @@ export default async (req) => {
   const formulaStore = getStore(leagueStoreName('handicap-config', leagueId))
   const overrideStore = getStore(leagueStoreName('handicap-overrides', leagueId))
   const histStore = getStore(leagueStoreName('handicap-history', leagueId))
+  const coursesBlobStore = getStore(leagueStoreName('courses', leagueId))
 
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 })
@@ -148,6 +228,16 @@ export default async (req) => {
   }
 
   const formula = await formulaStore.get('formula', { type: 'json' }).catch(() => null)
+
+  // Build courses map for USGA differential computation
+  const coursesMap = new Map() // courseName.toLowerCase() → course object
+  try {
+    const { blobs: cBlobs } = await coursesBlobStore.list().catch(() => ({ blobs: [] }))
+    for (const cb of cBlobs || []) {
+      const c = await coursesBlobStore.get(cb.key, { type: 'json' }).catch(() => null)
+      if (c && c.name) coursesMap.set(String(c.name).trim().toLowerCase(), c)
+    }
+  } catch (_) { /* non-fatal */ }
 
   for (const p of targetPlayers) {
     const playerName = p
@@ -212,6 +302,10 @@ export default async (req) => {
 
       const override = await overrideStore.get(`override-${email}`, { type: 'json' }).catch(() => null)
 
+      // Fetch all final scores for this player (newest first)
+      const allScores = await listScoresForPlayer(store, playerName, email)
+
+      // ── Old single handicap (backward compat) ──
       let nextHcp = null
       let source = 'system'
       let note = null
@@ -221,30 +315,54 @@ export default async (req) => {
         source = 'override'
         note = override.note || null
       } else {
-        // Fix #5: pass both email and name so listScoresForPlayer can match either
-        const allScores = await listScoresForPlayer(store, playerName, email)
         nextHcp = computeHandicapFromScores(allScores, formula || null)
         source = 'system'
       }
 
-      if (nextHcp === null || !Number.isFinite(nextHcp)) continue
+      // ── New typed handicaps (USGA differential formula) ──
+      const calcFront9 = computeTypedHcp(allScores, 'front', coursesMap)
+      const calcBack9  = computeTypedHcp(allScores, 'back',  coursesMap)
+      const calcHcp18  = computeTypedHcp(allScores, '18',    coursesMap)
+
+      // Respect per-type overrides stored on the player record
+      const hcpFront9 = (playerObj.hcpFront9Override && playerObj.hcpFront9OverrideValue !== null && playerObj.hcpFront9OverrideValue !== undefined)
+        ? playerObj.hcpFront9OverrideValue
+        : (calcFront9 !== null ? calcFront9 : (playerObj.hcpFront9 !== undefined ? playerObj.hcpFront9 : null))
+
+      const hcpBack9 = (playerObj.hcpBack9Override && playerObj.hcpBack9OverrideValue !== null && playerObj.hcpBack9OverrideValue !== undefined)
+        ? playerObj.hcpBack9OverrideValue
+        : (calcBack9 !== null ? calcBack9 : (playerObj.hcpBack9 !== undefined ? playerObj.hcpBack9 : null))
+
+      const hcp18 = (playerObj.hcp18Override && playerObj.hcp18OverrideValue !== null && playerObj.hcp18OverrideValue !== undefined)
+        ? playerObj.hcp18OverrideValue
+        : (calcHcp18 !== null ? calcHcp18 : (playerObj.hcp18 !== undefined ? playerObj.hcp18 : null))
 
       const updatedPlayer = {
         ...(playerObj || {}),
-        handicap: nextHcp,
+        hcpFront9,
+        hcpBack9,
+        hcp18,
         updatedAt: new Date().toISOString()
       }
 
+      // Keep old handicap field if it was computed or overridden
+      if (nextHcp !== null && Number.isFinite(nextHcp)) {
+        updatedPlayer.handicap = nextHcp
+      }
+
       await playerStore.setJSON(playerKey, updatedPlayer)
-      await histStore.setJSON(`hist-${email}-${Date.now()}`, {
-        email,
-        value: nextHcp,
-        source,
-        at: new Date().toISOString(),
-        week,
-        date: latest.date || null,
-        note
-      })
+
+      if (nextHcp !== null && Number.isFinite(nextHcp)) {
+        await histStore.setJSON(`hist-${email}-${Date.now()}`, {
+          email,
+          value: nextHcp,
+          source,
+          at: new Date().toISOString(),
+          week,
+          date: latest.date || null,
+          note
+        })
+      }
     } catch (e) {
       // non-fatal
     }
