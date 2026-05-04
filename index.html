@@ -2146,7 +2146,9 @@
               <div class="form-field"><label>Full Name</label><input id="pm-name" placeholder="John Smith" /></div>
               <div class="form-field"><label>Email</label><input id="pm-email" type="email" placeholder="john@email.com" /></div>
               <div class="form-field"><label>Phone</label><input id="pm-phone" placeholder="(555) 000-0000" /></div>
-              <div class="form-field"><label>Handicap</label><input id="pm-handicap" type="number" placeholder="0.0" step="0.1" /></div>
+              <div class="form-field"><label>Handicap (overall)</label><input id="pm-handicap" type="number" placeholder="0.0" step="0.1" /></div>
+              <div class="form-field"><label>9-Hole Handicap</label><input id="pm-hdcp9" type="number" placeholder="0.0" step="0.1" /></div>
+              <div class="form-field"><label>18-Hole Handicap</label><input id="pm-hdcp18" type="number" placeholder="0.0" step="0.1" /></div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button class="btn-sm btn-green" onclick="savePlayerFromForm()">Save Player</button>
@@ -2158,7 +2160,7 @@
           <div class="card-header"><div class="card-title">Player Roster</div></div>
           <div class="card-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Hdcp</th><th>Net Skins</th><th>Gross Skins</th><th>50/50</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Hdcp</th><th>9-HCP</th><th>18-HCP</th><th>Net Skins</th><th>Gross Skins</th><th>50/50</th><th>Actions</th></tr></thead>
               <tbody id="player-roster"></tbody>
             </table>
           </div>
@@ -6299,29 +6301,37 @@ function clearPlayerForm() {
   const emailEl = document.getElementById('pm-email');
   const phoneEl = document.getElementById('pm-phone');
   const hcEl = document.getElementById('pm-handicap');
+  const hc9El = document.getElementById('pm-hdcp9');
+  const hc18El = document.getElementById('pm-hdcp18');
   const cancel = document.getElementById('pm-cancel');
   if (nameEl) nameEl.value = '';
   if (emailEl) emailEl.value = '';
   if (phoneEl) phoneEl.value = '';
   if (hcEl) hcEl.value = '';
+  if (hc9El) hc9El.value = '';
+  if (hc18El) hc18El.value = '';
   if (emailEl) emailEl.disabled = false;
   if (cancel) cancel.style.display = 'none';
   editingPlayerEmail = null;
 }
 
 async function savePlayerFromForm() {
-  if (!currentUser || currentUser.role !== 'admin') {
+  if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'scorer')) {
     showToast('Access denied');
     return;
   }
-  const nameEl = document.getElementById('pm-name');
+  const nameEl  = document.getElementById('pm-name');
   const emailEl = document.getElementById('pm-email');
   const phoneEl = document.getElementById('pm-phone');
-  const hcEl = document.getElementById('pm-handicap');
-  const name = nameEl ? nameEl.value.trim() : '';
-  const email = emailEl ? emailEl.value.trim() : '';
-  const phone = phoneEl ? phoneEl.value.trim() : '';
-  const handicap = hcEl ? hcEl.value : '';
+  const hcEl    = document.getElementById('pm-handicap');
+  const hc9El   = document.getElementById('pm-hdcp9');
+  const hc18El  = document.getElementById('pm-hdcp18');
+  const name     = nameEl  ? nameEl.value.trim()  : '';
+  const email    = emailEl ? emailEl.value.trim()  : '';
+  const phone    = phoneEl ? phoneEl.value.trim()  : '';
+  const handicap = hcEl    ? hcEl.value            : '';
+  const hdcp9    = hc9El   ? hc9El.value           : '';
+  const hdcp18   = hc18El  ? hc18El.value          : '';
 
   if (!name || !email) {
     showToast('Name and email required');
@@ -6332,7 +6342,7 @@ async function savePlayerFromForm() {
     await fetchJson('/api/players', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, handicap })
+      body: JSON.stringify({ name, email, phone, handicap, hdcp9, hdcp18 })
     });
     await loadPlayers();
     buildPlayerRoster();
@@ -6347,18 +6357,22 @@ async function savePlayerFromForm() {
 function editPlayer(email) {
   const p = (playersCache || []).find(x => String(x.email).toLowerCase() === String(email).toLowerCase());
   if (!p) return;
-  const nameEl = document.getElementById('pm-name');
+  const nameEl  = document.getElementById('pm-name');
   const emailEl = document.getElementById('pm-email');
   const phoneEl = document.getElementById('pm-phone');
-  const hcEl = document.getElementById('pm-handicap');
-  const cancel = document.getElementById('pm-cancel');
+  const hcEl    = document.getElementById('pm-handicap');
+  const hc9El   = document.getElementById('pm-hdcp9');
+  const hc18El  = document.getElementById('pm-hdcp18');
+  const cancel  = document.getElementById('pm-cancel');
   if (nameEl) nameEl.value = p.name || '';
   if (emailEl) {
     emailEl.value = p.email || '';
     emailEl.disabled = true;
   }
   if (phoneEl) phoneEl.value = p.phone || '';
-  if (hcEl) hcEl.value = (p.handicap !== null && p.handicap !== undefined) ? p.handicap : '';
+  if (hcEl)   hcEl.value   = (p.handicap !== null && p.handicap !== undefined) ? p.handicap : '';
+  if (hc9El)  hc9El.value  = (p.hdcp9   !== null && p.hdcp9   !== undefined) ? p.hdcp9   : '';
+  if (hc18El) hc18El.value = (p.hdcp18  !== null && p.hdcp18  !== undefined) ? p.hdcp18  : '';
   if (cancel) cancel.style.display = '';
   editingPlayerEmail = p.email;
 }
@@ -8373,7 +8387,9 @@ function buildPlayerRoster() {
   const tbody = document.getElementById('player-roster');
   const rows = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA.map(p => ({ name: p.name, email: p.email, phone: p.phone, handicap: p.hdcp }));
   tbody.innerHTML = rows.map(p => {
-    const hc = (p.handicap !== undefined && p.handicap !== null) ? p.handicap : (p.hdcp !== undefined ? p.hdcp : '');
+    const hc   = (p.handicap !== undefined && p.handicap !== null) ? p.handicap : (p.hdcp !== undefined ? p.hdcp : '');
+    const hc9  = (p.hdcp9  !== null && p.hdcp9  !== undefined) ? p.hdcp9  : '—';
+    const hc18 = (p.hdcp18 !== null && p.hdcp18 !== undefined) ? p.hdcp18 : '—';
     const opt = p.email ? getOptInForEmail(p.email) : null;
     const netOn = !!(opt && opt.netSkins && opt.netSkins.enabled);
     const grossOn = !!(opt && opt.grossSkins && opt.grossSkins.enabled);
@@ -8384,6 +8400,8 @@ function buildPlayerRoster() {
         <td>${p.email || ''}</td>
         <td>${p.phone || ''}</td>
         <td>${(hc === null || hc === undefined || hc === '') ? '—' : hc}</td>
+        <td style="text-align:center">${hc9}</td>
+        <td style="text-align:center">${hc18}</td>
         <td style="text-align:center"><input type="checkbox" ${netOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'net_skins', this.checked)" /></td>
         <td style="text-align:center"><input type="checkbox" ${grossOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'gross_skins', this.checked)" /></td>
         <td style="text-align:center"><input type="checkbox" ${fiftyOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'fifty_fifty', this.checked)" /></td>
@@ -8926,10 +8944,13 @@ async function buildTeamLeaderboard() {
       const rankClass = i < 3 ? 'rank-' + (i + 1) : '';
       const p1 = (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player1Email || '').toLowerCase());
       const p2 = (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player2Email || '').toLowerCase());
-      const p1Name = p1 ? p1.name : (t.player1Email || '—');
-      const p2Name = p2 ? p2.name : (t.player2Email || '—');
-      const p1Hcp = p1 ? Number(p1.handicap !== undefined ? p1.handicap : (p1.hdcp || 0)).toFixed(1) : '—';
-      const p2Hcp = p2 ? Number(p2.handicap !== undefined ? p2.handicap : (p2.hdcp || 0)).toFixed(1) : '—';
+      const p1Name  = p1 ? p1.name : (t.player1Email || '—');
+      const p2Name  = p2 ? p2.name : (t.player2Email || '—');
+      const fmtHcp = (val) => (val !== null && val !== undefined) ? Number(val).toFixed(1) : '—';
+      const p1Hcp9  = p1 ? fmtHcp(p1.hdcp9)  : '—';
+      const p1Hcp18 = p1 ? fmtHcp(p1.hdcp18) : '—';
+      const p2Hcp9  = p2 ? fmtHcp(p2.hdcp9)  : '—';
+      const p2Hcp18 = p2 ? fmtHcp(p2.hdcp18) : '—';
       const tname = t.teamName ? t.teamName : 'Team ' + t.teamNumber;
       const record = t.wins + '-' + t.losses + '-' + t.ties;
       const totalPts = typeof t.totalPoints === 'number' ? t.totalPoints.toFixed(1) : '—';
@@ -8943,11 +8964,11 @@ async function buildTeamLeaderboard() {
         </td>
         <td>
           <div style="font-weight:600">${escapeHtml(p1Name)}</div>
-          <div style="font-size:11px;color:#888">Hdcp ${p1Hcp}</div>
+          <div style="font-size:11px;color:#888">9-HCP: ${p1Hcp9} &nbsp;|&nbsp; 18-HCP: ${p1Hcp18}</div>
         </td>
         <td>
           <div style="font-weight:600">${escapeHtml(p2Name)}</div>
-          <div style="font-size:11px;color:#888">Hdcp ${p2Hcp}</div>
+          <div style="font-size:11px;color:#888">9-HCP: ${p2Hcp9} &nbsp;|&nbsp; 18-HCP: ${p2Hcp18}</div>
         </td>
         <td style="text-align:center;color:var(--green);font-weight:700">${p1Pts}</td>
         <td style="text-align:center;color:var(--green);font-weight:700">${p2Pts}</td>
@@ -9062,21 +9083,29 @@ function showTeamHistory(teamNum) {
     return team.teamName ? team.teamName : ('Team ' + team.teamNumber);
   }
 
-  function playerHcp(player) {
+  function playerHcp(player, side) {
     if (!player) return 0;
+    const is18 = side === 'both' || side === 'full' || side === '18';
+    if (is18 && player.hdcp18 !== undefined && player.hdcp18 !== null) return Number(player.hdcp18) || 0;
+    if (!is18 && player.hdcp9 !== undefined && player.hdcp9 !== null) return Number(player.hdcp9) || 0;
+    // fallback to overall handicap
     const h = player.handicap !== undefined ? player.handicap
             : player.hdcp    !== undefined ? player.hdcp : 0;
     return Number(h) || 0;
   }
 
-  function pairTeam(team) {
+  function hcpLabel(side) {
+    return (side === 'both' || side === 'full' || side === '18') ? 'HCP 18' : 'HCP 9';
+  }
+
+  function pairTeam(team, side) {
     if (!team) return { low: null, high: null };
     const p1 = getPlayer(team.player1Email);
     const p2 = getPlayer(team.player2Email);
     if (!p1 && !p2) return { low: null, high: null };
     if (!p1) return { low: p2, high: null };
     if (!p2) return { low: p1, high: null };
-    return playerHcp(p1) <= playerHcp(p2)
+    return playerHcp(p1, side) <= playerHcp(p2, side)
       ? { low: p1, high: p2 }
       : { low: p2, high: p1 };
   }
@@ -9114,9 +9143,10 @@ function showTeamHistory(teamNum) {
 
     function playerRow(player, tname, rowCls, totCls) {
       const name  = player ? esc(player.name || player.email || '—') : '—';
-      const hcp   = playerHcp(player);
+      const hcp   = playerHcp(player, side);
+      const label = hcpLabel(side);
       const cells = HOLES.map(() => '<td class="sc-score-cell"></td>').join('');
-      return `<tr class="sc-p-row ${rowCls}"><td class="sc-p-label"><span class="sc-p-name">${name}<span class="sc-p-hcp"> (${hcp})</span></span><span class="sc-p-team">${esc(tname)}</span></td>${cells}<td class="sc-score-cell ${totCls}"></td></tr>`;
+      return `<tr class="sc-p-row ${rowCls}"><td class="sc-p-label"><span class="sc-p-name">${name}<span class="sc-p-hcp"> (${label}: ${hcp})</span></span><span class="sc-p-team">${esc(tname)}</span></td>${cells}<td class="sc-score-cell ${totCls}"></td></tr>`;
     }
 
     function ptsRow(totCls) {
@@ -9171,8 +9201,8 @@ function showTeamHistory(teamNum) {
     return matches.map(m => {
       const teamA = getTeam(m.teamA);
       const teamB = getTeam(m.teamB);
-      const { low: lowA, high: highA } = pairTeam(teamA);
-      const { low: lowB, high: highB } = pairTeam(teamB);
+      const { low: lowA, high: highA } = pairTeam(teamA, side);
+      const { low: lowB, high: highB } = pairTeam(teamB, side);
       return buildHtml({ lname, teamAName: teamDisplayName(teamA, m.teamA), teamBName: teamDisplayName(teamB, m.teamB), week, courseName: course, date, side, tee, lowA, lowB, highA, highB });
     }).join('');
   }
@@ -9223,8 +9253,8 @@ function showTeamHistory(teamNum) {
     const tee    = (sw && sw.tee)    || '';
     const teamA = getTeam(teamANum);
     const teamB = getTeam(teamBNum);
-    const { low: lowA, high: highA } = pairTeam(teamA);
-    const { low: lowB, high: highB } = pairTeam(teamB);
+    const { low: lowA, high: highA } = pairTeam(teamA, side);
+    const { low: lowB, high: highB } = pairTeam(teamB, side);
     root.innerHTML = buildHtml({ lname, teamAName: teamDisplayName(teamA, teamANum), teamBName: teamDisplayName(teamB, teamBNum), week, courseName: course, date, side, tee, lowA, lowB, highA, highB });
     setTimeout(() => { window.print(); }, 150);
   };

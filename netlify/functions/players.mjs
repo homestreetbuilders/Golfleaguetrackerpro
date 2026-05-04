@@ -1,5 +1,5 @@
 import { getStore } from '@netlify/blobs'
-import { requireAdmin } from './_auth.mjs'
+import { requireAdmin, requireAdminOrScorer } from './_auth.mjs'
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
@@ -36,6 +36,8 @@ export default async (req) => {
         email: normalizeEmail(data.email),
         phone: data.phone || '',
         handicap: typeof data.handicap === 'number' ? data.handicap : (data.handicap ? parseFloat(data.handicap) : null),
+        hdcp9:  data.hdcp9  !== undefined && data.hdcp9  !== null ? parseFloat(data.hdcp9)  : null,
+        hdcp18: data.hdcp18 !== undefined && data.hdcp18 !== null ? parseFloat(data.hdcp18) : null,
         updatedAt: data.updatedAt || null,
         createdAt: data.createdAt || null
       }
@@ -54,7 +56,7 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
-    const authErr = requireAdmin(req)
+    const authErr = requireAdminOrScorer(req)
     if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const email = normalizeEmail(body && body.email)
@@ -67,14 +69,18 @@ export default async (req) => {
     const key = `player-${email}`
     const existing = await store.get(key, { type: 'json' }).catch(() => null)
 
+    const parseOptional = (val, fallback) =>
+      val !== undefined && val !== null && String(val).trim() !== ''
+        ? parseFloat(val) : fallback
+
     const updated = {
       ...(existing || {}),
       name,
       email,
       phone: body && body.phone ? String(body.phone).trim() : (existing && existing.phone) || '',
-      handicap: body && body.handicap !== undefined && body.handicap !== null && String(body.handicap).trim() !== ''
-        ? parseFloat(body.handicap)
-        : ((existing && existing.handicap) ?? null),
+      handicap: parseOptional(body && body.handicap, (existing && existing.handicap) ?? null),
+      hdcp9:    parseOptional(body && body.hdcp9,    (existing && existing.hdcp9)    ?? null),
+      hdcp18:   parseOptional(body && body.hdcp18,   (existing && existing.hdcp18)   ?? null),
       updatedAt: new Date().toISOString(),
       createdAt: (existing && existing.createdAt) || new Date().toISOString()
     }
