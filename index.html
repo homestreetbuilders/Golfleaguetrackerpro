@@ -1388,6 +1388,9 @@
         <div class="nav-item" onclick="showPage('leaderboard')">
           <span class="nav-icon">🏆</span> Leaderboard
         </div>
+        <div class="nav-item" onclick="showPage('team-leaderboard')">
+          <span class="nav-icon">🏅</span> Team Standings
+        </div>
         <div class="nav-item" onclick="showPage('schedule')">
           <span class="nav-icon">📅</span> Schedule
         </div>
@@ -1632,6 +1635,75 @@
               </thead>
               <tbody id="leaderboard-body"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TEAM LEADERBOARD ── -->
+      <div class="page" id="page-team-leaderboard">
+        <div class="page-header">
+          <h2>Team Standings</h2>
+          <p>Mode 1 — 2-Man Team League &middot; Season points &amp; W-L-T record</p>
+        </div>
+
+        <!-- Standings Table -->
+        <div class="card">
+          <div class="card-header" style="padding:10px 16px">
+            <div class="card-title">Team Standings</div>
+            <button class="btn-sm" onclick="buildTeamLeaderboard()">Refresh</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table class="data-table" style="min-width:700px">
+                <thead>
+                  <tr>
+                    <th style="width:36px">#</th>
+                    <th>Team</th>
+                    <th>Player 1</th>
+                    <th>Player 2</th>
+                    <th style="text-align:center">P1 Pts</th>
+                    <th style="text-align:center">P2 Pts</th>
+                    <th style="text-align:center">Total</th>
+                    <th style="text-align:center">W-L-T</th>
+                    <th style="width:90px"></th>
+                  </tr>
+                </thead>
+                <tbody id="team-leaderboard-body">
+                  <tr><td colspan="9" style="padding:18px;color:#666;text-align:center">Loading&hellip;</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Team History Panel (shown when History button clicked) -->
+        <div class="card" id="team-history-card" style="display:none">
+          <div class="card-header" style="padding:10px 16px">
+            <div class="card-title" id="team-history-title">Match History</div>
+            <button class="btn-sm" onclick="document.getElementById('team-history-card').style.display='none'">Close</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table class="data-table" style="min-width:640px">
+                <thead>
+                  <tr>
+                    <th style="width:32px">Wk</th>
+                    <th style="width:90px">Date</th>
+                    <th>Opponent</th>
+                    <th style="text-align:center;width:40px">P1</th>
+                    <th style="text-align:center;width:60px">P1 Pts</th>
+                    <th style="text-align:center;width:40px">P2</th>
+                    <th style="text-align:center;width:60px">P2 Pts</th>
+                    <th style="text-align:center;width:70px">Tm Pts</th>
+                    <th style="text-align:center;width:50px">Result</th>
+                    <th style="width:60px" id="team-history-print-col"></th>
+                  </tr>
+                </thead>
+                <tbody id="team-history-body">
+                  <tr><td colspan="10" style="padding:18px;color:#666;text-align:center">Select a team above.</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -5264,6 +5336,9 @@ function showPage(id) {
   if (id === 'brackets') {
     hydrateBracketsAdminUI();
   }
+  if (id === 'team-leaderboard') {
+    buildTeamLeaderboard();
+  }
   if (id === 'team-scorecard') {
     hydrateTeamScorecardUI();
   }
@@ -8813,6 +8888,128 @@ function showToast(msg) {
   t.textContent = '✓ ' + msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODE 1 — TEAM LEADERBOARD
+// ═══════════════════════════════════════════════════════════════════
+
+let teamLeaderboardCache = []; // holds last-fetched standings
+
+async function buildTeamLeaderboard() {
+  const tbody = document.getElementById('team-leaderboard-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="9" style="padding:18px;color:#666;text-align:center">Loading&hellip;</td></tr>';
+
+  // Collapse history panel on refresh
+  const histCard = document.getElementById('team-history-card');
+  if (histCard) histCard.style.display = 'none';
+
+  // Ensure players are loaded for handicap display
+  if (!(playersCache && playersCache.length)) {
+    try { await loadPlayers(); } catch (e) {}
+  }
+
+  try {
+    const res = await fetchJson('/api/team-leaderboard');
+    const standings = Array.isArray(res && res.standings) ? res.standings : [];
+    teamLeaderboardCache = standings;
+
+    if (!standings.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="padding:18px;color:#666;text-align:center">No team data yet — create teams and finalize match scorecards to see standings.</td></tr>';
+      return;
+    }
+
+    const isScorer = currentUser && (currentUser.role === 'admin' || currentUser.role === 'scorer');
+
+    tbody.innerHTML = standings.map((t, i) => {
+      const rankClass = i < 3 ? 'rank-' + (i + 1) : '';
+      const p1 = (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player1Email || '').toLowerCase());
+      const p2 = (playersCache || []).find(p => String(p.email || '').toLowerCase() === String(t.player2Email || '').toLowerCase());
+      const p1Name = p1 ? p1.name : (t.player1Email || '—');
+      const p2Name = p2 ? p2.name : (t.player2Email || '—');
+      const p1Hcp = p1 ? Number(p1.handicap !== undefined ? p1.handicap : (p1.hdcp || 0)).toFixed(1) : '—';
+      const p2Hcp = p2 ? Number(p2.handicap !== undefined ? p2.handicap : (p2.hdcp || 0)).toFixed(1) : '—';
+      const tname = t.teamName ? t.teamName : 'Team ' + t.teamNumber;
+      const record = t.wins + '-' + t.losses + '-' + t.ties;
+      const totalPts = typeof t.totalPoints === 'number' ? t.totalPoints.toFixed(1) : '—';
+      const p1Pts   = typeof t.p1Points    === 'number' ? t.p1Points.toFixed(1)    : '—';
+      const p2Pts   = typeof t.p2Points    === 'number' ? t.p2Points.toFixed(1)    : '—';
+      return `<tr>
+        <td class="rank-num ${rankClass}">${i + 1}</td>
+        <td>
+          <div style="font-weight:700;color:#1A4A2E">${escapeHtml(tname)}</div>
+          <div style="font-size:11px;color:#888">Team ${t.teamNumber}</div>
+        </td>
+        <td>
+          <div style="font-weight:600">${escapeHtml(p1Name)}</div>
+          <div style="font-size:11px;color:#888">Hdcp ${p1Hcp}</div>
+        </td>
+        <td>
+          <div style="font-weight:600">${escapeHtml(p2Name)}</div>
+          <div style="font-size:11px;color:#888">Hdcp ${p2Hcp}</div>
+        </td>
+        <td style="text-align:center;color:var(--green);font-weight:700">${p1Pts}</td>
+        <td style="text-align:center;color:var(--green);font-weight:700">${p2Pts}</td>
+        <td style="text-align:center;color:var(--gold-dark);font-weight:900;font-size:16px">${totalPts}</td>
+        <td style="text-align:center;font-weight:700;color:#444">${escapeHtml(record)}</td>
+        <td style="text-align:center">
+          <button class="btn-sm" onclick="showTeamHistory(${t.teamNumber})" style="padding:3px 10px;font-size:12px">History</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:18px;color:#f66;text-align:center">Failed to load standings — check that teams are set up and match scorecards have been finalized.</td></tr>';
+  }
+}
+
+function showTeamHistory(teamNum) {
+  const team = teamLeaderboardCache.find(t => t.teamNumber === teamNum);
+  if (!team) { showToast('Team not found'); return; }
+
+  const histCard  = document.getElementById('team-history-card');
+  const titleEl   = document.getElementById('team-history-title');
+  const tbody     = document.getElementById('team-history-body');
+  const printCol  = document.getElementById('team-history-print-col');
+  if (!histCard || !tbody) return;
+
+  const tname = team.teamName ? team.teamName : 'Team ' + teamNum;
+  if (titleEl) titleEl.textContent = tname + ' — Match History';
+
+  const isScorer = currentUser && (currentUser.role === 'admin' || currentUser.role === 'scorer');
+  if (printCol) printCol.style.display = isScorer ? '' : 'none';
+
+  const history = Array.isArray(team.history) ? team.history : [];
+  if (!history.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="padding:18px;color:#666;text-align:center">No completed matches yet.</td></tr>';
+  } else {
+    tbody.innerHTML = history.map(h => {
+      const dateStr = h.date ? new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+      const rColor  = h.teamResult === 'W' ? '#4CAF50' : h.teamResult === 'L' ? '#f66' : 'var(--gold-dark)';
+      const p1rCol  = h.p1Result === 'W' ? '#4CAF50' : h.p1Result === 'L' ? '#f66' : 'var(--gold-dark)';
+      const p2rCol  = h.p2Result === 'W' ? '#4CAF50' : h.p2Result === 'L' ? '#f66' : 'var(--gold-dark)';
+      const oppA    = Math.min(teamNum, h.opponent);
+      const oppB    = Math.max(teamNum, h.opponent);
+      const printBtn = isScorer
+        ? `<button class="btn-sm" onclick="printMatchScorecard(${h.week},${oppA},${oppB})" style="padding:2px 7px;font-size:11px" title="Print scorecard">&#x1F5A8;</button>`
+        : '';
+      return `<tr>
+        <td style="font-weight:700;color:#1A4A2E;text-align:center">${h.week}</td>
+        <td style="font-size:13px">${escapeHtml(dateStr)}</td>
+        <td style="font-size:13px">${escapeHtml(h.opponentName || ('Team ' + h.opponent))}</td>
+        <td style="text-align:center;font-weight:700;font-size:12px;color:${p1rCol}">${escapeHtml(h.p1Result || '—')}</td>
+        <td style="text-align:center;color:var(--green);font-weight:600">${typeof h.p1Pts === 'number' ? h.p1Pts.toFixed(1) : '—'}</td>
+        <td style="text-align:center;font-weight:700;font-size:12px;color:${p2rCol}">${escapeHtml(h.p2Result || '—')}</td>
+        <td style="text-align:center;color:var(--green);font-weight:600">${typeof h.p2Pts === 'number' ? h.p2Pts.toFixed(1) : '—'}</td>
+        <td style="text-align:center;color:var(--gold-dark);font-weight:700">${typeof h.teamPoints === 'number' ? h.teamPoints.toFixed(1) : '—'}</td>
+        <td style="text-align:center;font-weight:900;font-size:14px;color:${rColor}">${escapeHtml(h.teamResult || '—')}</td>
+        ${isScorer ? '<td style="text-align:center">' + printBtn + '</td>' : ''}
+      </tr>`;
+    }).join('');
+  }
+
+  histCard.style.display = '';
+  histCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 </script>
 <script>
