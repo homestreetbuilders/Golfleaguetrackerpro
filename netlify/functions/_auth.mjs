@@ -40,7 +40,20 @@ export async function getCallerRole(req) {
   try {
     const store = getStore('user-roles')
     const role = await store.get(`role-${email}`, { type: 'text' }).catch(() => null)
-    return role || 'player'
+    if (role) return role
+
+    // Bootstrap: account existed before Blobs-based role tracking was introduced.
+    // If the email matches ADMIN_EMAIL and no role record exists yet, write 'admin'
+    // to Blobs now so all future requests find it without hitting this branch again.
+    const adminEmail = process.env.ADMIN_EMAIL
+      ? String(process.env.ADMIN_EMAIL).trim().toLowerCase()
+      : null
+    if (adminEmail && email === adminEmail) {
+      await store.set(`role-${email}`, 'admin').catch(() => null)
+      return 'admin'
+    }
+
+    return 'player'
   } catch (e) {
     return null
   }
