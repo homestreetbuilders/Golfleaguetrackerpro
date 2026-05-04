@@ -67,7 +67,7 @@ export default async (req) => {
   const store = getStore(leagueStoreName('payments', leagueId))
 
   if (req.method === 'POST') {
-    const authErr = requireAdmin(req)
+    const authErr = await requireAdmin(req)
     if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const email = normalizeEmail(body && body.email)

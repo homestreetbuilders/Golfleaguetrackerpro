@@ -39,7 +39,7 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
-    const authErr = requireAdmin(req)
+    const authErr = await requireAdmin(req)
     if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const incoming = body && typeof body === 'object' ? body : {}

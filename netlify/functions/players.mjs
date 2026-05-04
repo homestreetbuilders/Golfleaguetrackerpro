@@ -70,7 +70,7 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
-    const authErr = requireAdminOrScorer(req)
+    const authErr = await requireAdminOrScorer(req)
     if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const email = normalizeEmail(body && body.email)
@@ -120,7 +120,7 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
-    const authErr = requireAdmin(req)
+    const authErr = await requireAdmin(req)
     if (authErr) return authErr
     const email = normalizeEmail(url.searchParams.get('email'))
     if (!email) {

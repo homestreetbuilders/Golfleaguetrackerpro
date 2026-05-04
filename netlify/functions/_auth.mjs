@@ -1,9 +1,12 @@
 // _auth.mjs — Shared auth helper for Netlify serverless functions.
 //
-// Parses the Netlify Identity JWT from the Authorization: Bearer header.
-// Signature verification is skipped intentionally: tokens are short-lived
-// (1 h), issued by Netlify Identity, and this is a private internal app.
-// Expiry is still checked so stale tokens are always rejected.
+// Netlify Identity JWTs do NOT carry app_metadata.roles — roles are stored
+// exclusively in Netlify Blobs ('user-roles' store, key: 'role-{email}').
+// We decode the JWT only to extract the caller's email, then look up their
+// role in Blobs. Signature verification is skipped intentionally: tokens are
+// short-lived (1 h), issued by Netlify Identity. Expiry is still checked.
+
+import { getStore } from '@netlify/blobs'
 
 function decodeJwtPayload(token) {
   try {
@@ -16,7 +19,7 @@ function decodeJwtPayload(token) {
   }
 }
 
-export function getCallerRole(req) {
+function emailFromReq(req) {
   try {
     const auth = req.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
@@ -24,20 +27,28 @@ export function getCallerRole(req) {
     const payload = decodeJwtPayload(token)
     if (!payload) return null
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null
-    const roles = Array.isArray(payload.app_metadata && payload.app_metadata.roles)
-      ? payload.app_metadata.roles
-      : []
-    if (roles.includes('admin')) return 'admin'
-    if (roles.includes('scorer')) return 'scorer'
-    return 'player'
+    const email = payload.email ? String(payload.email).trim().toLowerCase() : null
+    return email || null
+  } catch (e) {
+    return null
+  }
+}
+
+export async function getCallerRole(req) {
+  const email = emailFromReq(req)
+  if (!email) return null
+  try {
+    const store = getStore('user-roles')
+    const role = await store.get(`role-${email}`, { type: 'text' }).catch(() => null)
+    return role || 'player'
   } catch (e) {
     return null
   }
 }
 
 // Returns a 403 Response if caller is not admin, otherwise null (allowed).
-export function requireAdmin(req) {
-  const role = getCallerRole(req)
+export async function requireAdmin(req) {
+  const role = await getCallerRole(req)
   if (role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
@@ -48,8 +59,8 @@ export function requireAdmin(req) {
 }
 
 // Returns a 403 Response if caller is neither admin nor scorer, otherwise null.
-export function requireAdminOrScorer(req) {
-  const role = getCallerRole(req)
+export async function requireAdminOrScorer(req) {
+  const role = await getCallerRole(req)
   if (role !== 'admin' && role !== 'scorer') {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,

@@ -77,7 +77,7 @@ export default async (req) => {
   const action = (url.searchParams.get('action') || '').toLowerCase()
 
   if (req.method === 'POST') {
-    const authErr = requireAdmin(req)
+    const authErr = await requireAdmin(req)
     if (authErr) return authErr
     const body = await req.json().catch(() => null)
 
@@ -193,7 +193,7 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
-    const authErr = requireAdmin(req)
+    const authErr = await requireAdmin(req)
     if (authErr) return authErr
     const week = asInt(url.searchParams.get('week'))
     if (!week) {

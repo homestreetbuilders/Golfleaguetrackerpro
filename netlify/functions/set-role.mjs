@@ -6,7 +6,7 @@ export default async (req) => {
     return new Response('Method not allowed', { status: 405 })
   }
 
-  const authErr = requireAdmin(req)
+  const authErr = await requireAdmin(req)
   if (authErr) return authErr
 
   const body = await req.json().catch(() => null)

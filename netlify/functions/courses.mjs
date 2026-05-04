@@ -90,7 +90,7 @@ export default async (req) => {
   }
 
   if (req.method === 'POST') {
-    const authErr = requireAdmin(req)
+    const authErr = await requireAdmin(req)
     if (authErr) return authErr
     const body = await req.json().catch(() => null)
     const name = body && body.name ? String(body.name).trim() : ''
@@ -127,7 +127,7 @@ export default async (req) => {
   }
 
   if (req.method === 'DELETE') {
-    const authErr = requireAdmin(req)
+    const authErr = await requireAdmin(req)
     if (authErr) return authErr
     const id = normalizeId(url.searchParams.get('id'))
     if (!id) return new Response('Missing id', { status: 400 })
