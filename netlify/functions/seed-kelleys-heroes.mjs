@@ -323,8 +323,9 @@ async function handleInit(reset) {
     })
   }
 
-  // Schedule (6 weeks)
-  for (let w = 1; w <= 6; w++) {
+  // Schedule (6 weeks) — include matches array so print-scorecard can find pairings
+  for (const wk of MATCH_SCHEDULE) {
+    const w = wk.week
     await scheduleStore.setJSON(`week-${w}`, {
       week: w,
       date:    WEEK_DATES[w - 1],
@@ -333,6 +334,7 @@ async function handleInit(reset) {
       teeTime: '5:30 PM',
       type:    'match',
       side:    'front',
+      matches: wk.matches,
       updatedAt: now
     })
   }

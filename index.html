@@ -5170,6 +5170,9 @@ function showPage(id) {
   if (id === 'guides') {
     renderRoleGuides();
   }
+  if (id === 'scorecards') {
+    hydrateScorecardUI();
+  }
   if (id === 'schedule') {
     buildSchedule();
   }

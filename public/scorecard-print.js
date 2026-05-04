@@ -264,9 +264,24 @@
       return;
     }
 
-    const html = buildWeekHtml(sw);
+    /* If schedule week has no matches array, fall back to match-scorecards API
+       (seeded leagues store pairings separately, not in the schedule record). */
+    let swResolved = sw;
+    const hasMatches = Array.isArray(sw.matches) && sw.matches.some(m => m && m.teamA && m.teamB);
+    if (!hasMatches && typeof fetchJson === 'function') {
+      try {
+        const res = await fetchJson('/api/match-scorecards?week=' + encodeURIComponent(week));
+        const scorecards = res && Array.isArray(res.scorecards) ? res.scorecards : [];
+        const fallbackMatches = scorecards
+          .map(sc => ({ teamA: sc && sc.teamA ? Number(sc.teamA) : 0, teamB: sc && sc.teamB ? Number(sc.teamB) : 0 }))
+          .filter(m => m.teamA && m.teamB);
+        if (fallbackMatches.length) swResolved = Object.assign({}, sw, { matches: fallbackMatches });
+      } catch (_) { /* non-fatal */ }
+    }
+
+    const html = buildWeekHtml(swResolved);
     if (!html) {
-      if (typeof showToast === 'function') showToast('No team matchups saved for Week ' + week + '. Add matches in Schedule first.');
+      if (typeof showToast === 'function') showToast('No team matchups for Week ' + week + '. Add matches in Schedule first.');
       return;
     }
 
