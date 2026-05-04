@@ -8974,7 +8974,28 @@ async function sendReminderToAll() {
 // Netlify Identity: keep session + role on refresh
 (() => {
   const ident = getIdentity();
-  if (!ident || typeof ident.on !== 'function') return;
+  if (!ident || typeof ident.on !== 'function') {
+    console.warn('[identity] netlifyIdentity widget not available — check script tag');
+    return;
+  }
+
+  ident.on('error', (err) => {
+    // A 400 on /.netlify/identity/token means the stored refresh token is
+    // stale (expired or from a different site). Clear local storage and
+    // prompt the user to log in again — this resolves "netlify is not defined"
+    // errors thrown internally by the widget during a failed token refresh.
+    console.warn('[identity] Identity error:', err);
+    const msg = err && err.message ? String(err.message) : String(err || '');
+    if (msg.includes('400') || msg.includes('token') || msg.toLowerCase().includes('invalid')) {
+      try {
+        // Clear the stale GoTrue session from localStorage
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('gotrue.') || k.startsWith('netlify-identity')) localStorage.removeItem(k);
+        });
+      } catch (e) { /* ignore */ }
+      showToast('Session expired — please log in again');
+    }
+  });
 
   ident.on('init', async (user) => {
     if (!user) return;
@@ -8991,7 +9012,11 @@ async function sendReminderToAll() {
     ident.close();
   });
 
-  ident.init();
+  try {
+    ident.init({ APIUrl: window.location.origin + '/.netlify/identity' });
+  } catch (e) {
+    console.error('[identity] init() threw:', e);
+  }
 })();
 
 // ═══════════════════════════════
