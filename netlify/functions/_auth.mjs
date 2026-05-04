@@ -19,7 +19,7 @@ function decodeJwtPayload(token) {
   }
 }
 
-function emailFromReq(req) {
+export function emailFromReq(req) {
   try {
     const auth = req.headers.get('authorization') || ''
     console.log('[auth] Authorization header present:', !!auth, '| starts with Bearer:', auth.startsWith('Bearer '))
