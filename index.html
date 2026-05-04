@@ -2001,12 +2001,24 @@
               </div>
             </div>
 
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
-              <button class="btn-sm" onclick="generateScorecardPreview()">Preview</button>
-              <button class="btn-sm btn-green" onclick="printScorecard()">🖨️ Print 5×7</button>
-              <button class="btn-sm" onclick="printAllScorecardsForWeek()">🖨️ Print All Week Matches</button>
-              <button class="btn-sm btn-green" onclick="(function(){var w=parseInt((document.getElementById('sc-week')||{}).value||'0',10);if(!w){showToast('Select a week first');return;}printWeekMatchScorecards(w);})()">🖨️ Print 5×7 Match Cards</button>
-              <div style="font-size:12px;color:#666">Stroke dots are computed from player handicap + hole handicap indexes</div>
+            <!-- ── FC Match Scorecard (new landscape 5×7 design) ── -->
+            <div style="background:#f0f7f3;border:1.5px solid #3DA06B;border-radius:6px;padding:10px 14px;margin-bottom:12px">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#1A4A2E;margin-bottom:8px">FC Match Scorecards — Landscape 5×7 (New Design)</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                <button class="btn-sm btn-green" style="font-size:13px;padding:6px 16px;font-weight:700" onclick="(function(){var w=parseInt((document.getElementById('sc-week')||{}).value||'0',10);if(!w){showToast('Select a week first');return;}if(typeof printWeekMatchScorecards!=='function'){showToast('Print module loading — try again');return;}printWeekMatchScorecards(w);})()">🖨️ Print FC Match Scorecards</button>
+                <span style="font-size:12px;color:#1A4A2E">Low &amp; High HCP pairings · blank score cells · prints one 5×7 card per match</span>
+              </div>
+            </div>
+
+            <!-- ── Individual player scorecards (old format) ── -->
+            <div style="margin-bottom:16px">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:8px">Individual Player Scorecards (select player above)</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                <button class="btn-sm" onclick="generateScorecardPreview()">Preview</button>
+                <button class="btn-sm" onclick="printScorecard()">🖨️ Print Individual Card</button>
+                <button class="btn-sm" onclick="printAllScorecardsForWeek()">🖨️ Print All Players (Old Format)</button>
+                <span style="font-size:12px;color:#888">Stroke dots pre-filled from handicap</span>
+              </div>
             </div>
             <div class="scorecard-preview-wrap">
               <div class="scorecard-preview" id="scorecard-preview"></div>
