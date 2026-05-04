@@ -11,6 +11,7 @@
 <link rel="icon" href="fairwaycommandshortcut.png" />
 <link rel="apple-touch-icon" href="fc_icon_512.png" />
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/scorecard-print.css">
 <style>
   /* Font fallbacks if Google Fonts blocked */
   @font-face { font-family: 'Bebas Neue'; src: local('Impact'), local('Arial Narrow'); }
@@ -7180,6 +7181,7 @@ async function buildSchedule() {
     try { const sr = await fetchJson('/api/substitutes'); substitutes = Array.isArray(sr && sr.substitutes) ? sr.substitutes : []; } catch (e) {}
 
     const isAdmin = currentUser && currentUser.role === 'admin';
+    const isScorer = currentUser && (currentUser.role === 'admin' || currentUser.role === 'scorer');
     const adminCard = document.getElementById('schedule-admin-card');
     if (adminCard) adminCard.style.display = isAdmin ? '' : 'none';
 
@@ -7230,7 +7232,7 @@ async function buildSchedule() {
         <th style="width:90px">Type</th>
         <th>Course / Side</th>
         <th style="width:60px;text-align:center">Matches</th>
-        ${isAdmin ? '<th style="width:110px"></th>' : ''}
+        ${isScorer ? `<th style="width:${isAdmin ? '170px' : '90px'}"></th>` : ''}
       </tr></thead>
       <tbody>
         ${sorted.map(w => {
@@ -7249,7 +7251,7 @@ async function buildSchedule() {
             <td><span style="font-size:11px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:10px;background:${bg};color:${fg}">${typeLabels[type]||type}</span></td>
             <td style="font-size:13px;color:#444">${escapeHtml(courseSide)}</td>
             <td style="text-align:center;font-size:13px;color:#666">${matchCount}</td>
-            ${isAdmin ? `<td style="white-space:nowrap"><button class="btn-sm" onclick="editScheduleWeek(${w.week})" style="padding:3px 9px;font-size:11px;margin-right:4px">Edit</button><button class="btn-sm" onclick="deleteScheduleWeekFromUIByNum(${w.week})" style="padding:3px 9px;font-size:11px;color:#c33;border-color:#c33">Del</button></td>` : ''}
+            ${isScorer ? `<td style="white-space:nowrap">${type === 'match' ? `<button class="btn-sm" onclick="printWeekMatchScorecards(${w.week})" style="padding:3px 9px;font-size:11px;margin-right:4px" title="Print match scorecards">🖨️</button>` : ''}${isAdmin ? `<button class="btn-sm" onclick="editScheduleWeek(${w.week})" style="padding:3px 9px;font-size:11px;margin-right:4px">Edit</button><button class="btn-sm" onclick="deleteScheduleWeekFromUIByNum(${w.week})" style="padding:3px 9px;font-size:11px;color:#c33;border-color:#c33">Del</button>` : ''}</td>` : ''}
           </tr>`;
         }).join('')}
       </tbody>
@@ -8736,6 +8738,7 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 </script>
+<script src="/public/scorecard-print.js"></script>
 </body>
 </html>
 </html>
