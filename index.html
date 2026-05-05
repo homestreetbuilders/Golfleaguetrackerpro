@@ -290,7 +290,16 @@
     border-top: 1px solid rgba(212,175,55,0.1);
   }
 
-  .demo-logins p {
+  .demo-logins .demo-logins-real {
+    margin-top: 10px;
+    font-size: 11px;
+    color: rgba(212,175,55,0.85);
+    text-align: center;
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+  }
+
+  .demo-logins-note {
     font-size: 11px;
     color: #D4AF37;
     letter-spacing: 1px;
@@ -331,6 +340,27 @@
   .demo-pill:hover {
     background: rgba(212,175,55,0.18);
     border-color: var(--gold);
+  }
+
+  /* Netlify Identity widget is loaded for GoTrue/API only — we render our own login + recovery UI.
+     The widget iframe can retain an invisible full-viewport capture layer after #recovery_token flows,
+     freezing the FC form underneath. Neutralize dormant widget stacking by default. */
+  #netlify-identity-widget-root,
+  #netlify-identity-widget-root iframe {
+    pointer-events: none !important;
+  }
+
+  .pw-recovery-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2147483000;
+    align-items: center;
+    justify-content: center;
+  }
+  .pw-recovery-overlay.is-open {
+    display: flex;
   }
 
   /* ═══════════════════════════════
@@ -1336,14 +1366,15 @@
       <div class="error-msg" id="signup-error">Please fill all fields.</div>
     </div>
 
-    <!-- Demo Logins -->
+    <!-- Local preview only — no Netlify JWT; cloud saves blocked by API -->
     <div class="demo-logins">
-      <p>Quick Demo Login</p>
+      <p class="demo-logins-note">Offline / preview personas (sample data • not real login)</p>
       <div class="demo-pills">
-        <div class="demo-pill" id="demo-login-admin" onclick="demoLogin('admin')">Admin</div>
-        <div class="demo-pill" id="demo-login-scorer" onclick="demoLogin('scorer')">Scorer</div>
-        <div class="demo-pill" id="demo-login-player" onclick="demoLogin('player')">Player</div>
+        <div class="demo-pill" id="demo-login-admin" title="No JWT — read-only versus live blobs">Demo Admin</div>
+        <div class="demo-pill" id="demo-login-scorer" title="No JWT — read-only versus live blobs">Demo Scorer</div>
+        <div class="demo-pill" id="demo-login-player" title="No JWT — read-only versus live blobs">Demo Player</div>
       </div>
+      <p class="demo-logins-real">Production: Sign in with Email + Password (Netlify Identity).</p>
     </div>
   </div>
 </div>
@@ -2789,7 +2820,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Password Recovery Modal — shown when user arrives via recovery email link -->
-<div id="pw-recovery-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;">
+<div id="pw-recovery-overlay" class="pw-recovery-overlay" aria-hidden="true">
   <div style="background:#1e1e1e;border:1px solid #D4AF37;border-radius:12px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
     <div style="text-align:center;margin-bottom:24px;">
       <div style="font-size:28px;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;color:#D4AF37;">Reset Password</div>
@@ -2865,6 +2896,16 @@ const PAYMENT_DATA = [
 // STATE
 // ═══════════════════════════════
 let currentUser = null;
+/** True until cancel / completion while #recovery_token is being handled — blocks Identity auto-route into the app mid-reset. */
+let fcPwRecoveryLanding = /\brecovery_token=/.test(String(window.location.hash || ''));
+
+function showPwRecoveryOverlay(open) {
+  const overlay = document.getElementById('pw-recovery-overlay');
+  if (!overlay) return;
+  overlay.classList.toggle('is-open', !!open);
+  overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+}
+
 let leaderboardMode = 'gross';
 let scoringMode = 'batch';
 let leaderboardFilters = { week: '', start: '', end: '' };
@@ -3251,9 +3292,9 @@ async function fetchJson(url, options) {
   const isWrite = options && options.method && options.method !== 'GET';
   if (!token && isWrite) {
     const isDemoSession = currentUser && currentUser.demo;
-    if (isDemoSession) {
-      throw new Error('demo-mode');
-    }
+    if (isDemoSession) throw new Error('demo-mode');
+    const expectJwt = !!(getIdentity && getIdentity()) && currentUser;
+    if (expectJwt) throw new Error('auth-token-missing — reload and sign in again (JWT did not attach). Use the deployed HTTPS URL.');
   }
 
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
@@ -4845,12 +4886,34 @@ function printLeaderboard() {
   win.document.close();
 }
 
+function roleFromIdentityUser(user) {
+  const am = user && user.app_metadata;
+  const rolesArr = [];
+  if (am && typeof am === 'object') {
+    if (typeof am.roles === 'string' && am.roles.trim()) {
+      rolesArr.push(...String(am.roles).split(/[\s,;]+/).map(r => r.trim().toLowerCase()).filter(Boolean));
+    }
+    if (Array.isArray(am.roles)) {
+      for (const r of am.roles) {
+        if (typeof r === 'string' && r.trim()) rolesArr.push(String(r).trim().toLowerCase());
+      }
+    }
+    if (typeof am.role === 'string' && am.role.trim()) rolesArr.push(am.role.trim().toLowerCase());
+  }
+  if (rolesArr.includes('admin')) return 'admin';
+  if (rolesArr.includes('scorer')) return 'scorer';
+  return null;
+}
+
 async function resolveUserRole(user) {
   try {
+    const fromMeta = roleFromIdentityUser(user);
+    if (fromMeta) return fromMeta;
     const email = user && user.email;
     if (!email) return 'player';
-    const roleRes = await fetchJson('/api/user-role?email=' + encodeURIComponent(email));
-    if (roleRes && roleRes.role) return roleRes.role;
+    const roleRes = await fetch('/api/user-role?email=' + encodeURIComponent(email));
+    const j = await roleRes.json().catch(() => null);
+    if (roleRes.ok && j && j.role && typeof j.role === 'string') return j.role;
     return 'player';
   } catch (e) {
     return 'player';
@@ -5264,18 +5327,18 @@ function doLogin() {
   };
 
   if (ident) {
-    document.getElementById('login-error').style.display = 'none';
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    errEl.textContent = 'Invalid email or password.';
     identityPasswordLogin(email, pass).then(async (u) => {
+      fcPwRecoveryLanding = false;
       const role = await resolveUserRole(u);
       loginSuccess({ name: (u.user_metadata && u.user_metadata.full_name) ? u.user_metadata.full_name : (u.email || email), email: u.email || email, role });
-    }).catch(() => {
-      // Netlify Identity login failed — fall back to local demo session.
-      // In demo mode there is no JWT so admin write operations (save player,
-      // save course, etc.) will be blocked by the backend. Show a banner.
-      const matched = localLogin();
-      if (matched) {
-        showToast('Demo mode — read-only. Log in via Netlify Identity to save data.');
-      }
+    }).catch((e) => {
+      console.warn('[identity] login failed:', e);
+      const msg = e && e.message ? String(e.message) : '';
+      errEl.textContent = (msg && msg.length > 8 && msg.length < 240) ? msg : 'Sign in failed. Confirm your Netlify Identity password or reset it via email.';
+      errEl.style.display = 'block';
     });
     return;
   }
@@ -5337,7 +5400,8 @@ function demoLogin(key) {
   } catch (e) {
     // ignore
   }
-  loginSuccess(u);
+  loginSuccess({ ...u, demo: true });
+  showToast('Preview mode — use Email + Password to get a JWT and save.');
 }
 
 function loginSuccess(user) {
@@ -5365,7 +5429,6 @@ async function submitPasswordRecovery() {
   const confirm    = (document.getElementById('pw-recovery-confirm') || {}).value || '';
   const errorEl    = document.getElementById('pw-recovery-error');
   const submitBtn  = document.getElementById('pw-recovery-submit');
-  const overlay    = document.getElementById('pw-recovery-overlay');
 
   const showErr = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; } };
   const clearErr = () => { if (errorEl) errorEl.style.display = 'none'; };
@@ -5384,7 +5447,8 @@ async function submitPasswordRecovery() {
   try {
     const updated = await user.update({ password: newPass });
     // Password set — log the user in properly
-    if (overlay) overlay.style.display = 'none';
+    showPwRecoveryOverlay(false);
+    fcPwRecoveryLanding = false;
     window._pwRecoveryUser = null;
     // Clear the recovery token hash from the URL without reloading
     if (window.history && window.history.replaceState) {
@@ -5405,8 +5469,8 @@ async function submitPasswordRecovery() {
 }
 
 function cancelPasswordRecovery() {
-  const overlay = document.getElementById('pw-recovery-overlay');
-  if (overlay) overlay.style.display = 'none';
+  showPwRecoveryOverlay(false);
+  fcPwRecoveryLanding = false;
   window._pwRecoveryUser = null;
   // Clear recovery_token hash so the widget doesn't re-fire on next navigation
   if (window.history && window.history.replaceState) {
@@ -9104,49 +9168,68 @@ async function sendReminderToAll() {
   });
 
   ident.on('password_recovery', (user) => {
-    // Fired when the page loads with #recovery_token= in the URL.
-    // The widget has already exchanged the token for a limited-scope session.
-    // If the token is expired/used, user.update() will fail — we handle that
-    // gracefully in submitPasswordRecovery() and via the Cancel button.
+    try {
+      if (typeof ident.close === 'function') ident.close();
+    } catch (eClose) {
+      console.warn('[identity] close()', eClose);
+    }
 
-    // Clear the hash immediately so a page reload won't re-trigger this
     if (window.history && window.history.replaceState) {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
     if (!user || typeof user.update !== 'function') {
-      // Token couldn't be exchanged — show login screen normally
+      fcPwRecoveryLanding = false;
+      showPwRecoveryOverlay(false);
       const ls = document.getElementById('login-screen');
       if (ls) ls.style.display = '';
+      window._pwRecoveryUser = null;
+      showToast('Recovery link expired or invalid — request a fresh reset email.');
       return;
     }
 
+    fcPwRecoveryLanding = true;
     window._pwRecoveryUser = user;
-    const overlay = document.getElementById('pw-recovery-overlay');
+    showPwRecoveryOverlay(true);
     const emailEl = document.getElementById('pw-recovery-email');
     if (emailEl) emailEl.textContent = user.email ? 'Account: ' + user.email : '';
-    if (overlay) overlay.style.display = 'flex';
     const ls = document.getElementById('login-screen');
     if (ls) ls.style.display = 'none';
+
+    ['pw-recovery-new', 'pw-recovery-confirm'].forEach((id) => {
+      const inp = document.getElementById(id);
+      if (inp) {
+        inp.value = '';
+        try { inp.removeAttribute('readonly'); inp.removeAttribute('disabled'); inp.focus({ preventScroll: true }); } catch (eFocus) {}
+      }
+    });
   });
 
   ident.on('init', async (user) => {
-    if (!user) return;
+    if (!user || fcPwRecoveryLanding) return;
+    fcPwRecoveryLanding = false;
     const role = await resolveUserRole(user);
     const name = (user.user_metadata && user.user_metadata.full_name) ? user.user_metadata.full_name : (user.email || 'User');
     loginSuccess({ name, email: user.email, role });
   });
 
   ident.on('login', async (user) => {
-    if (!user) return;
+    if (!user || fcPwRecoveryLanding) return;
     const role = await resolveUserRole(user);
     const name = (user.user_metadata && user.user_metadata.full_name) ? user.user_metadata.full_name : (user.email || 'User');
     loginSuccess({ name, email: user.email, role });
-    ident.close();
+    try {
+      if (typeof ident.close === 'function') ident.close();
+    } catch (eClose2) {}
   });
 
   try {
     ident.init({ APIUrl: window.location.origin + '/.netlify/identity' });
+    queueMicrotask(() => {
+      try {
+        if (typeof ident.close === 'function') ident.close();
+      } catch (eClose3) {}
+    });
   } catch (e) {
     console.error('[identity] init() threw:', e);
   }

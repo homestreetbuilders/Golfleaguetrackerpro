@@ -22,10 +22,13 @@ export default async (req) => {
     return new Response('Invalid role — must be admin, scorer, or player', { status: 400 })
   }
 
-  const netlifyToken = process.env.NETLIFY_TOKEN
+  const netlifyToken = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_TOKEN
   const siteId       = process.env.NETLIFY_SITE_ID
   if (!netlifyToken || !siteId) {
-    return new Response('Server misconfigured: NETLIFY_TOKEN or NETLIFY_SITE_ID not set', { status: 500 })
+    return new Response(
+      'Server misconfigured: set NETLIFY_SITE_ID plus NETLIFY_AUTH_TOKEN or NETLIFY_TOKEN',
+      { status: 500 }
+    )
   }
 
   // Resolve the Identity instance ID from the site config
@@ -56,11 +59,13 @@ export default async (req) => {
     return new Response(`No Netlify Identity account found for ${email}`, { status: 404 })
   }
 
-  // Update app_metadata.roles
+  const prevAm = user.app_metadata && typeof user.app_metadata === 'object' ? { ...user.app_metadata } : {}
+  const mergedMeta = { ...prevAm, roles: [role] }
+
   const updateRes = await fetch(`${base}/${user.id}`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${netlifyToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ app_metadata: { roles: [role] } })
+    body: JSON.stringify({ app_metadata: mergedMeta })
   }).catch(() => null)
   if (!updateRes || !updateRes.ok) {
     return new Response('Failed to update user role in Netlify Identity', { status: 502 })

@@ -47,13 +47,14 @@ export default async (req) => {
   // Write role to app_metadata via GoTrue admin API
   if (identity && identity.url && identity.token) {
     try {
+      const prevAm = user.app_metadata && typeof user.app_metadata === 'object' ? user.app_metadata : {}
       await fetch(`${identity.url}/admin/users/${user.id}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${identity.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ app_metadata: { roles: [role] } })
+        body: JSON.stringify({ app_metadata: { ...prevAm, roles: [role] } })
       })
     } catch (e) { /* non-fatal — user can be assigned role manually */ }
   }
