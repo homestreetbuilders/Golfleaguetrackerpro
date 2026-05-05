@@ -2810,6 +2810,10 @@
       style="width:100%;padding:12px;background:#D4AF37;color:#000;font-weight:700;font-size:14px;border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;">
       SET NEW PASSWORD
     </button>
+    <button onclick="cancelPasswordRecovery()"
+      style="width:100%;margin-top:10px;padding:10px;background:transparent;color:#aaa;font-size:13px;border:1px solid #444;border-radius:6px;cursor:pointer;">
+      Cancel — return to login
+    </button>
   </div>
 </div>
 
@@ -5398,6 +5402,19 @@ async function submitPasswordRecovery() {
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
+}
+
+function cancelPasswordRecovery() {
+  const overlay = document.getElementById('pw-recovery-overlay');
+  if (overlay) overlay.style.display = 'none';
+  window._pwRecoveryUser = null;
+  // Clear recovery_token hash so the widget doesn't re-fire on next navigation
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+  // Bring the login screen back
+  const ls = document.getElementById('login-screen');
+  if (ls) ls.style.display = '';
 }
 
 function doLogout() {
@@ -9089,13 +9106,26 @@ async function sendReminderToAll() {
   ident.on('password_recovery', (user) => {
     // Fired when the page loads with #recovery_token= in the URL.
     // The widget has already exchanged the token for a limited-scope session.
-    // Store the user so submitPasswordRecovery() can call user.update().
+    // If the token is expired/used, user.update() will fail — we handle that
+    // gracefully in submitPasswordRecovery() and via the Cancel button.
+
+    // Clear the hash immediately so a page reload won't re-trigger this
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    if (!user || typeof user.update !== 'function') {
+      // Token couldn't be exchanged — show login screen normally
+      const ls = document.getElementById('login-screen');
+      if (ls) ls.style.display = '';
+      return;
+    }
+
     window._pwRecoveryUser = user;
     const overlay = document.getElementById('pw-recovery-overlay');
     const emailEl = document.getElementById('pw-recovery-email');
-    if (emailEl) emailEl.textContent = user && user.email ? 'Account: ' + user.email : '';
+    if (emailEl) emailEl.textContent = user.email ? 'Account: ' + user.email : '';
     if (overlay) overlay.style.display = 'flex';
-    // Make sure the login screen is hidden while the reset form is shown
     const ls = document.getElementById('login-screen');
     if (ls) ls.style.display = 'none';
   });
