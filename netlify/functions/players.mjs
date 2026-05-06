@@ -40,7 +40,7 @@ export default async (req) => {
         createdAt: data.createdAt || null
       }
       if (includeRoles) {
-        const userSnap = await db.collection(COL.users).doc(p.email).get()
+        const userSnap = await db.collection(COL.users).doc(lid(leagueId, p.email)).get()
         p.role = (userSnap.exists && userSnap.data().role) || 'player'
       }
       players.push(p)

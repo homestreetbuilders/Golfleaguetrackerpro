@@ -5,7 +5,12 @@ function normalizeId(v) { return String(v || '').trim().toLowerCase().replace(/\
 export default async (req) => {
   if (req.method === 'GET') {
     const snap = await db.collection(COL.leagues).get()
-    const leagues = snap.docs.map(d => d.data()).filter(l => l && l.id)
+    const leagues = snap.docs.map(d => {
+      const data = d.data()
+      // Normalise: seed script writes `leagueId`; the canonical field is `id`
+      if (data && !data.id && data.leagueId) data.id = data.leagueId
+      return data
+    }).filter(l => l && l.id)
     leagues.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
     return Response.json({ leagues })
   }
