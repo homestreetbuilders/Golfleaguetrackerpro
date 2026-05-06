@@ -1,40 +1,33 @@
-import { getStore } from '@netlify/blobs'
+import { db, COL, lid } from './_firebase.mjs'
 
 function normalizeLeagueId(v) {
   return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
 }
 
-function leagueStoreName(base, leagueId) {
-  const id = normalizeLeagueId(leagueId)
-  return id ? `${base}-${id}` : base
-}
-
 export default async (req) => {
   const url = new URL(req.url)
-  const leagueId = url.searchParams.get('leagueId')
-  const store = getStore(leagueStoreName('scorecard-locks', leagueId))
+  const leagueId = normalizeLeagueId(url.searchParams.get('leagueId'))
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
 
   if (req.method === 'GET') {
     const player = url.searchParams.get('player')
-    // Fix #7: also accept email param so the UI can query by email-based key
     const email = url.searchParams.get('email')
       ? String(url.searchParams.get('email')).trim().toLowerCase()
       : null
     const week = url.searchParams.get('week')
-    if (!player && !email) {
-      return new Response('Missing player or email', { status: 400 })
-    }
-    if (!week) {
-      return new Response('Missing week', { status: 400 })
-    }
+    if (!player && !email) return new Response('Missing player or email', { status: 400 })
+    if (!week) return new Response('Missing week', { status: 400 })
 
-    // Fix #7: check both key formats; locked if either is set
-    const nameLock = player
-      ? await store.get(`lock-${String(player).toLowerCase()}-week-${week}`, { type: 'json' }).catch(() => null)
-      : null
-    const emailLock = email
-      ? await store.get(`lock-email-${email}-week-${week}`, { type: 'json' }).catch(() => null)
-      : null
+    const nameLockId  = player ? `lock-${String(player).toLowerCase()}-week-${week}` : null
+    const emailLockId = email  ? `lock-email-${email}-week-${week}` : null
+
+    const [nameLockSnap, emailLockSnap] = await Promise.all([
+      nameLockId  ? db.collection(COL.scorecardLocks).doc(lid(leagueId, nameLockId)).get()  : Promise.resolve(null),
+      emailLockId ? db.collection(COL.scorecardLocks).doc(lid(leagueId, emailLockId)).get() : Promise.resolve(null)
+    ])
+
+    const nameLock  = nameLockSnap  && nameLockSnap.exists  ? nameLockSnap.data()  : null
+    const emailLock = emailLockSnap && emailLockSnap.exists ? emailLockSnap.data() : null
 
     const locked = (nameLock && nameLock.locked) || (emailLock && emailLock.locked)
     return Response.json(locked ? (nameLock || emailLock) : { locked: false })
@@ -43,16 +36,11 @@ export default async (req) => {
   if (req.method === 'POST') {
     const body = await req.json().catch(() => null)
     const player = body && body.player
-    // Fix #7: also support email-based lock key in POST
     const email = body && body.email ? String(body.email).trim().toLowerCase() : null
     const week = body && body.week
     const locked = Boolean(body && body.locked)
-    if (!player && !email) {
-      return new Response('Missing player or email', { status: 400 })
-    }
-    if (!week) {
-      return new Response('Missing week', { status: 400 })
-    }
+    if (!player && !email) return new Response('Missing player or email', { status: 400 })
+    if (!week) return new Response('Missing week', { status: 400 })
 
     const lockData = {
       locked,
@@ -60,13 +48,16 @@ export default async (req) => {
       reason: body && body.reason ? body.reason : null
     }
 
-    // Fix #7: write to whichever key formats are available
+    const writes = []
     if (player) {
-      await store.setJSON(`lock-${String(player).toLowerCase()}-week-${week}`, lockData)
+      const nameLockId = `lock-${String(player).toLowerCase()}-week-${week}`
+      writes.push(db.collection(COL.scorecardLocks).doc(lid(leagueId, nameLockId)).set({ leagueId, ...lockData }))
     }
     if (email) {
-      await store.setJSON(`lock-email-${email}-week-${week}`, lockData)
+      const emailLockId = `lock-email-${email}-week-${week}`
+      writes.push(db.collection(COL.scorecardLocks).doc(lid(leagueId, emailLockId)).set({ leagueId, ...lockData }))
     }
+    await Promise.all(writes)
 
     return Response.json({ success: true, locked })
   }
@@ -74,6 +65,4 @@ export default async (req) => {
   return new Response('Method not allowed', { status: 405 })
 }
 
-export const config = {
-  path: '/api/scorecard-lock'
-}
+export const config = { path: '/api/scorecard-lock' }

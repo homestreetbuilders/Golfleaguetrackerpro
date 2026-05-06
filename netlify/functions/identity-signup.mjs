@@ -1,63 +1,39 @@
-// identity-signup.mjs — Netlify Identity event trigger on new user signup.
-// Sets the user's role in app_metadata via the GoTrue admin API so it
-// appears in the JWT on their first login.
+// identity-signup.mjs — Firebase user creation hook (called from client after signup)
+// Since we use Firebase Auth instead of Netlify Identity, this endpoint is called
+// by the client after a successful Firebase Auth signup to register the user's role.
+// It replicates the first-user-wins admin logic that identity-signup.mjs provided.
+
+import { db, COL } from './_firebase.mjs'
+import { emailFromReq } from './_auth.mjs'
 
 export default async (req) => {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
+
+  // Require auth token
+  const email = emailFromReq(req)
+  if (!email) return new Response('Not authenticated', { status: 401 })
+
+  // If user already has a role, return it
+  const userSnap = await db.collection(COL.users).doc(email).get()
+  if (userSnap.exists && userSnap.data().role) {
+    return Response.json({ success: true, email, role: userSnap.data().role, note: 'Already registered' })
   }
 
-  const body = await req.json().catch(() => null)
-  const user     = body && body.user
-  const identity = body && body.identity
-
-  if (!user || !user.email || !user.id) {
-    return new Response('Missing user data', { status: 400 })
-  }
-
-  // Determine role for this new user
-  const adminEmail = process.env.ADMIN_EMAIL
-    ? String(process.env.ADMIN_EMAIL).trim().toLowerCase()
-    : null
-
+  // First-user-wins: check if any admin exists
+  const adminEmail = process.env.ADMIN_EMAIL ? String(process.env.ADMIN_EMAIL).trim().toLowerCase() : null
   let role
+
   if (adminEmail) {
-    role = String(user.email).trim().toLowerCase() === adminEmail ? 'admin' : 'player'
+    role = String(email).trim().toLowerCase() === adminEmail ? 'admin' : 'player'
   } else {
-    // First-user-wins: check if any admin already exists via the Identity admin API
-    role = 'player'
-    if (identity && identity.url && identity.token) {
-      try {
-        const listRes = await fetch(`${identity.url}/admin/users?per_page=100`, {
-          headers: { Authorization: `Bearer ${identity.token}` }
-        })
-        if (listRes.ok) {
-          const data = await listRes.json()
-          const anyAdmin = (data.users || []).some(u =>
-            u.id !== user.id &&
-            Array.isArray(u.app_metadata && u.app_metadata.roles) &&
-            u.app_metadata.roles.includes('admin')
-          )
-          if (!anyAdmin) role = 'admin'
-        }
-      } catch (e) { /* fallback to player */ }
-    }
+    const adminsSnap = await db.collection(COL.users).where('role', '==', 'admin').limit(1).get()
+    role = adminsSnap.empty ? 'admin' : 'player'
   }
 
-  // Write role to app_metadata via GoTrue admin API
-  if (identity && identity.url && identity.token) {
-    try {
-      const prevAm = user.app_metadata && typeof user.app_metadata === 'object' ? user.app_metadata : {}
-      await fetch(`${identity.url}/admin/users/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${identity.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ app_metadata: { ...prevAm, roles: [role] } })
-      })
-    } catch (e) { /* non-fatal — user can be assigned role manually */ }
-  }
+  await db.collection(COL.users).doc(email).set({ email, role, createdAt: new Date().toISOString() }, { merge: true })
+  console.log('[identity-signup] Registered', email, 'as', role)
 
-  return Response.json({ success: true, email: user.email, role })
+  return Response.json({ success: true, email, role })
 }
+
+export const config = { path: '/api/identity-signup' }

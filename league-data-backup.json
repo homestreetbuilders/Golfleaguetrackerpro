@@ -1,0 +1,31 @@
+{
+  "exportedAt": "2026-05-06T00:46:30.028Z",
+  "siteId": "fbd27904-cba5-4f48-9e5e-34803c41bbf2",
+  "leagueId": "kelleys-heroes",
+  "global": {
+    "leagues": {},
+    "user-roles": {}
+  },
+  "league": {
+    "players": {},
+    "scores": {},
+    "schedule": {},
+    "teams": {},
+    "pairings": {},
+    "courses": {},
+    "match-scorecards": {},
+    "scorecard-locks": {},
+    "side-game-optins": {},
+    "side-games-ledger": {},
+    "league-settings": {},
+    "handicap-config": {},
+    "handicap-overrides": {},
+    "handicap-history": {},
+    "payments": {},
+    "payment-settings": {},
+    "announcements": {},
+    "chat": {},
+    "ai-pairing": {},
+    "brackets": {}
+  }
+}

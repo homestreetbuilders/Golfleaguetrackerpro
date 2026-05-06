@@ -1,44 +1,24 @@
-import { getStore } from '@netlify/blobs'
+import { db, COL, lid, listDocs, getDoc, setDoc, deleteDoc } from './_firebase.mjs'
 
-function asInt(v) {
-  const n = parseInt(v, 10)
-  return Number.isFinite(n) ? n : null
-}
-
-function normalizeLeagueId(v) {
-  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
-}
-
-function leagueStoreName(base, leagueId) {
-  const id = normalizeLeagueId(leagueId)
-  return id ? `${base}-${id}` : base
-}
-
-function normalizeEmail(email) {
-  return String(email || '').trim().toLowerCase()
-}
+function normalizeLeagueId(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') }
+function normalizeEmail(email) { return String(email || '').trim().toLowerCase() }
+function asInt(v) { const n = parseInt(v, 10); return Number.isFinite(n) ? n : null }
 
 export default async (req) => {
   const url = new URL(req.url)
-  const leagueId = url.searchParams.get('leagueId')
-  const store = getStore(leagueStoreName('substitutes', leagueId))
+  const leagueId = normalizeLeagueId(url.searchParams.get('leagueId'))
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
 
   if (req.method === 'GET') {
     const week = asInt(url.searchParams.get('week'))
     const playerEmail = normalizeEmail(url.searchParams.get('playerEmail'))
 
     if (week && playerEmail) {
-      const key = `sub-${week}-${playerEmail}`
-      const sub = await store.get(key, { type: 'json' }).catch(() => null)
+      const sub = await getDoc(COL.substitutes, leagueId, `sub-${week}-${playerEmail}`)
       return Response.json({ substitute: sub || null })
     }
 
-    const { blobs } = await store.list().catch(() => ({ blobs: [] }))
-    const substitutes = []
-    for (const blob of blobs || []) {
-      const data = await store.get(blob.key, { type: 'json' }).catch(() => null)
-      if (data) substitutes.push(data)
-    }
+    const substitutes = await listDocs(COL.substitutes, leagueId)
     return Response.json({ substitutes })
   }
 
@@ -48,40 +28,30 @@ export default async (req) => {
     const playerEmail = normalizeEmail(body && body.playerEmail)
     const substituteName = body && body.substituteName ? String(body.substituteName).trim() : ''
     const substituteHandicap = body && body.substituteHandicap !== undefined && body.substituteHandicap !== null && String(body.substituteHandicap).trim() !== ''
-      ? Number(body.substituteHandicap)
-      : null
+      ? Number(body.substituteHandicap) : null
 
     if (!week || !playerEmail || !substituteName) {
       return new Response('Missing week, playerEmail, or substituteName', { status: 400 })
     }
 
-    const key = `sub-${week}-${playerEmail}`
     const record = {
-      week,
-      playerEmail,
-      substituteName,
+      week, playerEmail, substituteName,
       substituteHandicap: Number.isFinite(substituteHandicap) ? substituteHandicap : null,
       updatedAt: new Date().toISOString()
     }
-
-    await store.setJSON(key, record)
+    await setDoc(COL.substitutes, leagueId, `sub-${week}-${playerEmail}`, record)
     return Response.json({ success: true, substitute: record })
   }
 
   if (req.method === 'DELETE') {
     const week = asInt(url.searchParams.get('week'))
     const playerEmail = normalizeEmail(url.searchParams.get('playerEmail'))
-    if (!week || !playerEmail) {
-      return new Response('Missing week or playerEmail', { status: 400 })
-    }
-    const key = `sub-${week}-${playerEmail}`
-    await store.delete(key).catch(() => null)
+    if (!week || !playerEmail) return new Response('Missing week or playerEmail', { status: 400 })
+    await deleteDoc(COL.substitutes, leagueId, `sub-${week}-${playerEmail}`)
     return Response.json({ success: true })
   }
 
   return new Response('Method not allowed', { status: 405 })
 }
 
-export const config = {
-  path: '/api/substitutes'
-}
+export const config = { path: '/api/substitutes' }

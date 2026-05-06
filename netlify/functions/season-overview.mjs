@@ -1,37 +1,27 @@
-import { getStore } from '@netlify/blobs'
+import { db, COL } from './_firebase.mjs'
 
-function normalizeLeagueId(v) {
-  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
-}
-
-function leagueStoreName(base, leagueId) {
-  const id = normalizeLeagueId(leagueId)
-  return id ? `${base}-${id}` : base
-}
+function normalizeLeagueId(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') }
 
 export default async (req) => {
   const url = new URL(req.url)
-  const leagueId = url.searchParams.get('leagueId')
-  const store = getStore(leagueStoreName('season-overview', leagueId))
-  const key = 'rules'
+  const leagueId = normalizeLeagueId(url.searchParams.get('leagueId'))
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
 
   if (req.method === 'GET') {
-    const rules = await store.get(key, { type: 'json' }).catch(() => null)
-    return Response.json({ rules: rules || { title: 'Season Overview', content: '' } })
+    const snap = await db.collection(COL.seasonOverview).doc(leagueId).get()
+    return Response.json({ rules: snap.exists ? snap.data() : { title: 'Season Overview', content: '' } })
   }
 
   if (req.method === 'POST') {
     const body = await req.json().catch(() => null)
     const title = body && body.title ? String(body.title) : 'Season Overview'
     const content = body && body.content ? String(body.content) : ''
-    const updated = { title, content, updatedAt: new Date().toISOString() }
-    await store.setJSON(key, updated)
+    const updated = { leagueId, title, content, updatedAt: new Date().toISOString() }
+    await db.collection(COL.seasonOverview).doc(leagueId).set(updated)
     return Response.json({ success: true, rules: updated })
   }
 
   return new Response('Method not allowed', { status: 405 })
 }
 
-export const config = {
-  path: '/api/season-overview'
-}
+export const config = { path: '/api/season-overview' }

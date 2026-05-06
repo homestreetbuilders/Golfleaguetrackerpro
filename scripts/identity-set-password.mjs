@@ -1,12 +1,13 @@
 // scripts/identity-set-password.mjs — Set Identity password (+ optional FC role via app_metadata.roles)
 //
-// Requires NETLIFY_AUTH_TOKEN (Dashboard → Applications → Personal access tokens)
-// and NETLIFY_SITE_ID for the deployed site that has Identity enabled.
+// Requires a Netlify *personal access token* (not a GoTrue JWT) plus your site UUID:
+//   NETLIFY_AUTH_TOKEN or NETLIFY_TOKEN
+//   NETLIFY_SITE_ID
 //
 // Usage (PowerShell example):
 //   $env:NETLIFY_AUTH_TOKEN="..."; $env:NETLIFY_SITE_ID="..." ; node scripts/identity-set-password.mjs ron@example.com Admin2026 admin
 
-const netlifyToken = process.env.NETLIFY_AUTH_TOKEN
+const netlifyToken = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_TOKEN
 const siteId = process.env.NETLIFY_SITE_ID
 const [, , emailRaw, passwordRaw, roleOpt] = process.argv
 
@@ -16,8 +17,8 @@ Usage:
   node scripts/identity-set-password.mjs <email> <newPassword> [admin|scorer|player]
 
 Env:
-  NETLIFY_AUTH_TOKEN  — Netlify personal access token
-  NETLIFY_SITE_ID     — UUID of the Fairway Command site on Netlify
+  NETLIFY_AUTH_TOKEN or NETLIFY_TOKEN — Netlify personal access token (User settings → Applications)
+  NETLIFY_SITE_ID    — Site UUID (Site settings → Site details → Site information)
 `)
 }
 
@@ -28,7 +29,7 @@ if (!emailRaw || !passwordRaw) {
 
 if (!netlifyToken || !siteId) {
   usage()
-  console.error('Missing NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID.')
+  console.error('Missing NETLIFY_AUTH_TOKEN (or NETLIFY_TOKEN) or NETLIFY_SITE_ID.')
   process.exit(1)
 }
 

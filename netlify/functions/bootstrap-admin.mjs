@@ -5,10 +5,9 @@
 //   1. Zero admin accounts exist in the system (first-admin-wins, no secret needed)
 //   2. A BOOTSTRAP_SECRET env var is set and ?secret= matches it
 //
-// Once an admin exists, condition 1 no longer applies. The role is written
-// to Netlify Blobs so all future auth checks find it normally.
+// The role is written to COL.users in Firestore so all future auth checks find it normally.
 
-import { getStore } from '@netlify/blobs'
+import { db, COL } from './_firebase.mjs'
 import { emailFromReq } from './_auth.mjs'
 
 export default async (req) => {
@@ -16,35 +15,26 @@ export default async (req) => {
     return new Response('Method not allowed', { status: 405 })
   }
 
-  // Extract caller email from JWT
   const email = emailFromReq(req)
   if (!email) {
     return Response.json({
       error: 'Not authenticated',
-      hint: 'Run this from the browser console while logged in to the app: ' +
-            'const t = await netlifyIdentity.currentUser().jwt(); ' +
+      hint: 'Run this from the browser console while logged in: ' +
+            'const t = await firebase.auth().currentUser.getIdToken(); ' +
             'fetch("/api/bootstrap-admin", {headers:{Authorization:"Bearer "+t}}).then(r=>r.json()).then(console.log)'
     }, { status: 401 })
   }
 
-  const store = getStore('user-roles')
-
   // Check if caller is already admin
-  const existingRole = await store.get(`role-${email}`, { type: 'text' }).catch(() => null)
-  if (existingRole === 'admin') {
+  const userSnap = await db.collection(COL.users).doc(email).get()
+  const userData = userSnap.exists ? userSnap.data() : {}
+  if (userData.role === 'admin') {
     return Response.json({ success: true, email, role: 'admin', note: 'Already admin — no change needed' })
   }
 
   // Condition 1: zero admins in the system → safe to bootstrap
-  const { blobs } = await store.list().catch(() => ({ blobs: [] }))
-  const adminCount = (blobs || []).filter(b => b && b.key && String(b.key).startsWith('role-')).length
-  // Read each to count actual admins
-  let hasAnyAdmin = false
-  for (const blob of (blobs || [])) {
-    if (!blob || !blob.key || !String(blob.key).startsWith('role-')) continue
-    const r = await store.get(blob.key, { type: 'text' }).catch(() => null)
-    if (r === 'admin') { hasAnyAdmin = true; break }
-  }
+  const adminsSnap = await db.collection(COL.users).where('role', '==', 'admin').limit(1).get()
+  const hasAnyAdmin = !adminsSnap.empty
 
   // Condition 2: secret matches BOOTSTRAP_SECRET env var
   const secret = process.env.BOOTSTRAP_SECRET ? String(process.env.BOOTSTRAP_SECRET).trim() : null
@@ -53,7 +43,7 @@ export default async (req) => {
   const secretMatches = secret && provided && provided === secret
 
   if (!hasAnyAdmin || secretMatches) {
-    await store.set(`role-${email}`, 'admin')
+    await db.collection(COL.users).doc(email).set({ email, role: 'admin', updatedAt: new Date().toISOString() }, { merge: true })
     console.log('[bootstrap-admin] Granted admin to', email, hasAnyAdmin ? '(secret matched)' : '(no admins existed)')
     return Response.json({ success: true, email, role: 'admin', note: 'Admin role granted' })
   }
@@ -64,6 +54,4 @@ export default async (req) => {
   }, { status: 403 })
 }
 
-export const config = {
-  path: '/api/bootstrap-admin'
-}
+export const config = { path: '/api/bootstrap-admin' }

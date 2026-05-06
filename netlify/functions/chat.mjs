@@ -1,52 +1,28 @@
-import { getStore } from '@netlify/blobs'
+import { db, COL, lid, listDocs, getDoc, setDoc, deleteDoc } from './_firebase.mjs'
 
-function asInt(v) {
-  const n = parseInt(v, 10)
-  return Number.isFinite(n) ? n : null
-}
-
-function normalizeLeagueId(v) {
-  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
-}
-
-function leagueStoreName(base, leagueId) {
-  const id = normalizeLeagueId(leagueId)
-  return id ? `${base}-${id}` : base
-}
-
-function normalizeEmail(v) {
-  return String(v || '').trim().toLowerCase()
-}
-
-function cleanText(v, maxLen) {
-  const s = String(v || '').trim()
-  if (!s) return ''
-  return s.length > maxLen ? s.slice(0, maxLen) : s
-}
-
-async function listMessages(store, limit) {
-  const { blobs } = await store.list({ prefix: 'msg-' }).catch(() => ({ blobs: [] }))
-  const items = []
-  for (const b of blobs || []) {
-    const m = await store.get(b.key, { type: 'json' }).catch(() => null)
-    if (m) items.push(m)
-  }
-  items.sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
-  const lim = Math.max(1, Math.min(500, limit || 200))
-  return items.slice(Math.max(0, items.length - lim))
-}
+function normalizeLeagueId(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') }
+function normalizeEmail(v) { return String(v || '').trim().toLowerCase() }
+function asInt(v) { const n = parseInt(v, 10); return Number.isFinite(n) ? n : null }
+function cleanText(v, maxLen) { const s = String(v || '').trim(); return s.length > maxLen ? s.slice(0, maxLen) : s }
 
 export default async (req) => {
   const url = new URL(req.url)
-  const leagueId = url.searchParams.get('leagueId')
-  const store = getStore(leagueStoreName('chat', leagueId))
+  const leagueId = normalizeLeagueId(url.searchParams.get('leagueId'))
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
   const action = (url.searchParams.get('action') || '').toLowerCase()
 
   if (req.method === 'GET') {
     const limit = asInt(url.searchParams.get('limit')) || 200
-    const messages = await listMessages(store, limit)
-    const pinned = await store.get('pinned', { type: 'json' }).catch(() => null)
-    return Response.json({ messages, pinned: pinned || null })
+    const lim = Math.max(1, Math.min(500, limit))
+
+    const docs = await listDocs(COL.chat, leagueId)
+    const messages = docs
+      .filter(d => d.id && String(d.id).startsWith('msg-'))
+      .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
+    const sliced = messages.slice(Math.max(0, messages.length - lim))
+
+    const pinned = await getDoc(COL.chat, leagueId, 'pinned')
+    return Response.json({ messages: sliced, pinned: pinned || null })
   }
 
   if (req.method === 'POST') {
@@ -59,9 +35,9 @@ export default async (req) => {
       if (!user || !msg) return new Response('Missing user or msg', { status: 400 })
 
       const createdAt = new Date().toISOString()
-      const key = `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`
-      const record = { id: key, user, email: email || null, msg, createdAt }
-      await store.setJSON(key, record)
+      const id = `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`
+      const record = { id, user, email: email || null, msg, createdAt }
+      await setDoc(COL.chat, leagueId, id, record)
       return Response.json({ success: true, message: record })
     }
 
@@ -73,12 +49,12 @@ export default async (req) => {
         pinnedBy: body && body.pinnedBy ? String(body.pinnedBy) : null,
         pinnedAt: new Date().toISOString()
       }
-      await store.setJSON('pinned', pinned)
+      await setDoc(COL.chat, leagueId, 'pinned', pinned)
       return Response.json({ success: true, pinned })
     }
 
     if (action === 'unpin') {
-      await store.delete('pinned').catch(() => null)
+      await deleteDoc(COL.chat, leagueId, 'pinned')
       return Response.json({ success: true })
     }
 
@@ -88,6 +64,4 @@ export default async (req) => {
   return new Response('Method not allowed', { status: 405 })
 }
 
-export const config = {
-  path: '/api/chat'
-}
+export const config = { path: '/api/chat' }

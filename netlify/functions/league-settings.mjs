@@ -1,41 +1,23 @@
-import { getStore } from '@netlify/blobs'
 import { requireAdmin } from './_auth.mjs'
+import { db, COL } from './_firebase.mjs'
 
-function normalizeLeagueId(v) {
-  return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
-}
+function normalizeLeagueId(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') }
 
-function leagueStoreName(base, leagueId) {
-  const id = normalizeLeagueId(leagueId)
-  return id ? `${base}-${id}` : base
+const DEFAULT_SETTINGS = {
+  leagueName: 'Fairway Command League', seasonStart: null, seasonEnd: null,
+  teePlacementsCount: 3, handicapMode: 'usga', customFormulaText: '',
+  netSkinsSeasonPot: 0, grossSkinsSeasonPot: 0, fiftyFiftySeasonBuyIn: 0,
+  nineHoleStrokeMethod: 'half'
 }
 
 export default async (req) => {
-  const url = new URL(req.url)
-  const leagueId = url.searchParams.get('leagueId')
-  const store = getStore(leagueStoreName('league-settings', leagueId))
-  const key = 'settings'
-
-  const defaultSettings = {
-    leagueName: 'Fairway Command League',
-    seasonStart: null,
-    seasonEnd: null,
-    teePlacementsCount: 3,
-    handicapMode: 'usga',
-    customFormulaText: '',
-    netSkinsSeasonPot: 0,
-    grossSkinsSeasonPot: 0,
-    fiftyFiftySeasonBuyIn: 0,
-    // 'half' = stored handicap is an 18-hole index; divide by 2 for 9-hole strokes (USGA default)
-    // 'full' = stored handicap is already a 9-hole course handicap; use directly
-    nineHoleStrokeMethod: 'half'
-  }
+  const url      = new URL(req.url)
+  const leagueId = normalizeLeagueId(url.searchParams.get('leagueId'))
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
 
   if (req.method === 'GET') {
-    const settings = await store.get(key, { type: 'json' }).catch(() => null)
-    return Response.json({
-      settings: settings || defaultSettings
-    })
+    const snap = await db.collection(COL.leagueSettings).doc(leagueId).get()
+    return Response.json({ settings: snap.exists ? snap.data() : DEFAULT_SETTINGS })
   }
 
   if (req.method === 'POST') {
@@ -44,39 +26,26 @@ export default async (req) => {
     const body = await req.json().catch(() => null)
     const incoming = body && typeof body === 'object' ? body : {}
 
-    const netPotRaw = incoming.netSkinsSeasonPot !== undefined ? Number(incoming.netSkinsSeasonPot) : 0
-    const grossPotRaw = incoming.grossSkinsSeasonPot !== undefined ? Number(incoming.grossSkinsSeasonPot) : 0
-    const netSkinsSeasonPot = Number.isFinite(netPotRaw) ? Math.max(0, netPotRaw) : 0
-    const grossSkinsSeasonPot = Number.isFinite(grossPotRaw) ? Math.max(0, grossPotRaw) : 0
-
-    const fiftyRaw = incoming.fiftyFiftySeasonBuyIn !== undefined ? Number(incoming.fiftyFiftySeasonBuyIn) : 0
-    const fiftyFiftySeasonBuyIn = Number.isFinite(fiftyRaw) ? Math.max(0, fiftyRaw) : 0
-
-    const nineHoleStrokeMethod = ['half', 'full'].includes(incoming.nineHoleStrokeMethod)
-      ? incoming.nineHoleStrokeMethod
-      : 'half'
-
+    const netPot   = Number(incoming.netSkinsSeasonPot   ?? 0); const grossPot = Number(incoming.grossSkinsSeasonPot ?? 0)
+    const fiftyPot = Number(incoming.fiftyFiftySeasonBuyIn ?? 0)
     const normalized = {
-      leagueName: incoming.leagueName ? String(incoming.leagueName) : 'Fairway Command League',
-      seasonStart: incoming.seasonStart ? String(incoming.seasonStart) : null,
-      seasonEnd: incoming.seasonEnd ? String(incoming.seasonEnd) : null,
-      teePlacementsCount: Number.isFinite(Number(incoming.teePlacementsCount)) ? Number(incoming.teePlacementsCount) : 3,
-      handicapMode: incoming.handicapMode ? String(incoming.handicapMode).toLowerCase() : 'usga',
-      customFormulaText: incoming.customFormulaText ? String(incoming.customFormulaText) : '',
-      netSkinsSeasonPot,
-      grossSkinsSeasonPot,
-      fiftyFiftySeasonBuyIn,
-      nineHoleStrokeMethod,
-      updatedAt: new Date().toISOString()
+      leagueName:            incoming.leagueName ? String(incoming.leagueName) : 'Fairway Command League',
+      seasonStart:           incoming.seasonStart  ? String(incoming.seasonStart)  : null,
+      seasonEnd:             incoming.seasonEnd    ? String(incoming.seasonEnd)    : null,
+      teePlacementsCount:    Number.isFinite(Number(incoming.teePlacementsCount)) ? Number(incoming.teePlacementsCount) : 3,
+      handicapMode:          incoming.handicapMode  ? String(incoming.handicapMode).toLowerCase()  : 'usga',
+      customFormulaText:     incoming.customFormulaText ? String(incoming.customFormulaText) : '',
+      netSkinsSeasonPot:     Number.isFinite(netPot)   ? Math.max(0, netPot)   : 0,
+      grossSkinsSeasonPot:   Number.isFinite(grossPot) ? Math.max(0, grossPot) : 0,
+      fiftyFiftySeasonBuyIn: Number.isFinite(fiftyPot) ? Math.max(0, fiftyPot) : 0,
+      nineHoleStrokeMethod:  ['half','full'].includes(incoming.nineHoleStrokeMethod) ? incoming.nineHoleStrokeMethod : 'half',
+      leagueId, updatedAt: new Date().toISOString()
     }
-
-    await store.setJSON(key, normalized)
+    await db.collection(COL.leagueSettings).doc(leagueId).set(normalized)
     return Response.json({ success: true, settings: normalized })
   }
 
   return new Response('Method not allowed', { status: 405 })
 }
 
-export const config = {
-  path: '/api/league-settings'
-}
+export const config = { path: '/api/league-settings' }
