@@ -1346,6 +1346,12 @@
       </div>
       <button class="btn-primary" onclick="doLogin()">Sign In</button>
       <div class="error-msg" id="login-error">Invalid email or password.</div>
+      <div style="text-align:center;margin-top:10px;">
+        <button type="button" onclick="doForgotPassword()"
+          style="background:none;border:none;color:#D4AF37;font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">
+          Forgot password?
+        </button>
+      </div>
     </div>
 
     <!-- Signup Form -->
@@ -1374,7 +1380,7 @@
         <div class="demo-pill" id="demo-login-scorer" title="No JWT — read-only versus live blobs">Demo Scorer</div>
         <div class="demo-pill" id="demo-login-player" title="No JWT — read-only versus live blobs">Demo Player</div>
       </div>
-      <p class="demo-logins-real">Production: Sign in with Email + Password (Netlify Identity).</p>
+      <p class="demo-logins-real">Production: Sign in with Email + Password (Firebase Auth).</p>
     </div>
   </div>
 </div>
@@ -2848,7 +2854,73 @@
   </div>
 </div>
 
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+<script type="module">
+// Firebase Auth — initialised here so the module can import from CDN.
+// Methods are exposed on window.* so non-module scripts in index.html can use them.
+import { initializeApp }                from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         signOut, onAuthStateChanged, updateProfile,
+         sendPasswordResetEmail, confirmPasswordReset,
+         getIdTokenResult }             from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+
+const _fbApp = initializeApp({
+  apiKey:            'AIzaSyCC2RYPLKeUHy05o99sJDVmIvfQWul3-Vc',
+  authDomain:        'fairway-command.firebaseapp.com',
+  projectId:         'fairway-command',
+  storageBucket:     'fairway-command.firebasestorage.app',
+  messagingSenderId: '469465900105',
+  appId:             '1:469465900105:web:dfa977a3dc936dd3f1cb98'
+});
+
+const _fbAuth = getAuth(_fbApp);
+window._fbAuth          = _fbAuth;
+window._fbSignIn        = (e, p) => signInWithEmailAndPassword(_fbAuth, e, p);
+window._fbCreateUser    = (e, p) => createUserWithEmailAndPassword(_fbAuth, e, p);
+window._fbSignOut       = ()     => signOut(_fbAuth);
+window._fbUpdateProfile = (u, d) => updateProfile(u, d);
+window._fbSendPasswordReset  = (e)       => sendPasswordResetEmail(_fbAuth, e);
+window._fbConfirmPasswordReset = (code, pw) => confirmPasswordReset(_fbAuth, code, pw);
+window._fbGetIdToken    = (force) => {
+  const u = _fbAuth.currentUser;
+  return u ? u.getIdToken(!!force) : Promise.resolve(null);
+};
+window._fbGetTokenClaims = async (force) => {
+  const u = _fbAuth.currentUser;
+  if (!u) return {};
+  const r = await getIdTokenResult(u, !!force);
+  return r.claims || {};
+};
+
+// Restore session on page load (Firebase persists auth across refreshes)
+onAuthStateChanged(_fbAuth, async (fbUser) => {
+  if (!fbUser || window.currentUser) return;
+  try {
+    const claims = await window._fbGetTokenClaims();
+    const role   = (claims.role === 'admin' || claims.role === 'scorer') ? claims.role : 'player';
+    const name   = fbUser.displayName || fbUser.email || 'User';
+    if (typeof window.loginSuccess === 'function') {
+      window.loginSuccess({ name, email: fbUser.email, role });
+    }
+  } catch (e) {
+    console.warn('[firebase] session restore failed:', e);
+  }
+});
+
+// Handle Firebase password-reset redirect (?mode=resetPassword&oobCode=…)
+const _fbParams = new URLSearchParams(window.location.search);
+if (_fbParams.get('mode') === 'resetPassword' && _fbParams.get('oobCode')) {
+  window._fbResetOobCode = _fbParams.get('oobCode');
+  // Clean the URL without reloading
+  const clean = window.location.pathname;
+  if (window.history && window.history.replaceState) window.history.replaceState(null, '', clean);
+  // Show the reset overlay once the DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.showPwRecoveryOverlay === 'function') window.showPwRecoveryOverlay(true);
+    const ls = document.getElementById('login-screen');
+    if (ls) ls.style.display = 'none';
+  });
+}
+</script>
 
 <script>
 // ═══════════════════════════════
@@ -2896,8 +2968,6 @@ const PAYMENT_DATA = [
 // STATE
 // ═══════════════════════════════
 let currentUser = null;
-/** True until cancel / completion while #recovery_token is being handled — blocks Identity auto-route into the app mid-reset. */
-let fcPwRecoveryLanding = /\brecovery_token=/.test(String(window.location.hash || ''));
 
 function showPwRecoveryOverlay(open) {
   const overlay = document.getElementById('pw-recovery-overlay');
@@ -3235,51 +3305,41 @@ function switchTab(tab) {
   document.getElementById('signup-form').classList.toggle('hidden', tab !== 'signup');
 }
 
-function getIdentity() {
-  return window.netlifyIdentity || null;
-}
+// Firebase Auth helpers — delegate to the module-scope window.* bindings
 
 async function identityPasswordLogin(email, pass) {
-  const ident = getIdentity();
-  if (!ident) throw new Error('Identity not available');
-  if (ident.gotrue && typeof ident.gotrue.login === 'function') {
-    return await ident.gotrue.login(email, pass, true);
-  }
-  if (typeof ident.login === 'function') {
-    return await ident.login(email, pass, true);
-  }
-  throw new Error('Password login not supported');
+  if (!window._fbSignIn) throw new Error('Firebase Auth not initialised');
+  const cred = await window._fbSignIn(email, pass);
+  return cred.user;
 }
 
 async function identitySignup(email, pass, meta) {
-  const ident = getIdentity();
-  if (!ident) throw new Error('Identity not available');
-  if (ident.gotrue && typeof ident.gotrue.signup === 'function') {
-    return await ident.gotrue.signup(email, pass, meta);
+  if (!window._fbCreateUser) throw new Error('Firebase Auth not initialised');
+  const cred = await window._fbCreateUser(email, pass);
+  if (meta && meta.full_name && window._fbUpdateProfile) {
+    await window._fbUpdateProfile(cred.user, { displayName: meta.full_name }).catch(() => {});
   }
-  if (typeof ident.signup === 'function') {
-    return await ident.signup(email, pass, meta);
-  }
-  throw new Error('Signup not supported');
+  return cred.user;
 }
 
 async function getIdentityToken() {
-  // Calls user.jwt() so Netlify Identity can refresh an expired access token.
-  // Races against a 3-second timeout and falls back to the cached access_token
-  // so a slow Identity server never stalls API calls indefinitely.
   try {
-    const ident = window.netlifyIdentity;
-    if (!ident) return null;
-    const user = typeof ident.currentUser === 'function' ? ident.currentUser() : null;
-    if (!user) return null;
-    const fresh = await Promise.race([
-      user.jwt(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('jwt timeout')), 3000))
-    ]).catch(() => null);
-    return fresh || (user.token && user.token.access_token) || null;
+    if (!window._fbGetIdToken) return null;
+    return await window._fbGetIdToken(false);
   } catch (e) {
     return null;
   }
+}
+
+function firebaseAuthErrorMessage(e) {
+  const code = (e && e.code) ? e.code : '';
+  if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') return 'Invalid email or password.';
+  if (code === 'auth/email-already-in-use') return 'An account with this email already exists.';
+  if (code === 'auth/weak-password') return 'Password must be at least 6 characters.';
+  if (code === 'auth/invalid-email') return 'Please enter a valid email address.';
+  if (code === 'auth/too-many-requests') return 'Too many sign-in attempts — wait a moment and try again.';
+  if (code === 'auth/network-request-failed') return 'Network error — check your connection.';
+  return (e && e.message) ? e.message : 'Authentication failed.';
 }
 
 async function fetchJson(url, options) {
@@ -4886,34 +4946,24 @@ function printLeaderboard() {
   win.document.close();
 }
 
-function roleFromIdentityUser(user) {
-  const am = user && user.app_metadata;
-  const rolesArr = [];
-  if (am && typeof am === 'object') {
-    if (typeof am.roles === 'string' && am.roles.trim()) {
-      rolesArr.push(...String(am.roles).split(/[\s,;]+/).map(r => r.trim().toLowerCase()).filter(Boolean));
-    }
-    if (Array.isArray(am.roles)) {
-      for (const r of am.roles) {
-        if (typeof r === 'string' && r.trim()) rolesArr.push(String(r).trim().toLowerCase());
-      }
-    }
-    if (typeof am.role === 'string' && am.role.trim()) rolesArr.push(am.role.trim().toLowerCase());
-  }
-  if (rolesArr.includes('admin')) return 'admin';
-  if (rolesArr.includes('scorer')) return 'scorer';
-  return null;
-}
-
-async function resolveUserRole(user) {
+// Role is stored in Firebase Custom Claims (token.claims.role).
+// Falls back to the /api/user-role endpoint (reads Netlify Blobs) while the
+// backend migration is in progress.
+async function resolveUserRole(fbUser) {
   try {
-    const fromMeta = roleFromIdentityUser(user);
-    if (fromMeta) return fromMeta;
-    const email = user && user.email;
+    // 1. Check Firebase Custom Claims (preferred — set by backend Admin SDK)
+    if (window._fbGetTokenClaims) {
+      const claims = await window._fbGetTokenClaims(false);
+      const r = claims && claims.role ? String(claims.role).toLowerCase() : '';
+      if (r === 'admin' || r === 'scorer' || r === 'player') return r;
+    }
+    // 2. Fall back to API (Netlify Blobs — temporary until backend migrated)
+    const email = (fbUser && fbUser.email) ||
+                  (window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.email);
     if (!email) return 'player';
-    const roleRes = await fetch('/api/user-role?email=' + encodeURIComponent(email));
-    const j = await roleRes.json().catch(() => null);
-    if (roleRes.ok && j && j.role && typeof j.role === 'string') return j.role;
+    const res = await fetch('/api/user-role?email=' + encodeURIComponent(email));
+    const j   = await res.json().catch(() => null);
+    if (res.ok && j && typeof j.role === 'string') return j.role;
     return 'player';
   } catch (e) {
     return 'player';
@@ -5304,92 +5354,64 @@ function applyRoleAccess(role) {
 }
 
 function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-password').value;
-  const ident = getIdentity();
+  const email  = document.getElementById('login-email').value.trim();
+  const pass   = document.getElementById('login-password').value;
+  const errEl  = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  errEl.textContent   = 'Invalid email or password.';
 
-  const localLogin = () => {
-    let user = Object.values(USERS).find(u => u.email === email && u.password === pass);
-    if (!user) {
-      const stored = localStorage.getItem('fc_user_' + email);
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.password === pass) user = u;
-      }
-    }
-    if (!user) {
-      document.getElementById('login-error').style.display = 'block';
-      return false;
-    }
-    document.getElementById('login-error').style.display = 'none';
-    loginSuccess(user);
-    return true;
-  };
-
-  if (ident) {
-    const errEl = document.getElementById('login-error');
-    errEl.style.display = 'none';
-    errEl.textContent = 'Invalid email or password.';
+  if (window._fbSignIn) {
     identityPasswordLogin(email, pass).then(async (u) => {
-      fcPwRecoveryLanding = false;
       const role = await resolveUserRole(u);
-      loginSuccess({ name: (u.user_metadata && u.user_metadata.full_name) ? u.user_metadata.full_name : (u.email || email), email: u.email || email, role });
+      const name = u.displayName || u.email || email;
+      loginSuccess({ name, email: u.email || email, role });
     }).catch((e) => {
-      console.warn('[identity] login failed:', e);
-      const msg = e && e.message ? String(e.message) : '';
-      errEl.textContent = (msg && msg.length > 8 && msg.length < 240) ? msg : 'Sign in failed. Confirm your Netlify Identity password or reset it via email.';
+      console.warn('[firebase] login failed:', e);
+      errEl.textContent   = firebaseAuthErrorMessage(e);
       errEl.style.display = 'block';
     });
     return;
   }
 
-  localLogin();
+  // Demo / offline fallback (no Firebase available)
+  const u = Object.values(USERS).find(u => u.email === email && u.password === pass);
+  if (!u) { errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  loginSuccess(u);
 }
 
 function doSignup() {
-  const name = document.getElementById('signup-name').value.trim();
-  const email = document.getElementById('signup-email').value.trim();
-  const pass = document.getElementById('signup-password').value;
-  const errEl = document.getElementById('signup-error');
+  const name   = document.getElementById('signup-name').value.trim();
+  const email  = document.getElementById('signup-email').value.trim();
+  const pass   = document.getElementById('signup-password').value;
+  const errEl  = document.getElementById('signup-error');
   if (!name || !email || pass.length < 6) {
     errEl.textContent = 'Please fill all fields (password min 6 chars).';
     errEl.style.display = 'block';
     return;
   }
-  const ident = getIdentity();
-  if (ident) {
+
+  if (window._fbCreateUser) {
     errEl.style.display = 'none';
     identitySignup(email, pass, { full_name: name }).then(async (u) => {
-      try {
-        await fetchJson('/.netlify/functions/identity-signup', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ email: email })
-        });
-      } catch (e) {
-        // Non-fatal; role will default on fetch.
-      }
+      // role defaults to 'player'; an admin can promote via Roles UI
       const role = await resolveUserRole(u);
-      loginSuccess({ name, email, role });
+      loginSuccess({ name, email: u.email || email, role });
     }).catch((e) => {
-      errEl.textContent = (e && e.message) ? e.message : 'Sign up failed.';
+      errEl.textContent   = firebaseAuthErrorMessage(e);
       errEl.style.display = 'block';
     });
     return;
   }
 
-  // Fallback demo/local mode
-  if (localStorage.getItem('fc_user_' + email) || Object.values(USERS).find(u => u.email === email)) {
+  // Demo / offline fallback
+  if (Object.values(USERS).find(u => u.email === email)) {
     errEl.textContent = 'That email is already registered. Please sign in.';
     errEl.style.display = 'block';
     return;
   }
   errEl.style.display = 'none';
-  const existingUsers = Object.keys(localStorage).filter(k => k.startsWith('fc_user_')).length;
-  const role = existingUsers === 0 ? 'admin' : 'player';
-  const newUser = { name, email, password: pass, role };
-  localStorage.setItem('fc_user_' + email, JSON.stringify(newUser));
-  loginSuccess(newUser);
+  loginSuccess({ name, email, role: 'player', demo: true });
 }
 
 function demoLogin(key) {
@@ -5425,60 +5447,57 @@ function loginSuccess(user) {
 }
 
 async function submitPasswordRecovery() {
-  const newPass    = (document.getElementById('pw-recovery-new')     || {}).value || '';
-  const confirm    = (document.getElementById('pw-recovery-confirm') || {}).value || '';
-  const errorEl    = document.getElementById('pw-recovery-error');
-  const submitBtn  = document.getElementById('pw-recovery-submit');
+  const newPass   = (document.getElementById('pw-recovery-new')     || {}).value || '';
+  const confirm   = (document.getElementById('pw-recovery-confirm') || {}).value || '';
+  const errorEl   = document.getElementById('pw-recovery-error');
+  const submitBtn = document.getElementById('pw-recovery-submit');
 
-  const showErr = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; } };
-  const clearErr = () => { if (errorEl) errorEl.style.display = 'none'; };
+  const showErr  = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; } };
+  const clearErr = ()    => { if (errorEl) errorEl.style.display = 'none'; };
 
   clearErr();
   if (newPass.length < 8) { showErr('Password must be at least 8 characters.'); return; }
   if (newPass !== confirm) { showErr('Passwords do not match.'); return; }
 
-  const user = window._pwRecoveryUser;
-  if (!user || typeof user.update !== 'function') {
-    showErr('Session expired — please request a new recovery email.');
+  const oobCode = window._fbResetOobCode;
+  if (!oobCode || !window._fbConfirmPasswordReset) {
+    showErr('Reset session expired — please request a new password reset email.');
     return;
   }
 
   if (submitBtn) submitBtn.disabled = true;
   try {
-    const updated = await user.update({ password: newPass });
-    // Password set — log the user in properly
+    await window._fbConfirmPasswordReset(oobCode, newPass);
+    window._fbResetOobCode = null;
     showPwRecoveryOverlay(false);
-    fcPwRecoveryLanding = false;
-    window._pwRecoveryUser = null;
-    // Clear the recovery token hash from the URL without reloading
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-    const role = await resolveUserRole(updated || user);
-    const name = ((updated || user).user_metadata && (updated || user).user_metadata.full_name)
-      ? (updated || user).user_metadata.full_name
-      : ((updated || user).email || 'User');
-    loginSuccess({ name, email: (updated || user).email, role });
-    showToast('Password updated — you are now logged in');
+    const ls = document.getElementById('login-screen');
+    if (ls) ls.style.display = '';
+    showToast('Password updated — please sign in with your new password');
   } catch (e) {
-    console.error('[pw-recovery] update failed:', e);
-    showErr('Failed to set password: ' + (e && e.message ? e.message : String(e)));
+    console.error('[firebase] confirmPasswordReset failed:', e);
+    showErr(firebaseAuthErrorMessage(e));
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
 }
 
 function cancelPasswordRecovery() {
+  window._fbResetOobCode = null;
   showPwRecoveryOverlay(false);
-  fcPwRecoveryLanding = false;
-  window._pwRecoveryUser = null;
-  // Clear recovery_token hash so the widget doesn't re-fire on next navigation
-  if (window.history && window.history.replaceState) {
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
-  }
-  // Bring the login screen back
   const ls = document.getElementById('login-screen');
   if (ls) ls.style.display = '';
+}
+
+async function doForgotPassword() {
+  const email = (document.getElementById('login-email').value || '').trim();
+  if (!email) { showToast('Enter your email address above, then click Forgot Password.'); return; }
+  if (!window._fbSendPasswordReset) { showToast('Auth not ready — try again in a moment.'); return; }
+  try {
+    await window._fbSendPasswordReset(email);
+    showToast('Password reset email sent — check your inbox.');
+  } catch (e) {
+    showToast(firebaseAuthErrorMessage(e));
+  }
 }
 
 function doLogout() {
@@ -5487,11 +5506,7 @@ function doLogout() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
-
-  const ident = getIdentity();
-  if (ident && typeof ident.logout === 'function') {
-    ident.logout();
-  }
+  if (window._fbSignOut) window._fbSignOut().catch(() => {});
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9141,99 +9156,9 @@ async function sendReminderToAll() {
   }
 }
 
-// Netlify Identity: keep session + role on refresh
-(() => {
-  const ident = getIdentity();
-  if (!ident || typeof ident.on !== 'function') {
-    console.warn('[identity] netlifyIdentity widget not available — check script tag');
-    return;
-  }
-
-  ident.on('error', (err) => {
-    // A 400 on /.netlify/identity/token means the stored refresh token is
-    // stale (expired or from a different site). Clear local storage and
-    // prompt the user to log in again — this resolves "netlify is not defined"
-    // errors thrown internally by the widget during a failed token refresh.
-    console.warn('[identity] Identity error:', err);
-    const msg = err && err.message ? String(err.message) : String(err || '');
-    if (msg.includes('400') || msg.includes('token') || msg.toLowerCase().includes('invalid')) {
-      try {
-        // Clear the stale GoTrue session from localStorage
-        Object.keys(localStorage).forEach(k => {
-          if (k.startsWith('gotrue.') || k.startsWith('netlify-identity')) localStorage.removeItem(k);
-        });
-      } catch (e) { /* ignore */ }
-      showToast('Session expired — please log in again');
-    }
-  });
-
-  ident.on('password_recovery', (user) => {
-    try {
-      if (typeof ident.close === 'function') ident.close();
-    } catch (eClose) {
-      console.warn('[identity] close()', eClose);
-    }
-
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-
-    if (!user || typeof user.update !== 'function') {
-      fcPwRecoveryLanding = false;
-      showPwRecoveryOverlay(false);
-      const ls = document.getElementById('login-screen');
-      if (ls) ls.style.display = '';
-      window._pwRecoveryUser = null;
-      showToast('Recovery link expired or invalid — request a fresh reset email.');
-      return;
-    }
-
-    fcPwRecoveryLanding = true;
-    window._pwRecoveryUser = user;
-    showPwRecoveryOverlay(true);
-    const emailEl = document.getElementById('pw-recovery-email');
-    if (emailEl) emailEl.textContent = user.email ? 'Account: ' + user.email : '';
-    const ls = document.getElementById('login-screen');
-    if (ls) ls.style.display = 'none';
-
-    ['pw-recovery-new', 'pw-recovery-confirm'].forEach((id) => {
-      const inp = document.getElementById(id);
-      if (inp) {
-        inp.value = '';
-        try { inp.removeAttribute('readonly'); inp.removeAttribute('disabled'); inp.focus({ preventScroll: true }); } catch (eFocus) {}
-      }
-    });
-  });
-
-  ident.on('init', async (user) => {
-    if (!user || fcPwRecoveryLanding) return;
-    fcPwRecoveryLanding = false;
-    const role = await resolveUserRole(user);
-    const name = (user.user_metadata && user.user_metadata.full_name) ? user.user_metadata.full_name : (user.email || 'User');
-    loginSuccess({ name, email: user.email, role });
-  });
-
-  ident.on('login', async (user) => {
-    if (!user || fcPwRecoveryLanding) return;
-    const role = await resolveUserRole(user);
-    const name = (user.user_metadata && user.user_metadata.full_name) ? user.user_metadata.full_name : (user.email || 'User');
-    loginSuccess({ name, email: user.email, role });
-    try {
-      if (typeof ident.close === 'function') ident.close();
-    } catch (eClose2) {}
-  });
-
-  try {
-    ident.init({ APIUrl: window.location.origin + '/.netlify/identity' });
-    queueMicrotask(() => {
-      try {
-        if (typeof ident.close === 'function') ident.close();
-      } catch (eClose3) {}
-    });
-  } catch (e) {
-    console.error('[identity] init() threw:', e);
-  }
-})();
+// Firebase Auth session persistence is handled by onAuthStateChanged in the
+// <script type="module"> block above (fires before DOMContentLoaded when the
+// user has an active Firebase session). Nothing more needed here.
 
 // ═══════════════════════════════
 // CHAT
