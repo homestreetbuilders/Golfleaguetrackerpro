@@ -2883,6 +2883,7 @@ if (!_firebaseConfig) {
   // auth/api-key-not-valid errors. window._fbSignIn will remain undefined and
   // doLogin() will fall back to the offline demo path.
 } else {
+  console.log('[firebase] Initializing with config:', JSON.stringify(_firebaseConfig));
   const _fbApp  = initializeApp(_firebaseConfig);
   const _fbAuth = getAuth(_fbApp);
 
