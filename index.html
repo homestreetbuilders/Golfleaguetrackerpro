@@ -2870,38 +2870,42 @@ let _firebaseConfig;
 try {
   const res = await fetch('/api/firebase-config');
   if (!res.ok) throw new Error('firebase-config endpoint returned ' + res.status);
-  _firebaseConfig = await res.json();
+  const json = await res.json();
+  if (!json.apiKey) throw new Error('firebase-config response missing apiKey');
+  _firebaseConfig = json;
 } catch (e) {
   console.error('[firebase] Failed to load config from /api/firebase-config:', e);
 }
 
-if (!_firebaseConfig || !_firebaseConfig.apiKey) {
-  console.error('[firebase] Config missing — auth will not work. Set FIREBASE_* env vars in Netlify dashboard.');
-}
+if (!_firebaseConfig) {
+  console.error('[firebase] Config missing — auth will not work. Check FIREBASE_* env vars in Netlify dashboard.');
+  // Do not call initializeApp — calling it with an empty/partial config causes
+  // auth/api-key-not-valid errors. window._fbSignIn will remain undefined and
+  // doLogin() will fall back to the offline demo path.
+} else {
+  const _fbApp  = initializeApp(_firebaseConfig);
+  const _fbAuth = getAuth(_fbApp);
 
-const _fbApp = initializeApp(_firebaseConfig || {});
+  window._fbAuth          = _fbAuth;
+  window._fbSignIn        = (e, p) => signInWithEmailAndPassword(_fbAuth, e, p);
+  window._fbCreateUser    = (e, p) => createUserWithEmailAndPassword(_fbAuth, e, p);
+  window._fbSignOut       = ()     => signOut(_fbAuth);
+  window._fbUpdateProfile = (u, d) => updateProfile(u, d);
+  window._fbSendPasswordReset     = (e)         => sendPasswordResetEmail(_fbAuth, e);
+  window._fbConfirmPasswordReset  = (code, pw)  => confirmPasswordReset(_fbAuth, code, pw);
+  window._fbGetIdToken    = (force) => {
+    const u = _fbAuth.currentUser;
+    return u ? u.getIdToken(!!force) : Promise.resolve(null);
+  };
+  window._fbGetTokenClaims = async (force) => {
+    const u = _fbAuth.currentUser;
+    if (!u) return {};
+    const r = await getIdTokenResult(u, !!force);
+    return r.claims || {};
+  };
 
-const _fbAuth = getAuth(_fbApp);
-window._fbAuth          = _fbAuth;
-window._fbSignIn        = (e, p) => signInWithEmailAndPassword(_fbAuth, e, p);
-window._fbCreateUser    = (e, p) => createUserWithEmailAndPassword(_fbAuth, e, p);
-window._fbSignOut       = ()     => signOut(_fbAuth);
-window._fbUpdateProfile = (u, d) => updateProfile(u, d);
-window._fbSendPasswordReset  = (e)       => sendPasswordResetEmail(_fbAuth, e);
-window._fbConfirmPasswordReset = (code, pw) => confirmPasswordReset(_fbAuth, code, pw);
-window._fbGetIdToken    = (force) => {
-  const u = _fbAuth.currentUser;
-  return u ? u.getIdToken(!!force) : Promise.resolve(null);
-};
-window._fbGetTokenClaims = async (force) => {
-  const u = _fbAuth.currentUser;
-  if (!u) return {};
-  const r = await getIdTokenResult(u, !!force);
-  return r.claims || {};
-};
-
-// Restore session on page load (Firebase persists auth across refreshes)
-onAuthStateChanged(_fbAuth, async (fbUser) => {
+  // Restore session on page load (Firebase persists auth across refreshes)
+  onAuthStateChanged(_fbAuth, async (fbUser) => {
   if (!fbUser || window.currentUser) return;
   try {
     const claims = await window._fbGetTokenClaims();
@@ -2915,20 +2919,21 @@ onAuthStateChanged(_fbAuth, async (fbUser) => {
   }
 });
 
-// Handle Firebase password-reset redirect (?mode=resetPassword&oobCode=…)
-const _fbParams = new URLSearchParams(window.location.search);
-if (_fbParams.get('mode') === 'resetPassword' && _fbParams.get('oobCode')) {
-  window._fbResetOobCode = _fbParams.get('oobCode');
-  // Clean the URL without reloading
-  const clean = window.location.pathname;
-  if (window.history && window.history.replaceState) window.history.replaceState(null, '', clean);
-  // Show the reset overlay once the DOM is ready
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof window.showPwRecoveryOverlay === 'function') window.showPwRecoveryOverlay(true);
-    const ls = document.getElementById('login-screen');
-    if (ls) ls.style.display = 'none';
-  });
-}
+  // Handle Firebase password-reset redirect (?mode=resetPassword&oobCode=…)
+  const _fbParams = new URLSearchParams(window.location.search);
+  if (_fbParams.get('mode') === 'resetPassword' && _fbParams.get('oobCode')) {
+    window._fbResetOobCode = _fbParams.get('oobCode');
+    // Clean the URL without reloading
+    const clean = window.location.pathname;
+    if (window.history && window.history.replaceState) window.history.replaceState(null, '', clean);
+    // Show the reset overlay once the DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof window.showPwRecoveryOverlay === 'function') window.showPwRecoveryOverlay(true);
+      const ls = document.getElementById('login-screen');
+      if (ls) ls.style.display = 'none';
+    });
+  }
+} // end: firebase config loaded
 </script>
 
 <script>
