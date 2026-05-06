@@ -4970,7 +4970,10 @@ async function resolveUserRole(fbUser) {
     const email = (fbUser && fbUser.email) ||
                   (window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.email);
     if (!email) return 'player';
-    const res = await fetch('/api/user-role?email=' + encodeURIComponent(email));
+    const leagueId = (typeof getActiveLeagueId === 'function' && getActiveLeagueId()) || '';
+    const roleUrl  = '/api/user-role?email=' + encodeURIComponent(email) +
+                     (leagueId ? '&leagueId=' + encodeURIComponent(leagueId) : '');
+    const res = await fetch(roleUrl);
     const j   = await res.json().catch(() => null);
     if (res.ok && j && typeof j.role === 'string') return j.role;
     return 'player';

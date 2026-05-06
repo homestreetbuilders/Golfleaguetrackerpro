@@ -2,12 +2,14 @@ import { db, COL } from './_firebase.mjs'
 
 export default async (req) => {
   if (req.method === 'GET') {
-    const url   = new URL(req.url)
-    const email = url.searchParams.get('email')
+    const url      = new URL(req.url)
+    const email    = url.searchParams.get('email')
+    const leagueId = url.searchParams.get('leagueId')
     if (!email) return new Response('Missing email', { status: 400 })
-    const key   = String(email).trim().toLowerCase()
-    const snap  = await db.collection(COL.users).doc(key).get()
-    const role  = (snap.exists && snap.data().role) || 'player'
+    const key      = String(email).trim().toLowerCase()
+    const docId    = leagueId ? `${leagueId}_${key}` : key
+    const snap     = await db.collection(COL.users).doc(docId).get()
+    const role     = (snap.exists && snap.data().role) || 'player'
     return Response.json({ email: key, role })
   }
   return new Response('Method not allowed', { status: 405 })
