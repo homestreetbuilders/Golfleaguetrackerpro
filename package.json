@@ -3,6 +3,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@netlify/blobs": "^10.7.4"
+    "@netlify/blobs": "^10.7.4",
+    "firebase": "^12.12.1"
   }
 }

@@ -2856,6 +2856,8 @@
 
 <script type="module">
 // Firebase Auth — initialised here so the module can import from CDN.
+// Config is fetched from /api/firebase-config (reads env vars server-side)
+// so no credentials are hardcoded in this file.
 // Methods are exposed on window.* so non-module scripts in index.html can use them.
 import { initializeApp }                from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
@@ -2863,14 +2865,21 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          sendPasswordResetEmail, confirmPasswordReset,
          getIdTokenResult }             from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 
-const _fbApp = initializeApp({
-  apiKey:            'AIzaSyCC2RYPLKeUHy05o99sJDVmIvfQWul3-Vc',
-  authDomain:        'fairway-command.firebaseapp.com',
-  projectId:         'fairway-command',
-  storageBucket:     'fairway-command.firebasestorage.app',
-  messagingSenderId: '469465900105',
-  appId:             '1:469465900105:web:dfa977a3dc936dd3f1cb98'
-});
+// Fetch config from server (credentials live in env vars, not in source)
+let _firebaseConfig;
+try {
+  const res = await fetch('/api/firebase-config');
+  if (!res.ok) throw new Error('firebase-config endpoint returned ' + res.status);
+  _firebaseConfig = await res.json();
+} catch (e) {
+  console.error('[firebase] Failed to load config from /api/firebase-config:', e);
+}
+
+if (!_firebaseConfig || !_firebaseConfig.apiKey) {
+  console.error('[firebase] Config missing — auth will not work. Set FIREBASE_* env vars in Netlify dashboard.');
+}
+
+const _fbApp = initializeApp(_firebaseConfig || {});
 
 const _fbAuth = getAuth(_fbApp);
 window._fbAuth          = _fbAuth;
