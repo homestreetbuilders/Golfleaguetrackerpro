@@ -36,4 +36,4 @@ export default async (req) => {
   return Response.json({ success: true, email, role })
 }
 
-export const config = { path: '/api/identity-signup' }
+// No path config — identity-* functions are event-triggered and cannot have a custom path.
