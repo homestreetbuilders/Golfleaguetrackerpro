@@ -15,11 +15,17 @@ export default async () => {
 
   const missing = required.filter(k => !process.env[k])
   if (missing.length) {
+    console.error('[firebase-config] Missing env vars:', missing.join(', '))
     return new Response(
       JSON.stringify({ error: 'Server misconfigured — missing env vars: ' + missing.join(', ') }),
       { status: 500, headers: { 'content-type': 'application/json' } }
     )
   }
+
+  const apiKey = process.env.FIREBASE_API_KEY
+  console.log('[firebase-config] FIREBASE_API_KEY length:', apiKey.length)
+  console.log('[firebase-config] FIREBASE_API_KEY first8:', apiKey.slice(0, 8))
+  console.log('[firebase-config] FIREBASE_API_KEY last4:', apiKey.slice(-4))
 
   return Response.json({
     apiKey:            process.env.FIREBASE_API_KEY,
