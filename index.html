@@ -2215,6 +2215,67 @@
               <div class="form-field"><label>Full Name</label><input id="pm-name" placeholder="John Smith" /></div>
               <div class="form-field"><label>Email</label><input id="pm-email" type="email" placeholder="john@email.com" /></div>
               <div class="form-field"><label>Phone</label><input id="pm-phone" placeholder="(555) 000-0000" /></div>
+
+              <!-- Player Type -->
+              <div class="form-field" style="grid-column:1/-1">
+                <label>Player Type</label>
+                <div style="display:flex;gap:20px;margin-top:6px">
+                  <label style="display:flex;align-items:center;gap:6px;font-weight:600;cursor:pointer">
+                    <input type="radio" name="pm-player-type" id="pm-type-regular" value="Regular" checked onchange="onPlayerTypeChange()" /> Regular
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;font-weight:600;cursor:pointer">
+                    <input type="radio" name="pm-player-type" id="pm-type-substitute" value="Substitute" onchange="onPlayerTypeChange()" />
+                    <span style="color:#D4AF37">Substitute</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Sub For Player (shown only when Substitute) -->
+              <div class="form-field" id="pm-sub-for-row" style="display:none">
+                <label>Sub For Player <span style="font-weight:400;color:#888">(optional — which regular player they typically cover)</span></label>
+                <select id="pm-sub-for-player" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff">
+                  <option value="">— any player —</option>
+                </select>
+              </div>
+
+              <!-- Handicap Source -->
+              <div class="form-field" style="grid-column:1/-1">
+                <label>Handicap Source</label>
+                <select id="pm-hcp-source" onchange="onHcpSourceChange()" style="width:100%;max-width:320px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff">
+                  <option value="calculated">Calculated (app-managed)</option>
+                  <option value="GHIN">GHIN Index</option>
+                  <option value="provisional">Provisional (admin-entered)</option>
+                  <option value="USGA_WHS">USGA WHS (manual)</option>
+                </select>
+              </div>
+
+              <!-- GHIN fields -->
+              <div class="form-field" id="pm-ghin-row" style="display:none">
+                <label>GHIN Handicap Index</label>
+                <input id="pm-ghin-index" type="number" step="0.1" min="0" max="54" placeholder="e.g. 14.2" oninput="calcGhinCourseHcp()" style="width:160px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px" />
+                <div id="pm-ghin-preview" style="margin-top:6px;font-size:12px;color:#555;background:#f5f5f5;padding:6px 10px;border-radius:3px;display:none"></div>
+              </div>
+
+              <!-- Provisional fields -->
+              <div id="pm-provisional-row" style="grid-column:1/-1;display:none">
+                <div class="form-grid">
+                  <div class="form-field">
+                    <label>Provisional Handicap <span style="font-weight:400;color:#888">(strokes, 9-hole)</span></label>
+                    <input id="pm-hcp-provisional" type="number" step="1" min="0" max="36" placeholder="e.g. 10" style="width:160px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px" />
+                  </div>
+                  <div class="form-field">
+                    <label>Source Note <span style="font-weight:400;color:#888">(e.g. "self-reported")</span></label>
+                    <input id="pm-hcp-provisional-note" placeholder="e.g. self-reported 10 hdcp" style="padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;width:100%" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rounds posted (read-only, shown when editing) -->
+              <div class="form-field" id="pm-rounds-posted-row" style="display:none;grid-column:1/-1">
+                <label>Rounds Posted in Fairway Command</label>
+                <div id="pm-rounds-posted" style="font-size:14px;color:#555;padding:6px 0;font-weight:600">0 rounds posted</div>
+              </div>
+
               <div class="form-field" style="grid-column:1/-1">
                 <label>Handicaps (auto-calculated — override per type below)</label>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:6px">
@@ -2255,7 +2316,7 @@
           <div class="card-header"><div class="card-title">Player Roster</div></div>
           <div class="card-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>F9 HCP</th><th>B9 HCP</th><th>18 HCP</th><th>Net Skins</th><th>Gross Skins</th><th>50/50</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Name</th><th>Type</th><th>Email</th><th>Phone</th><th>F9 HCP</th><th>B9 HCP</th><th>Src</th><th>Net Skins</th><th>Gross Skins</th><th>50/50</th><th>Actions</th></tr></thead>
               <tbody id="player-roster"></tbody>
             </table>
           </div>
@@ -6596,6 +6657,48 @@ function setHcpDisplay(id, value, isOverride) {
   }
 }
 
+function onPlayerTypeChange() {
+  const isSub = document.getElementById('pm-type-substitute') && document.getElementById('pm-type-substitute').checked;
+  const subRow = document.getElementById('pm-sub-for-row');
+  if (subRow) subRow.style.display = isSub ? '' : 'none';
+  // Populate sub-for dropdown from regulars in playersCache
+  if (isSub) {
+    const sel = document.getElementById('pm-sub-for-player');
+    if (sel) {
+      const regulars = (playersCache || []).filter(p => p.playerType !== 'Substitute');
+      const editing = editingPlayerEmail;
+      sel.innerHTML = '<option value="">— any player —</option>' +
+        regulars.filter(p => p.email !== editing).map(p => `<option value="${p.email}">${escapeHtml(p.name)}</option>`).join('');
+    }
+  }
+}
+
+function onHcpSourceChange() {
+  const src = (document.getElementById('pm-hcp-source') || {}).value || 'calculated';
+  const ghinRow = document.getElementById('pm-ghin-row');
+  const provRow = document.getElementById('pm-provisional-row');
+  if (ghinRow) ghinRow.style.display = src === 'GHIN' ? '' : 'none';
+  if (provRow) provRow.style.display = src === 'provisional' ? '' : 'none';
+  // Gray out manual override inputs when source is GHIN or provisional (auto-calculated)
+  const autoSrc = src === 'GHIN' || src === 'provisional';
+  ['pm-hcpfront9-override-chk','pm-hcpback9-override-chk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = autoSrc; if (autoSrc) el.checked = false; }
+  });
+}
+
+function calcGhinCourseHcp() {
+  const idxEl = document.getElementById('pm-ghin-index');
+  const prev  = document.getElementById('pm-ghin-preview');
+  if (!idxEl || !prev) return;
+  const idx = parseFloat(idxEl.value);
+  if (!Number.isFinite(idx) || idx < 0) { prev.style.display = 'none'; return; }
+  const f9 = Math.round(idx * (119 / 113) * 0.80);
+  const b9 = Math.round(idx * (124 / 113) * 0.80);
+  prev.textContent = `→ Front 9: ${f9} strokes   Back 9: ${b9} strokes`;
+  prev.style.display = '';
+}
+
 function clearPlayerForm() {
   const nameEl = document.getElementById('pm-name');
   const emailEl = document.getElementById('pm-email');
@@ -6604,6 +6707,23 @@ function clearPlayerForm() {
   if (nameEl) nameEl.value = '';
   if (emailEl) { emailEl.value = ''; emailEl.disabled = false; }
   if (phoneEl) phoneEl.value = '';
+  // Reset sub/hcp source fields
+  const typeReg = document.getElementById('pm-type-regular');
+  if (typeReg) typeReg.checked = true;
+  const hcpSrc = document.getElementById('pm-hcp-source');
+  if (hcpSrc) hcpSrc.value = 'calculated';
+  const ghinIdx = document.getElementById('pm-ghin-index');
+  if (ghinIdx) ghinIdx.value = '';
+  const provHcp = document.getElementById('pm-hcp-provisional');
+  if (provHcp) provHcp.value = '';
+  const provNote = document.getElementById('pm-hcp-provisional-note');
+  if (provNote) provNote.value = '';
+  const subFor = document.getElementById('pm-sub-for-player');
+  if (subFor) subFor.value = '';
+  const roundsRow = document.getElementById('pm-rounds-posted-row');
+  if (roundsRow) roundsRow.style.display = 'none';
+  onPlayerTypeChange();
+  onHcpSourceChange();
   if (cancel) cancel.style.display = 'none';
   // Reset handicap displays
   ['pm-hcpfront9-display','pm-hcpback9-display','pm-hcp18-display'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
@@ -6644,11 +6764,29 @@ async function savePlayerFromForm() {
   const hcp18Override          = !!(h18Chk && h18Chk.checked);
   const hcp18OverrideValue     = (hcp18Override     && h18Val && h18Val.value.trim() !== '') ? Number(h18Val.value) : null;
 
+  // Sub / handicap source fields
+  const playerType = (document.querySelector('input[name="pm-player-type"]:checked') || {}).value || 'Regular';
+  const hcpSource  = (document.getElementById('pm-hcp-source') || {}).value || 'calculated';
+  const subForPlayer = (document.getElementById('pm-sub-for-player') || {}).value || null;
+  const ghinIndexEl  = document.getElementById('pm-ghin-index');
+  const ghinIndex    = ghinIndexEl && ghinIndexEl.value.trim() !== '' ? parseFloat(ghinIndexEl.value) : null;
+  const provHcpEl    = document.getElementById('pm-hcp-provisional');
+  const hcpProvisional     = provHcpEl && provHcpEl.value.trim() !== '' ? parseFloat(provHcpEl.value) : null;
+  const provNoteEl         = document.getElementById('pm-hcp-provisional-note');
+  const hcpProvisionalNote = provNoteEl ? provNoteEl.value.trim() || null : null;
+
   try {
     await fetchJson('/api/players', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, hcpFront9Override, hcpFront9OverrideValue, hcpBack9Override, hcpBack9OverrideValue, hcp18Override, hcp18OverrideValue })
+      body: JSON.stringify({
+        name, email, phone,
+        hcpFront9Override, hcpFront9OverrideValue,
+        hcpBack9Override, hcpBack9OverrideValue,
+        hcp18Override, hcp18OverrideValue,
+        playerType, hcpSource, subForPlayer,
+        ghinIndex, hcpProvisional, hcpProvisionalNote
+      })
     });
     await loadPlayers();
     buildPlayerRoster();
@@ -6701,6 +6839,43 @@ function editPlayer(email) {
   setOv('pm-hcpfront9-override-chk', 'pm-hcpfront9-override-val', p.hcpFront9Override, p.hcpFront9OverrideValue);
   setOv('pm-hcpback9-override-chk',  'pm-hcpback9-override-val',  p.hcpBack9Override,  p.hcpBack9OverrideValue);
   setOv('pm-hcp18-override-chk',     'pm-hcp18-override-val',     p.hcp18Override,     p.hcp18OverrideValue);
+
+  // Sub / handicap source fields
+  const isSub = p.playerType === 'Substitute';
+  const typeSubEl = document.getElementById('pm-type-substitute');
+  const typeRegEl = document.getElementById('pm-type-regular');
+  if (typeSubEl) typeSubEl.checked = isSub;
+  if (typeRegEl) typeRegEl.checked = !isSub;
+  onPlayerTypeChange();
+
+  const hcpSrcEl = document.getElementById('pm-hcp-source');
+  if (hcpSrcEl) hcpSrcEl.value = p.hcpSource || 'calculated';
+  onHcpSourceChange();
+
+  const ghinEl = document.getElementById('pm-ghin-index');
+  if (ghinEl) ghinEl.value = (p.ghinIndex !== null && p.ghinIndex !== undefined) ? String(p.ghinIndex) : '';
+  calcGhinCourseHcp();
+
+  const provEl = document.getElementById('pm-hcp-provisional');
+  if (provEl) provEl.value = (p.hcpProvisional !== null && p.hcpProvisional !== undefined) ? String(p.hcpProvisional) : '';
+  const provNoteEl = document.getElementById('pm-hcp-provisional-note');
+  if (provNoteEl) provNoteEl.value = p.hcpProvisionalNote || '';
+
+  if (isSub) {
+    const subForEl = document.getElementById('pm-sub-for-player');
+    if (subForEl && p.subForPlayer) subForEl.value = p.subForPlayer;
+  }
+
+  // Show rounds posted
+  const roundsRow = document.getElementById('pm-rounds-posted-row');
+  const roundsEl  = document.getElementById('pm-rounds-posted');
+  if (roundsRow) roundsRow.style.display = '';
+  if (roundsEl) {
+    const n = p.hcpRoundsPosted || 0;
+    const provisional = n < 3;
+    roundsEl.innerHTML = `<span style="font-weight:700">${n}</span> rounds posted in Fairway Command` +
+      (provisional ? ' <span style="color:#e67e22;font-size:12px">(provisional — needs 3+)</span>' : ' <span style="color:#27ae60;font-size:12px">✓</span>');
+  }
 }
 
 async function deletePlayer(email) {
@@ -8830,20 +9005,26 @@ function buildPlayerRoster() {
     const fmtH = (v, isOv) => (v !== null && v !== undefined && Number.isFinite(Number(v))) ? Number(v).toFixed(1) + (isOv ? '<span style="color:var(--gold-dark);font-size:10px"> M</span>' : '') : '—';
     const f9  = fmtH(p.hcpFront9, p.hcpFront9Override);
     const b9  = fmtH(p.hcpBack9,  p.hcpBack9Override);
-    const h18v = (p.hcp18 !== null && p.hcp18 !== undefined) ? p.hcp18 : p.handicap; // fallback
-    const h18 = fmtH(h18v, p.hcp18Override);
     const opt = p.email ? getOptInForEmail(p.email) : null;
     const netOn = !!(opt && opt.netSkins && opt.netSkins.enabled);
     const grossOn = !!(opt && opt.grossSkins && opt.grossSkins.enabled);
     const fiftyOn = !!(opt && opt.fiftyFifty && opt.fiftyFifty.enabled);
+    const isSub = p.playerType === 'Substitute';
+    const typeBadge = isSub
+      ? '<span style="background:#D4AF37;color:#1A4A2E;font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px">SUB</span>'
+      : '<span style="color:#888;font-size:11px">Regular</span>';
+    const srcLabel = { GHIN: 'GHIN', provisional: 'Prov', calculated: 'Calc', USGA_WHS: 'WHS' };
+    const srcBadge = p.hcpSource ? `<span style="font-size:10px;color:#555">${srcLabel[p.hcpSource] || p.hcpSource}</span>` : '—';
+    const provWarn = (p.hcpRoundsPosted || 0) < 3 && p.hcpSource !== 'GHIN' ? ' ⚠️' : '';
     return `
-      <tr>
-        <td style="font-weight:600;color:#1a1a1a">${p.name || ''}</td>
+      <tr${isSub ? ' style="background:#fffdf0"' : ''}>
+        <td style="font-weight:600;color:#1a1a1a">${p.name || ''}${provWarn}</td>
+        <td>${typeBadge}</td>
         <td>${p.email || ''}</td>
         <td>${p.phone || ''}</td>
         <td style="text-align:center">${f9}</td>
         <td style="text-align:center">${b9}</td>
-        <td style="text-align:center">${h18}</td>
+        <td style="text-align:center">${srcBadge}</td>
         <td style="text-align:center"><input type="checkbox" ${netOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'net_skins', this.checked)" /></td>
         <td style="text-align:center"><input type="checkbox" ${grossOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'gross_skins', this.checked)" /></td>
         <td style="text-align:center"><input type="checkbox" ${fiftyOn ? 'checked' : ''} onchange="setSideGameOptIn('${p.email}', 'fifty_fifty', this.checked)" /></td>
