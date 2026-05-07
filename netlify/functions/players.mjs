@@ -8,6 +8,13 @@ function parseBool(v, fb) { return v !== undefined ? Boolean(v) : fb }
 function parseOptional(val, fallback) {
   return val !== undefined && val !== null && String(val).trim() !== '' ? parseFloat(val) : fallback
 }
+// GHIN index → course handicap for a 9-hole side using standard USGA slope conversion
+function ghinToCourseHcp(index, slopeRating, bogeyFactor) {
+  if (!Number.isFinite(index)) return null
+  return Math.round(index * (slopeRating / 113) * bogeyFactor)
+}
+const VALID_PLAYER_TYPES = ['Regular', 'Substitute']
+const VALID_HCP_SOURCES  = ['USGA_WHS', 'GHIN', 'provisional', 'calculated']
 
 export default async (req) => {
   const url      = new URL(req.url)
@@ -36,6 +43,14 @@ export default async (req) => {
         hcpBack9OverrideValue:  pNumFin(data.hcpBack9OverrideValue),
         hcp18Override:          Boolean(data.hcp18Override),
         hcp18OverrideValue:     pNumFin(data.hcp18OverrideValue),
+        // Sub player fields
+        playerType:          VALID_PLAYER_TYPES.includes(data.playerType) ? data.playerType : 'Regular',
+        hcpSource:           VALID_HCP_SOURCES.includes(data.hcpSource)   ? data.hcpSource  : null,
+        hcpProvisional:      pNumFin(data.hcpProvisional),
+        hcpProvisionalNote:  data.hcpProvisionalNote  || null,
+        hcpRoundsPosted:     typeof data.hcpRoundsPosted === 'number' ? data.hcpRoundsPosted : 0,
+        subForPlayer:        data.subForPlayer || null,
+        ghinIndex:           pNumFin(data.ghinIndex),
         updatedAt: data.updatedAt || null,
         createdAt: data.createdAt || null
       }
@@ -66,6 +81,29 @@ export default async (req) => {
     const hcpBack9OverrideValue  = parseOptional(body.hcpBack9OverrideValue,  (existing && existing.hcpBack9OverrideValue)  ?? null)
     const hcp18OverrideValue     = parseOptional(body.hcp18OverrideValue,     (existing && existing.hcp18OverrideValue)     ?? null)
 
+    // Sub player fields
+    const playerType = VALID_PLAYER_TYPES.includes(body.playerType) ? body.playerType : (existing && existing.playerType) || 'Regular'
+    const hcpSource  = VALID_HCP_SOURCES.includes(body.hcpSource)   ? body.hcpSource  : (existing && existing.hcpSource)  || null
+    const hcpProvisional     = parseOptional(body.hcpProvisional,     (existing && existing.hcpProvisional)     ?? null)
+    const hcpProvisionalNote = body.hcpProvisionalNote !== undefined  ? (String(body.hcpProvisionalNote || '').trim() || null) : (existing && existing.hcpProvisionalNote) || null
+    const subForPlayer       = body.subForPlayer !== undefined        ? (normalizeEmail(body.subForPlayer) || null) : (existing && existing.subForPlayer) || null
+    const ghinIndex          = parseOptional(body.ghinIndex, (existing && existing.ghinIndex) ?? null)
+    // hcpRoundsPosted is system-managed — only accept from body if explicitly an integer
+    const hcpRoundsPosted = (body.hcpRoundsPosted !== undefined && Number.isInteger(body.hcpRoundsPosted))
+      ? Math.max(0, body.hcpRoundsPosted)
+      : (existing && typeof existing.hcpRoundsPosted === 'number' ? existing.hcpRoundsPosted : 0)
+
+    // GHIN auto-override: front9 = index * (119/113) * 0.80, back9 = index * (124/113) * 0.80
+    let resolvedF9Override = hcpFront9Override, resolvedF9Value = hcpFront9OverrideValue
+    let resolvedB9Override = hcpBack9Override,  resolvedB9Value = hcpBack9OverrideValue
+    if (hcpSource === 'GHIN' && Number.isFinite(ghinIndex)) {
+      resolvedF9Override = true; resolvedF9Value = ghinToCourseHcp(ghinIndex, 119, 0.80)
+      resolvedB9Override = true; resolvedB9Value = ghinToCourseHcp(ghinIndex, 124, 0.80)
+    } else if (hcpSource === 'provisional' && Number.isFinite(hcpProvisional)) {
+      resolvedF9Override = true; resolvedF9Value = hcpProvisional
+      resolvedB9Override = true; resolvedB9Value = hcpProvisional
+    }
+
     const updated = {
       ...(existing || {}),
       name, email,
@@ -73,12 +111,14 @@ export default async (req) => {
       handicap: parseOptional(body.handicap, (existing && existing.handicap) ?? null),
       hdcp9:    parseOptional(body.hdcp9,    (existing && existing.hdcp9)    ?? null),
       hdcp18:   parseOptional(body.hdcp18,   (existing && existing.hdcp18)   ?? null),
-      hcpFront9Override,
-      hcpFront9OverrideValue: hcpFront9Override ? hcpFront9OverrideValue : null,
-      hcpBack9Override,
-      hcpBack9OverrideValue:  hcpBack9Override  ? hcpBack9OverrideValue  : null,
+      hcpFront9Override:      resolvedF9Override,
+      hcpFront9OverrideValue: resolvedF9Override ? resolvedF9Value : null,
+      hcpBack9Override:       resolvedB9Override,
+      hcpBack9OverrideValue:  resolvedB9Override ? resolvedB9Value : null,
       hcp18Override,
-      hcp18OverrideValue:     hcp18Override     ? hcp18OverrideValue     : null,
+      hcp18OverrideValue:     hcp18Override ? hcp18OverrideValue : null,
+      playerType, hcpSource, hcpProvisional, hcpProvisionalNote,
+      hcpRoundsPosted, subForPlayer, ghinIndex,
       updatedAt: new Date().toISOString(),
       createdAt: (existing && existing.createdAt) || new Date().toISOString()
     }
