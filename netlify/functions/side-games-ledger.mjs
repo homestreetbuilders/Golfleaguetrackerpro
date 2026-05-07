@@ -118,13 +118,14 @@ export default async (req) => {
   if (action !== 'compute') return new Response('Invalid action', { status: 400 })
 
   // Load data in parallel
-  const [scheduleDocs, leagueSettingsSnap, carryoverDoc, players, optIns, courses] = await Promise.all([
+  const [scheduleDocs, leagueSettingsSnap, carryoverDoc, players, optIns, courses, allSubs] = await Promise.all([
     listDocs(COL.schedule, leagueId),
     db.collection(COL.leagueSettings).doc(leagueId).get(),
     getDoc(COL.sideGamesLedger, leagueId, 'carryover'),
     listDocs(COL.players, leagueId),
     listDocs(COL.sideGameOptins, leagueId),
-    listDocs(COL.courses, leagueId)
+    listDocs(COL.courses, leagueId),
+    listDocs(COL.substitutes, leagueId)
   ])
 
   const scheduleWeek = scheduleDocs.find(d => d.week === week) || null
@@ -162,8 +163,23 @@ export default async (req) => {
   }
   const scores = Array.from(byPlayerName.values())
 
+  // Build weekly sub side-game flags: substituteEmail → subSideGames for this week
+  const subWeeklyOptIns = new Map()
+  for (const sub of (allSubs || [])) {
+    if (asInt(sub && sub.week) !== week) continue
+    const subEmail = sub.substituteEmail ? String(sub.substituteEmail).trim().toLowerCase() : null
+    if (!subEmail) continue
+    const sg = sub.subSideGames && typeof sub.subSideGames === 'object' ? sub.subSideGames : {}
+    subWeeklyOptIns.set(subEmail, { netSkins: Boolean(sg.netSkins), grossSkins: Boolean(sg.grossSkins), fiftyFifty: Boolean(sg.fiftyFifty) })
+  }
+
   const isEligible = (email, field) => {
     const e = String(email || '').trim().toLowerCase()
+    // Substitute players: eligibility comes from their weekly sub assignment flags, not season opt-ins
+    if (subWeeklyOptIns.has(e)) {
+      return Boolean(subWeeklyOptIns.get(e)[field])
+    }
+    // Regular players: check season opt-in record
     const rec = (optIns || []).find(o => String(o && o.email || '').trim().toLowerCase() === e) || null
     const g = rec && rec[field] ? rec[field] : null
     if (!g || !g.enabled) return false
