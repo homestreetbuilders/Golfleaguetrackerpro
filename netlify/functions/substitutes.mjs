@@ -34,10 +34,31 @@ export default async (req) => {
       return new Response('Missing week, playerEmail, or substituteName', { status: 400 })
     }
 
+    // Side game opt-ins for this sub assignment
+    const sg = body && body.subSideGames && typeof body.subSideGames === 'object' ? body.subSideGames : {}
+    const subSideGames = {
+      netSkins:   Boolean(sg.netSkins),
+      grossSkins: Boolean(sg.grossSkins),
+      fiftyFifty: Boolean(sg.fiftyFifty),
+    }
+
+    // Assignment log fields
+    const assignedBy  = body && body.assignedBy  ? String(body.assignedBy).trim()  : null
+    const weekDate    = body && body.weekDate     ? String(body.weekDate).trim()    : null
+    const absentPlayerName = body && body.absentPlayerName ? String(body.absentPlayerName).trim() : null
+    const substituteEmail  = body && body.substituteEmail  ? normalizeEmail(body.substituteEmail) : null
+
+    const now = new Date().toISOString()
     const record = {
       week, playerEmail, substituteName,
       substituteHandicap: Number.isFinite(substituteHandicap) ? substituteHandicap : null,
-      updatedAt: new Date().toISOString()
+      substituteEmail,
+      subSideGames,
+      absentPlayerName,
+      weekDate,
+      assignedBy,
+      assignedAt: now,
+      updatedAt:  now,
     }
     await setDoc(COL.substitutes, leagueId, `sub-${week}-${playerEmail}`, record)
     return Response.json({ success: true, substitute: record })

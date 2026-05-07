@@ -1835,6 +1835,54 @@
           </div>
         </div>
 
+        <!-- ── Sub Assignment (Admin) ── -->
+        <div class="card" id="sub-assignment-card" style="display:none">
+          <div class="card-header" style="padding:10px 16px">
+            <div class="card-title">Substitute Assignment</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1A4A2E;margin-bottom:4px">Week</label>
+                <select id="sub-assign-week" onchange="loadSubAssignmentForWeek()" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff">
+                  <option value="">— select week —</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Absent Player</label>
+                <select id="sub-assign-absent" onchange="loadExistingSub()" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff">
+                  <option value="">— select player —</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Sub Player</label>
+                <select id="sub-assign-sub" style="width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;background:#fff">
+                  <option value="">— select sub —</option>
+                </select>
+              </div>
+            </div>
+            <!-- Sub handicap override -->
+            <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:4px">Sub Handicap Override <span style="font-weight:400">(leave blank to use sub's profile hcp)</span></label>
+                <input id="sub-assign-hcap" type="number" step="0.1" min="0" max="36" placeholder="auto" style="width:120px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px" />
+              </div>
+            </div>
+            <!-- Side game toggles -->
+            <div id="sub-assign-side-games" style="background:#f9f5e7;border:1px solid #e8d880;border-radius:6px;padding:12px;margin-bottom:12px">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7a5800;margin-bottom:8px">Side Game Opt-In for This Week</div>
+              <div style="font-size:12px;color:#666;margin-bottom:8px">Defaults OFF — Admin must explicitly opt the sub in. Fees shown are per game.</div>
+              <div id="sub-assign-sg-toggles" style="display:flex;gap:20px;flex-wrap:wrap"></div>
+            </div>
+            <!-- Status of current assignments for this week -->
+            <div id="sub-assign-current" style="margin-bottom:12px;font-size:13px;color:#555"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn-sm btn-green" onclick="saveSubAssignmentFromUI()">Save Assignment</button>
+              <button class="btn-sm" onclick="clearSubAssignmentFromUI()">Remove Assignment</button>
+            </div>
+          </div>
+        </div>
+
         <!-- ── Pending Rainout Proposal (admin) ── -->
         <div class="card" id="schedule-proposal-card" style="display:none">
           <div class="card-header"><div class="card-title">Pending Schedule Adjustment</div></div>
@@ -5409,6 +5457,12 @@ function applyRoleAccess(role) {
   if (navScorer) navScorer.style.display = isScorer ? '' : 'none';
   if (navAdmin) navAdmin.style.display = isAdmin ? '' : 'none';
 
+  // Show admin-only schedule cards
+  const scheduleAdminCard = document.getElementById('schedule-admin-card');
+  const subAssignCard     = document.getElementById('sub-assignment-card');
+  if (scheduleAdminCard) scheduleAdminCard.style.display = isAdmin ? '' : 'none';
+  if (subAssignCard)     subAssignCard.style.display     = isAdmin ? '' : 'none';
+
   // Admin-only items that currently live under the Scorer group in the UI
   const managePlayersNav = document.querySelector(".nav-item[onclick=\"showPage('manage-players')\"]");
   const manageTeamsNav = document.querySelector(".nav-item[onclick=\"showPage('manage-teams')\"]");
@@ -5662,6 +5716,7 @@ function showPage(id) {
   }
   if (id === 'schedule') {
     buildSchedule();
+    if (currentUser && currentUser.role === 'admin') hydrateSubAssignmentUI();
   }
   if (id === 'rainouts') {
     buildSchedule();
@@ -7191,6 +7246,158 @@ async function clearSubFromUI() {
     generateScorecardPreview();
   } catch (e) {
     showToast('Clear failed');
+  }
+}
+
+// ── Sub Assignment (Schedule page) ────────────────────────────────────────────
+
+function hydrateSubAssignmentUI() {
+  // Populate week selector
+  const weekSel = document.getElementById('sub-assign-week');
+  if (weekSel && weekSel.options.length <= 1) {
+    weekSel.innerHTML = '<option value="">— select week —</option>' +
+      Array.from({ length: 20 }, (_, i) => `<option value="${i+1}">Week ${i+1}</option>`).join('');
+  }
+  // Populate absent-player selector (all regular players)
+  const absentSel = document.getElementById('sub-assign-absent');
+  if (absentSel) {
+    const regulars = (playersCache || []).filter(p => p.playerType !== 'Substitute');
+    absentSel.innerHTML = '<option value="">— select player —</option>' +
+      regulars.map(p => `<option value="${p.email}">${escapeHtml(p.name)}</option>`).join('');
+  }
+  // Populate sub selector (substitute players first, then all others)
+  const subSel = document.getElementById('sub-assign-sub');
+  if (subSel) {
+    const subs = (playersCache || []).filter(p => p.playerType === 'Substitute');
+    const regs = (playersCache || []).filter(p => p.playerType !== 'Substitute');
+    subSel.innerHTML = '<option value="">— select sub —</option>' +
+      (subs.length ? '<optgroup label="Substitutes">' + subs.map(p => `<option value="${p.email}">${escapeHtml(p.name)}</option>`).join('') + '</optgroup>' : '') +
+      (regs.length ? '<optgroup label="Regular Players">'  + regs.map(p => `<option value="${p.email}">${escapeHtml(p.name)}</option>`).join('') + '</optgroup>' : '');
+  }
+  populateSubSideGameToggles();
+}
+
+async function populateSubSideGameToggles() {
+  const container = document.getElementById('sub-assign-sg-toggles');
+  if (!container) return;
+  // Fetch payment settings to show entry fee amounts
+  let cats = [];
+  try {
+    const res = await fetchJson('/api/payment-settings');
+    cats = Array.isArray(res && res.categories) ? res.categories.filter(c => c.active) : [];
+  } catch (_) {}
+  const sgDefs = [
+    { key: 'netSkins',   label: 'Net Skins',   catMatch: /net.?skin/i },
+    { key: 'grossSkins', label: 'Gross Skins',  catMatch: /gross.?skin/i },
+    { key: 'fiftyFifty', label: '50/50',        catMatch: /50/i },
+  ];
+  container.innerHTML = sgDefs.map(sg => {
+    const cat = cats.find(c => sg.catMatch.test(c.name));
+    const fee = cat ? ` ($${cat.amount})` : '';
+    return `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+      <input type="checkbox" id="sub-sg-${sg.key}" /> ${sg.label}${fee}
+    </label>`;
+  }).join('');
+}
+
+async function loadSubAssignmentForWeek() {
+  const week = parseInt((document.getElementById('sub-assign-week') || {}).value, 10);
+  const statusEl = document.getElementById('sub-assign-current');
+  if (!week) { if (statusEl) statusEl.innerHTML = ''; return; }
+  try {
+    const res = await fetchJson('/api/substitutes');
+    const all = Array.isArray(res && res.substitutes) ? res.substitutes : [];
+    const thisWeek = all.filter(s => s.week === week);
+    if (statusEl) {
+      if (!thisWeek.length) {
+        statusEl.innerHTML = '<span style="color:#888">No substitutes assigned for this week.</span>';
+      } else {
+        statusEl.innerHTML = '<strong>Current assignments this week:</strong><br>' +
+          thisWeek.map(s => `${escapeHtml(s.absentPlayerName || s.playerEmail)} → <span style="color:#D4AF37;font-weight:700">${escapeHtml(s.substituteName)}</span>`).join('<br>');
+      }
+    }
+  } catch (_) {}
+}
+
+async function loadExistingSub() {
+  const week       = parseInt((document.getElementById('sub-assign-week')   || {}).value, 10);
+  const playerEmail = (document.getElementById('sub-assign-absent') || {}).value;
+  if (!week || !playerEmail) return;
+  try {
+    const res = await fetchJson('/api/substitutes?week=' + week + '&playerEmail=' + encodeURIComponent(playerEmail));
+    const sub = res && res.substitute;
+    if (sub) {
+      const subSel  = document.getElementById('sub-assign-sub');
+      const hcapEl  = document.getElementById('sub-assign-hcap');
+      if (subSel && sub.substituteEmail) subSel.value = sub.substituteEmail;
+      if (hcapEl) hcapEl.value = sub.substituteHandicap !== null && sub.substituteHandicap !== undefined ? sub.substituteHandicap : '';
+      const sg = sub.subSideGames || {};
+      ['netSkins','grossSkins','fiftyFifty'].forEach(k => {
+        const el = document.getElementById('sub-sg-' + k);
+        if (el) el.checked = !!sg[k];
+      });
+    }
+  } catch (_) {}
+}
+
+async function saveSubAssignmentFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  const week         = parseInt((document.getElementById('sub-assign-week')   || {}).value, 10);
+  const absentEmail  = (document.getElementById('sub-assign-absent') || {}).value;
+  const subEmail     = (document.getElementById('sub-assign-sub')    || {}).value;
+  const hcapVal      = (document.getElementById('sub-assign-hcap')   || {}).value;
+  if (!week || !absentEmail || !subEmail) { showToast('Select week, absent player, and sub'); return; }
+
+  const absentPlayer = (playersCache || []).find(p => p.email === absentEmail);
+  const subPlayer    = (playersCache || []).find(p => p.email === subEmail);
+  if (!subPlayer) { showToast('Sub player not found'); return; }
+
+  const subSideGames = {};
+  ['netSkins','grossSkins','fiftyFifty'].forEach(k => {
+    const el = document.getElementById('sub-sg-' + k);
+    subSideGames[k] = el ? el.checked : false;
+  });
+
+  // Resolve sub handicap: override value, or from sub player's profile
+  const hcpOverride = hcapVal.trim() !== '' ? parseFloat(hcapVal) : null;
+  const subHcp = Number.isFinite(hcpOverride) ? hcpOverride
+    : (subPlayer.hcpFront9 !== null && subPlayer.hcpFront9 !== undefined ? subPlayer.hcpFront9 : null);
+
+  try {
+    await fetchJson('/api/substitutes', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        week,
+        playerEmail:       absentEmail,
+        substituteName:    subPlayer.name,
+        substituteEmail:   subEmail,
+        substituteHandicap: subHcp,
+        absentPlayerName:  absentPlayer ? absentPlayer.name : absentEmail,
+        weekDate:          null,
+        assignedBy:        currentUser.email,
+        subSideGames,
+      })
+    });
+    showToast('Sub assigned: ' + subPlayer.name + ' covers for ' + (absentPlayer ? absentPlayer.name : absentEmail));
+    loadSubAssignmentForWeek();
+  } catch (e) {
+    showToast('Save failed');
+  }
+}
+
+async function clearSubAssignmentFromUI() {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Access denied'); return; }
+  const week        = parseInt((document.getElementById('sub-assign-week')  || {}).value, 10);
+  const absentEmail = (document.getElementById('sub-assign-absent') || {}).value;
+  if (!week || !absentEmail) { showToast('Select week and absent player'); return; }
+  if (!confirm('Remove sub assignment?')) return;
+  try {
+    await fetchJson('/api/substitutes?week=' + week + '&playerEmail=' + encodeURIComponent(absentEmail), { method: 'DELETE' });
+    showToast('Assignment removed');
+    loadSubAssignmentForWeek();
+  } catch (e) {
+    showToast('Remove failed');
   }
 }
 
