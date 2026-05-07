@@ -7634,7 +7634,7 @@ function buildMatchupScorecardHtml({ course, date, side, matchLabel, matchNum, l
   `;
 }
 
-function buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, dots, holes }) {
+function buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, dots, holes, isSub, isProvisional }) {
   const d = date ? parseIsoDateLocal(date) : null;
   const dateText = d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-US') : (date || '');
   const dotHtml = (n) => `<span class="stroke-dots">${Array.from({ length: n }).map(() => '<span class="stroke-dot"></span>').join('')}</span>`;
@@ -7659,7 +7659,7 @@ function buildScorecardHtml({ week, date, playerName, course, tee, hi, strokes, 
           <div class="right">Week ${week || '—'}</div>
         </div>
         <div class="scorecard-meta">
-          <div class="label">Player</div><div class="value">${playerName || '—'}</div>
+          <div class="label">Player</div><div class="value">${playerName || '—'}${isSub ? ' <span style="background:#D4AF37;color:#1A4A2E;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:.5px;vertical-align:middle">SUB</span>' : ''}${isProvisional ? ' <span title="Provisional handicap — fewer than 3 rounds posted" style="font-size:12px;cursor:help">⚠️</span>' : ''}</div>
           <div class="label">Date</div><div class="value">${dateText || '—'}</div>
           <div class="label">Course</div><div class="value">${course || '—'}</div>
           <div class="label">Tee</div><div class="value">${tee || '—'}</div>
@@ -7703,7 +7703,9 @@ async function generateScorecardPreview() {
   const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
   const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
   let displayName = playerName;
-  let hi = player ? (player.handicap !== undefined ? player.handicap : (player.hdcp !== undefined ? player.hdcp : 0)) : 0;
+  let hi = player ? (player.hcpFront9 !== null && player.hcpFront9 !== undefined ? player.hcpFront9 : (player.handicap !== undefined ? player.handicap : (player.hdcp !== undefined ? player.hdcp : 0))) : 0;
+  let isSub = false;
+  let subPlayer = null;
 
   if (currentUser && currentUser.role === 'admin' && week && player && player.email) {
     try {
@@ -7711,14 +7713,27 @@ async function generateScorecardPreview() {
       const sub = subRes && subRes.substitute ? subRes.substitute : null;
       if (sub && sub.substituteName) {
         displayName = sub.substituteName;
+        isSub = true;
+        // Resolve sub's handicap from their player record if available
+        if (sub.substituteEmail) {
+          subPlayer = (playersCache || []).find(p => p.email === sub.substituteEmail) || null;
+        }
         if (sub.substituteHandicap !== null && sub.substituteHandicap !== undefined) {
           hi = sub.substituteHandicap;
+        } else if (subPlayer && subPlayer.hcpFront9 !== null && subPlayer.hcpFront9 !== undefined) {
+          hi = subPlayer.hcpFront9;
         }
       }
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) { /* ignore */ }
   }
+
+  // Provisional: sub with < 3 rounds, or any player with provisional hcpSource
+  const effectivePlayer = isSub && subPlayer ? subPlayer : player;
+  const isProvisional = effectivePlayer && (
+    (effectivePlayer.hcpSource === 'provisional') ||
+    ((effectivePlayer.hcpRoundsPosted || 0) < 3 && effectivePlayer.playerType === 'Substitute')
+  );
+
   const strokes = getStrokesForNine(hi);
   const nine = (coursesCache && coursesCache.length && course) ? getActiveNineCourseData(course, tee, side) : null;
   const hcpIdx = nine && Array.isArray(nine.hcpIdx) && nine.hcpIdx.length === 9 ? nine.hcpIdx : HOLE_HCP_INDEX;
@@ -7734,7 +7749,7 @@ async function generateScorecardPreview() {
     holes = null;
   }
 
-  preview.innerHTML = buildScorecardHtml({ week, date, playerName: displayName, course, tee, hi, strokes, dots, holes });
+  preview.innerHTML = buildScorecardHtml({ week, date, playerName: displayName, course, tee, hi, strokes, dots, holes, isSub, isProvisional });
 }
 
 async function printScorecard() {
