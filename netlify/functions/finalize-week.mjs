@@ -262,6 +262,22 @@ export default async (req) => {
       const updatedPlayer = { ...playerObj, hcpFront9, hcpBack9, hcp18, updatedAt: new Date().toISOString() }
       if (nextHcp !== null && Number.isFinite(nextHcp)) updatedPlayer.handicap = nextHcp
 
+      // Sub player: track rounds posted and promote out of provisional after 3 rounds
+      if (playerObj.playerType === 'Substitute') {
+        const newRoundsPosted = allScores.length // allScores only contains final scores for this player
+        updatedPlayer.hcpRoundsPosted = newRoundsPosted
+        if (newRoundsPosted >= 3 && updatedPlayer.hcpSource === 'provisional') {
+          updatedPlayer.hcpSource = 'calculated'
+          updatedPlayer.hcpProvisional = null
+          updatedPlayer.hcpProvisionalNote = null
+          // Clear provisional-derived overrides so calculated values take effect
+          updatedPlayer.hcpFront9Override = false
+          updatedPlayer.hcpFront9OverrideValue = null
+          updatedPlayer.hcpBack9Override = false
+          updatedPlayer.hcpBack9OverrideValue = null
+        }
+      }
+
       await setDoc(COL.players, leagueId, email, updatedPlayer)
 
       if (nextHcp !== null && Number.isFinite(nextHcp)) {
