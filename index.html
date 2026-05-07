@@ -5858,7 +5858,7 @@ async function setRoleForUser(email, role) {
     return;
   }
   try {
-    await fetchJson('/.netlify/functions/set-role', {
+    await fetchJson('/api/set-role', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email, role })
