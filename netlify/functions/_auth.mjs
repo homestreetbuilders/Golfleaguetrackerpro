@@ -35,6 +35,10 @@ export function normalizedRolesFromAppMeta(meta) {
   return out
 }
 
+// Hardcoded permanent admin emails — league owner accounts that always get admin
+// access regardless of Firestore doc format or JWT custom claims state.
+const HARDCODED_ADMINS = ['ron@homestreetbuilders.com']
+
 function adminEmailFallback() {
   const v = process.env.ADMIN_EMAIL
   return v ? String(v).trim().toLowerCase() : null
@@ -64,6 +68,10 @@ export function getCallerRole(req) {
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null
 
     const email = payload.email ? String(payload.email).trim().toLowerCase() : null
+
+    // Hardcoded admin — always admin regardless of JWT claims
+    if (email && HARDCODED_ADMINS.includes(email)) return 'admin'
+
     const adminEnv = adminEmailFallback()
     if (adminEnv && email && email === adminEnv) return 'admin'
 

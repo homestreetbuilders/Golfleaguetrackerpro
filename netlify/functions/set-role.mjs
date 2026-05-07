@@ -9,20 +9,33 @@ export default async (req) => {
   const authErr = await requireAdmin(req)
   if (authErr) return authErr
 
-  const body  = await req.json().catch(() => null)
-  const email = body && body.email ? String(body.email).trim().toLowerCase() : null
-  const role  = body && body.role  ? String(body.role).trim().toLowerCase()  : null
+  const body     = await req.json().catch(() => null)
+  const email    = body && body.email    ? String(body.email).trim().toLowerCase()    : null
+  const role     = body && body.role     ? String(body.role).trim().toLowerCase()     : null
+  const leagueId = body && body.leagueId ? String(body.leagueId).trim().toLowerCase() : null
 
   if (!email || !role) return new Response('Missing email or role', { status: 400 })
   if (!['admin', 'scorer', 'player'].includes(role)) {
     return new Response('Invalid role — must be admin, scorer, or player', { status: 400 })
   }
 
-  // Write role to Firestore users collection
-  await db.collection(COL.users).doc(email).set(
-    { email, role, updatedAt: new Date().toISOString() },
-    { merge: true }
-  )
+  const now = new Date().toISOString()
+  const writes = []
+
+  // Write to league-prefixed doc (e.g. kelleys-heroes_ron@...) — primary lookup format
+  if (leagueId) {
+    const prefixedId = `${leagueId}_${email}`
+    writes.push(db.collection(COL.users).doc(prefixedId).set(
+      { email, role, leagueId, updatedAt: now }, { merge: true }
+    ))
+  }
+
+  // Also write to bare email doc — used by identity-signup and bootstrap-admin
+  writes.push(db.collection(COL.users).doc(email).set(
+    { email, role, updatedAt: now }, { merge: true }
+  ))
+
+  await Promise.all(writes)
 
   // Optionally update Firebase Auth custom claims (requires Admin SDK — non-fatal if user not found)
   try {

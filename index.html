@@ -3103,20 +3103,24 @@ if (!_firebaseConfig) {
     return r.claims || {};
   };
 
-  // Restore session on page load (Firebase persists auth across refreshes)
+  // Restore session on page load (Firebase persists auth across refreshes).
+  // Uses resolveUserRole() which checks JWT claims first then falls back to
+  // Firestore /api/user-role — so page refreshes always pick up the correct role.
   onAuthStateChanged(_fbAuth, async (fbUser) => {
-  if (!fbUser || window.currentUser) return;
-  try {
-    const claims = await window._fbGetTokenClaims();
-    const role   = (claims.role === 'admin' || claims.role === 'scorer') ? claims.role : 'player';
-    const name   = fbUser.displayName || fbUser.email || 'User';
-    if (typeof window.loginSuccess === 'function') {
-      window.loginSuccess({ name, email: fbUser.email, role });
+    if (!fbUser || window.currentUser) return;
+    try {
+      const role = typeof resolveUserRole === 'function'
+        ? await resolveUserRole(fbUser)
+        : 'player';
+      const name = fbUser.displayName || fbUser.email || 'User';
+      console.log('[firebase] session restore:', fbUser.email, '→ role:', role);
+      if (typeof window.loginSuccess === 'function') {
+        window.loginSuccess({ name, email: fbUser.email, role });
+      }
+    } catch (e) {
+      console.warn('[firebase] session restore failed:', e);
     }
-  } catch (e) {
-    console.warn('[firebase] session restore failed:', e);
-  }
-});
+  });
 
   // Handle Firebase password-reset redirect (?mode=resetPassword&oobCode=…)
   const _fbParams = new URLSearchParams(window.location.search);
@@ -5160,29 +5164,51 @@ function printLeaderboard() {
   win.document.close();
 }
 
-// Role is stored in Firebase Custom Claims (token.claims.role).
-// Falls back to the /api/user-role endpoint (reads Netlify Blobs) while the
-// backend migration is in progress.
+// Role resolution: JWT custom claims → /api/user-role Firestore lookup → 'player'
+// Always normalises to lowercase so "Admin" == "admin" never causes a mismatch.
 async function resolveUserRole(fbUser) {
   try {
-    // 1. Check Firebase Custom Claims (preferred — set by backend Admin SDK)
-    if (window._fbGetTokenClaims) {
-      const claims = await window._fbGetTokenClaims(false);
-      const r = claims && claims.role ? String(claims.role).toLowerCase() : '';
-      if (r === 'admin' || r === 'scorer' || r === 'player') return r;
-    }
-    // 2. Fall back to API (Netlify Blobs — temporary until backend migrated)
     const email = (fbUser && fbUser.email) ||
                   (window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.email);
+
+    // 1. Check Firebase Custom Claims (set by backend Admin SDK when available)
+    if (window._fbGetTokenClaims) {
+      const claims = await window._fbGetTokenClaims(false);
+      const r = claims && claims.role ? String(claims.role).trim().toLowerCase() : '';
+      console.log('[resolveUserRole] JWT claims.role:', claims && claims.role, '→ normalised:', r);
+      if (r === 'admin' || r === 'scorer' || r === 'player') return r;
+    }
+
+    // 2. Hardcoded admin fallback (client-side) — league owner always gets admin
+    const HARDCODED_ADMINS = ['ron@homestreetbuilders.com'];
+    if (email && HARDCODED_ADMINS.includes(String(email).trim().toLowerCase())) {
+      // Still call the API so Firestore role wins if explicitly set to a lower role,
+      // but default to 'admin' on any API failure.
+      console.log('[resolveUserRole] hardcoded admin email detected:', email);
+    }
+
+    // 3. Fall back to Firestore via /api/user-role
     if (!email) return 'player';
     const leagueId = (typeof getActiveLeagueId === 'function' && getActiveLeagueId()) || '';
     const roleUrl  = '/api/user-role?email=' + encodeURIComponent(email) +
                      (leagueId ? '&leagueId=' + encodeURIComponent(leagueId) : '');
+    console.log('[resolveUserRole] fetching', roleUrl);
     const res = await fetch(roleUrl);
     const j   = await res.json().catch(() => null);
-    if (res.ok && j && typeof j.role === 'string') return j.role;
+    console.log('[resolveUserRole] API response:', j);
+    if (res.ok && j && typeof j.role === 'string') {
+      return String(j.role).trim().toLowerCase();
+    }
+
+    // 4. Final fallback: hardcoded admins get 'admin' even if API fails
+    if (email && HARDCODED_ADMINS.includes(String(email).trim().toLowerCase())) return 'admin';
+
     return 'player';
   } catch (e) {
+    console.warn('[resolveUserRole] error:', e);
+    // Even on error, hardcoded admins get access
+    const email = fbUser && fbUser.email ? String(fbUser.email).trim().toLowerCase() : '';
+    if (email === 'ron@homestreetbuilders.com') return 'admin';
     return 'player';
   }
 }
@@ -5861,7 +5887,7 @@ async function setRoleForUser(email, role) {
     await fetchJson('/api/set-role', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, role })
+      body: JSON.stringify({ email, role, leagueId: getActiveLeagueId() || '' })
     });
     showToast('Role updated');
   } catch (e) {

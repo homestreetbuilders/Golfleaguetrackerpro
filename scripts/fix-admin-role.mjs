@@ -1,12 +1,10 @@
 // scripts/fix-admin-role.mjs
-// Ensures ron@homestreetbuilders.com has role:'admin' in Firestore users collection.
-// Uses the Firebase client SDK (web API key only — no service account needed).
+// Ensures ron@homestreetbuilders.com has role:'admin' (lowercase) in Firestore
+// at BOTH possible document ID formats:
+//   - users/ron@homestreetbuilders.com           (bare email format)
+//   - users/kelleys-heroes_ron@homestreetbuilders.com  (league-prefixed format)
 //
 // Usage: node --use-system-ca scripts/fix-admin-role.mjs
-//
-// NOTE: Setting Firebase Auth custom claims requires the Admin SDK (service account).
-// As a backend auth fallback, add ADMIN_EMAIL=ron@homestreetbuilders.com to Netlify
-// environment variables — _auth.mjs already honors this env var.
 
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
@@ -18,7 +16,7 @@ for (const line of readFileSync(resolve(__dir, '../.env'), 'utf8').split('\n')) 
   if (m) process.env[m[1]] = m[2].trim()
 }
 
-import { initializeApp }               from 'firebase/app'
+import { initializeApp }                    from 'firebase/app'
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore'
 
 const app = initializeApp({
@@ -31,44 +29,55 @@ const app = initializeApp({
 })
 const db = getFirestore(app)
 
-const TARGET_EMAIL = 'ron@homestreetbuilders.com'
-const NOW          = new Date().toISOString()
+const TARGET_EMAIL  = 'ron@homestreetbuilders.com'
+const LEAGUE_ID     = 'kelleys-heroes'
+const CORRECT_ROLE  = 'admin'   // always lowercase
+const NOW           = new Date().toISOString()
 
-// ── Check / upsert Firestore users doc ───────────────────────────────────────
-console.log(`\nChecking Firestore users/${TARGET_EMAIL} ...`)
-const userRef  = doc(db, 'users', TARGET_EMAIL)
-const userSnap = await getDoc(userRef)
+const DOC_IDS = [
+  TARGET_EMAIL,                           // bare
+  `${LEAGUE_ID}_${TARGET_EMAIL}`,         // league-prefixed
+]
 
-if (userSnap.exists()) {
-  const data = userSnap.data()
-  console.log('  Existing doc:', JSON.stringify(data))
-  if (String(data.role || '').toLowerCase() !== 'admin') {
-    await setDoc(userRef, { role: 'admin', updatedAt: NOW }, { merge: true })
-    console.log(`  ✓ Updated role: "${data.role || '(none)'}" → "admin"`)
+for (const docId of DOC_IDS) {
+  console.log(`\nChecking users/${docId} ...`)
+  const ref  = doc(db, 'users', docId)
+  const snap = await getDoc(ref)
+
+  if (snap.exists()) {
+    const data = snap.data()
+    console.log('  Existing data:', JSON.stringify(data))
+    const existingRole = String(data.role || '').trim().toLowerCase()
+    if (existingRole !== CORRECT_ROLE) {
+      await setDoc(ref, { role: CORRECT_ROLE, updatedAt: NOW }, { merge: true })
+      console.log(`  ✓ Updated role: "${data.role}" → "${CORRECT_ROLE}"`)
+    } else {
+      console.log(`  ✓ Role is already "${data.role}" — normalising to lowercase`)
+      await setDoc(ref, { role: CORRECT_ROLE, updatedAt: NOW }, { merge: true })
+    }
   } else {
-    console.log(`  ✓ role is already "${data.role}" — no change needed`)
+    await setDoc(ref, {
+      email:     TARGET_EMAIL,
+      role:      CORRECT_ROLE,
+      name:      'Ron McCoy',
+      leagueId:  docId.includes('_') ? LEAGUE_ID : undefined,
+      createdAt: NOW,
+      updatedAt: NOW,
+    })
+    console.log(`  ✓ Created users/${docId} with role: "${CORRECT_ROLE}"`)
   }
-} else {
-  await setDoc(userRef, {
-    email:     TARGET_EMAIL,
-    role:      'admin',
-    name:      'Ron McCoy',
-    createdAt: NOW,
-    updatedAt: NOW,
-  })
-  console.log(`  ✓ Created users/${TARGET_EMAIL} with role: "admin"`)
 }
 
 console.log(`
-Done.
+All done. Both doc formats now have role: "${CORRECT_ROLE}" (lowercase).
 
-IMPORTANT — two more steps required for full admin access:
+What happens at login:
+  1. resolveUserRole() checks JWT custom claims → likely empty
+  2. Falls back to /api/user-role?email=ron@homestreetbuilders.com&leagueId=kelleys-heroes
+  3. user-role.mjs tries "kelleys-heroes_ron@homestreetbuilders.com" → finds role:"admin"
+  4. Returns role:"admin" to the frontend
+  5. loginSuccess() calls applyRoleAccess("admin") → full Admin UI shown
 
-1. Add this environment variable to Netlify (Site settings → Environment variables):
-     ADMIN_EMAIL = ron@homestreetbuilders.com
-   This makes _auth.mjs grant admin to Ron on all backend API calls without
-   needing Firebase custom claims.
-
-2. Sign out and sign back in as ${TARGET_EMAIL} in the app so the updated
-   role is picked up from Firestore on the next /api/user-role call.
+Backend API auth (_auth.mjs):
+  ron@homestreetbuilders.com is hardcoded in HARDCODED_ADMINS → requireAdmin() always passes
 `)
