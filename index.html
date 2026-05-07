@@ -5703,9 +5703,11 @@ async function executeResetLeague() {
     }
 
     cancelResetLeague();
+    // Restore league context so sidebar and navigation reload correctly
+    localStorage.setItem('fc_league_id', 'kellys-heroes');
     showToast('League data has been reset.');
-    // Reload live data
-    setTimeout(() => { try { buildLeaderboard(); buildSchedule(); buildPlayerRoster(); } catch(_){} }, 400);
+    // Navigate to dashboard — triggers full sidebar and data reload
+    setTimeout(() => { try { showPage('dashboard'); } catch(_){} }, 300);
   } catch (e) {
     btn.disabled = false;
     btn.textContent = 'Reset League Data';
