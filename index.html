@@ -1641,6 +1641,7 @@
             <div style="display:flex;gap:8px;align-items:center">
               <button class="btn-sm" id="lb-mode-gross" onclick="setLeaderboardMode('gross')">Gross</button>
               <button class="btn-sm" id="lb-mode-net" onclick="setLeaderboardMode('net')">Net</button>
+              <button class="btn-sm" id="lb-show-subs-btn" onclick="toggleLeaderboardSubs()" style="background:#fff;color:#666;border:1px solid #ccc">Show Subs</button>
               <button class="btn-sm" onclick="printLeaderboard()">Print</button>
             </div>
           </div>
@@ -1671,6 +1672,17 @@
                 </tr>
               </thead>
               <tbody id="leaderboard-body"></tbody>
+            </table>
+          </div>
+          <div id="leaderboard-subs-section" style="display:none;border-top:2px dashed #e8e0c8;padding:0">
+            <div style="padding:8px 20px 4px;font-size:11px;font-weight:700;color:#888;letter-spacing:.5px;text-transform:uppercase;background:#fffdf0">Substitute Players</div>
+            <table class="data-table" style="background:#fffdf0">
+              <thead>
+                <tr style="background:#f5f0dc">
+                  <th>#</th><th>Player</th><th>Team</th><th>Rounds</th><th id="lb-subs-avg-th">Avg</th><th id="lb-subs-best-th">Best</th><th>Hdcp</th><th>Points</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-subs-body"></tbody>
             </table>
           </div>
         </div>
@@ -3103,6 +3115,7 @@ function showPwRecoveryOverlay(open) {
 let leaderboardMode = 'gross';
 let scoringMode = 'batch';
 let leaderboardFilters = { week: '', start: '', end: '' };
+let showSubsOnLeaderboard = false;
 let leaguesCache = [];
 let playersCache = [];
 let coursesCache = [];
@@ -6967,6 +6980,18 @@ function setLeaderboardMode(mode) {
   buildLeaderboard();
 }
 
+function toggleLeaderboardSubs() {
+  showSubsOnLeaderboard = !showSubsOnLeaderboard;
+  const btn = document.getElementById('lb-show-subs-btn');
+  if (btn) {
+    btn.style.background = showSubsOnLeaderboard ? '#D4AF37' : '#fff';
+    btn.style.color = showSubsOnLeaderboard ? '#1A4A2E' : '#666';
+    btn.style.fontWeight = showSubsOnLeaderboard ? '700' : '';
+    btn.style.border = showSubsOnLeaderboard ? '1px solid #D4AF37' : '1px solid #ccc';
+  }
+  buildLeaderboard();
+}
+
 function calcNetScore(gross, hdcp) {
   const h = typeof hdcp === 'number' ? hdcp : parseFloat(hdcp);
   if (!gross || isNaN(gross) || isNaN(h)) return gross;
@@ -7039,33 +7064,23 @@ async function buildLeaderboard() {
     if (gross === null || isNaN(gross)) continue;
     const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
     const player = pool.find(p => String(p.name).toLowerCase() === String(name).toLowerCase()) || { name, handicap: 0, hdcp: 0 };
+    const isSub = player && player.playerType === 'Substitute';
     const h = (typeof s.handicapSnapshot === 'number')
       ? s.handicapSnapshot
       : (player.handicap !== undefined ? player.handicap : (player.hdcp !== undefined ? player.hdcp : 0));
     const net = calcNetScore(gross, h);
     const val = leaderboardMode === 'net' ? net : gross;
     const playerEmail = s.playerEmail || (player && player.email) || '';
-    if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: h, email: playerEmail, values: [] });
+    if (!byPlayer.has(name)) byPlayer.set(name, { name, hdcp: h, email: playerEmail, isSub, values: [] });
     byPlayer.get(name).values.push(val);
   }
 
-  const rows = Array.from(byPlayer.values()).map(p => {
-    const rounds = p.values.length;
-    const avg = rounds ? (p.values.reduce((a,b)=>a+b,0) / rounds) : 0;
-    const best = rounds ? Math.min(...p.values) : 0;
-    const points = rounds ? Math.max(0, Math.round(100 - avg)) : 0;
-    // Find team by email or by name match
-    const em = String(p.email || '').toLowerCase();
-    const team = em ? getPlayerTeam(em) : null;
-    const teamLabel = team ? `<span style="font-size:11px;white-space:nowrap">T${team.teamNumber}${team.teamName?' '+escapeHtml(team.teamName):''}</span>` : '<span style="color:#ccc">—</span>';
-    return { ...p, rounds, avg: avg ? avg.toFixed(1) : '—', best: best || '—', points, teamLabel };
-  }).sort((a,b) => parseFloat(a.avg) - parseFloat(b.avg));
-
-  tbody.innerHTML = rows.map((p,i) => {
-    const rankClass = i < 3 ? `rank-${i+1}` : '';
-    return `<tr>
-      <td class="rank-num ${rankClass}">${i+1}</td>
-      <td style="font-weight:600;color:#1a1a1a">${escapeHtml(p.name)}</td>
+  const buildRow = (p, i, rankEnabled) => {
+    const rankClass = rankEnabled && i < 3 ? `rank-${i+1}` : '';
+    const subBadge = p.isSub ? ' <span style="background:#D4AF37;color:#1A4A2E;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:.5px;vertical-align:middle">SUB</span>' : '';
+    return `<tr style="${p.isSub ? 'background:#fffdf0' : ''}">
+      <td class="rank-num ${rankClass}">${rankEnabled ? i+1 : '—'}</td>
+      <td style="font-weight:600;color:#1a1a1a">${escapeHtml(p.name)}${subBadge}</td>
       <td style="color:#1A4A2E;font-size:12px">${p.teamLabel}</td>
       <td>${p.rounds}</td>
       <td style="color:var(--gold-dark);font-weight:700">${p.avg}</td>
@@ -7073,7 +7088,39 @@ async function buildLeaderboard() {
       <td>${p.hdcp}</td>
       <td style="color:var(--green);font-weight:700">${p.points}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="8" style="padding:18px;color:#666;text-align:center">No scores posted yet</td></tr>';
+  };
+
+  const allRows = Array.from(byPlayer.values()).map(p => {
+    const rounds = p.values.length;
+    const avg = rounds ? (p.values.reduce((a,b)=>a+b,0) / rounds) : 0;
+    const best = rounds ? Math.min(...p.values) : 0;
+    const points = rounds ? Math.max(0, Math.round(100 - avg)) : 0;
+    const em = String(p.email || '').toLowerCase();
+    const team = em ? getPlayerTeam(em) : null;
+    const teamLabel = team ? `<span style="font-size:11px;white-space:nowrap">T${team.teamNumber}${team.teamName?' '+escapeHtml(team.teamName):''}</span>` : '<span style="color:#ccc">—</span>';
+    return { ...p, rounds, avg: avg ? avg.toFixed(1) : '—', best: best || '—', points, teamLabel };
+  }).sort((a,b) => parseFloat(a.avg) - parseFloat(b.avg));
+
+  const regularRows = allRows.filter(p => !p.isSub);
+  const subRows = allRows.filter(p => p.isSub);
+
+  tbody.innerHTML = regularRows.map((p,i) => buildRow(p, i, true)).join('')
+    || '<tr><td colspan="8" style="padding:18px;color:#666;text-align:center">No scores posted yet</td></tr>';
+
+  // Subs section
+  const subsSection = document.getElementById('leaderboard-subs-section');
+  const subsTbody = document.getElementById('leaderboard-subs-body');
+  const avgTh = document.getElementById('lb-subs-avg-th');
+  const bestTh = document.getElementById('lb-subs-best-th');
+  if (avgTh) avgTh.textContent = leaderboardMode === 'net' ? 'Net Avg' : 'Avg';
+  if (bestTh) bestTh.textContent = leaderboardMode === 'net' ? 'Net Best' : 'Best';
+  if (subsSection) subsSection.style.display = (showSubsOnLeaderboard && subRows.length) ? '' : 'none';
+  if (subsTbody) {
+    subsTbody.innerHTML = showSubsOnLeaderboard
+      ? (subRows.map((p,i) => buildRow(p, i, false)).join('')
+          || '<tr><td colspan="8" style="padding:18px;color:#888;text-align:center">No sub scores posted</td></tr>')
+      : '';
+  }
 }
 
 function hydrateLeaderboardFiltersUI() {
