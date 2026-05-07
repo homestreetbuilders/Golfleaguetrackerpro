@@ -2761,6 +2761,22 @@
             <button class="btn-sm btn-green" onclick="saveLeagueSettingsFromUI()">Save Settings</button>
           </div>
         </div>
+
+        <!-- ── DANGER ZONE ── -->
+        <div id="danger-zone-card" class="card" style="display:none;border:2px solid #c0392b;margin-top:24px">
+          <div class="card-header" style="background:#fdf2f2;border-bottom:1px solid #f5c6cb">
+            <div class="card-title" style="color:#c0392b">Danger Zone</div>
+          </div>
+          <div class="card-body" style="background:#fdf2f2">
+            <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+              <div style="flex:1;min-width:200px">
+                <div style="font-weight:700;color:#c0392b;margin-bottom:4px">Reset League Data</div>
+                <div style="font-size:13px;color:#666">Permanently deletes all players, scores, schedule, teams, subs, payments, and side game records for the active league. Auth accounts, courses, and app settings are preserved.</div>
+              </div>
+              <button class="btn-sm" onclick="openResetLeagueModal()" style="background:#c0392b;color:#fff;font-weight:700;border:none;white-space:nowrap;flex-shrink:0">Reset League Data</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="print-only" id="print-root"></div>
@@ -2946,6 +2962,60 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- ── Reset League Data Modal — 3-step confirmation ── -->
+<div id="reset-league-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,0.5);overflow:hidden">
+
+    <!-- Step 1: Warning -->
+    <div id="reset-step-1">
+      <div style="background:#c0392b;padding:20px 24px 16px">
+        <div style="font-size:20px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:#fff">⚠️ DANGER ZONE</div>
+      </div>
+      <div style="padding:24px">
+        <p style="color:#1a1a1a;font-size:14px;line-height:1.6;margin:0 0 20px">This will permanently delete <strong>ALL league data</strong> including players, scores, schedule, teams, subs, payments, and side game records.<br><br>This <strong>cannot be undone</strong>. Click Continue to proceed.</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn-sm" onclick="cancelResetLeague()" style="background:#eee;color:#333">Cancel</button>
+          <button class="btn-sm" onclick="resetLeagueStep2()" style="background:#c0392b;color:#fff;font-weight:700">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Type RESET -->
+    <div id="reset-step-2" style="display:none">
+      <div style="background:#c0392b;padding:20px 24px 16px">
+        <div style="font-size:20px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:#fff">Confirm Deletion</div>
+      </div>
+      <div style="padding:24px">
+        <p style="color:#1a1a1a;font-size:14px;margin:0 0 14px">Type <strong style="font-family:monospace;background:#f5f5f5;padding:2px 6px;border-radius:3px">RESET</strong> to confirm data deletion.</p>
+        <input id="reset-confirm-input" type="text" placeholder="Type RESET here" oninput="onResetInputChange()" autocomplete="off"
+          style="width:100%;box-sizing:border-box;padding:10px 14px;border:2px solid #ccc;border-radius:6px;font-size:15px;font-family:monospace;outline:none;margin-bottom:16px" />
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn-sm" onclick="cancelResetLeague()" style="background:#eee;color:#333">Cancel</button>
+          <button id="reset-step-2-next" class="btn-sm" onclick="resetLeagueStep3()" disabled style="background:#ccc;color:#fff;font-weight:700;cursor:not-allowed">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Password re-entry -->
+    <div id="reset-step-3" style="display:none">
+      <div style="background:#c0392b;padding:20px 24px 16px">
+        <div style="font-size:20px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:#fff">Authorize Reset</div>
+      </div>
+      <div style="padding:24px">
+        <p style="color:#1a1a1a;font-size:14px;margin:0 0 14px">Re-enter your admin password to authorize this action.</p>
+        <input id="reset-password-input" type="password" placeholder="Your password" autocomplete="current-password"
+          style="width:100%;box-sizing:border-box;padding:10px 14px;border:2px solid #ccc;border-radius:6px;font-size:15px;outline:none;margin-bottom:8px" />
+        <div id="reset-pw-error" style="display:none;color:#c0392b;font-size:13px;margin-bottom:12px"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+          <button class="btn-sm" onclick="cancelResetLeague()" style="background:#eee;color:#333">Cancel</button>
+          <button id="reset-step-3-btn" class="btn-sm" onclick="executeResetLeague()" style="background:#c0392b;color:#fff;font-weight:700">Reset League Data</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Password Recovery Modal — shown when user arrives via recovery email link -->
 <div id="pw-recovery-overlay" class="pw-recovery-overlay" aria-hidden="true">
   <div style="background:#1e1e1e;border:1px solid #D4AF37;border-radius:12px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
@@ -2984,6 +3054,7 @@ import { initializeApp }                from 'https://www.gstatic.com/firebasejs
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signOut, onAuthStateChanged, updateProfile,
          sendPasswordResetEmail, confirmPasswordReset,
+         reauthenticateWithCredential, EmailAuthProvider,
          getIdTokenResult }             from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 
 // Fetch config from server (credentials live in env vars, not in source)
@@ -3012,6 +3083,12 @@ if (!_firebaseConfig) {
   window._fbSignIn        = (e, p) => signInWithEmailAndPassword(_fbAuth, e, p);
   window._fbCreateUser    = (e, p) => createUserWithEmailAndPassword(_fbAuth, e, p);
   window._fbSignOut       = ()     => signOut(_fbAuth);
+  window._fbReauthenticate = (password) => {
+    const user = _fbAuth.currentUser;
+    if (!user || !user.email) return Promise.reject(new Error('No signed-in user'));
+    const cred = EmailAuthProvider.credential(user.email, password);
+    return reauthenticateWithCredential(user, cred);
+  };
   window._fbUpdateProfile = (u, d) => updateProfile(u, d);
   window._fbSendPasswordReset     = (e)         => sendPasswordResetEmail(_fbAuth, e);
   window._fbConfirmPasswordReset  = (code, pw)  => confirmPasswordReset(_fbAuth, code, pw);
@@ -5473,8 +5550,10 @@ function applyRoleAccess(role) {
   // Show admin-only schedule cards
   const scheduleAdminCard = document.getElementById('schedule-admin-card');
   const subAssignCard     = document.getElementById('sub-assignment-card');
+  const dangerZoneCard    = document.getElementById('danger-zone-card');
   if (scheduleAdminCard) scheduleAdminCard.style.display = isAdmin ? '' : 'none';
   if (subAssignCard)     subAssignCard.style.display     = isAdmin ? '' : 'none';
+  if (dangerZoneCard)    dangerZoneCard.style.display    = isAdmin ? '' : 'none';
 
   // Admin-only items that currently live under the Scorer group in the UI
   const managePlayersNav = document.querySelector(".nav-item[onclick=\"showPage('manage-players')\"]");
@@ -5496,6 +5575,115 @@ function applyRoleAccess(role) {
       showPage('dashboard');
       showToast('Access denied');
     }
+  }
+}
+
+// ── Reset League Data — 3-step confirmation flow ─────────────────────────────
+
+function openResetLeagueModal() {
+  // Reset all steps to initial state
+  document.getElementById('reset-confirm-input').value = '';
+  document.getElementById('reset-password-input').value = '';
+  document.getElementById('reset-pw-error').style.display = 'none';
+  document.getElementById('reset-pw-error').textContent = '';
+  const nextBtn = document.getElementById('reset-step-2-next');
+  if (nextBtn) { nextBtn.disabled = true; nextBtn.style.background = '#ccc'; nextBtn.style.cursor = 'not-allowed'; }
+  document.getElementById('reset-step-1').style.display = '';
+  document.getElementById('reset-step-2').style.display = 'none';
+  document.getElementById('reset-step-3').style.display = 'none';
+  const overlay = document.getElementById('reset-league-overlay');
+  overlay.style.display = 'flex';
+}
+
+function cancelResetLeague() {
+  document.getElementById('reset-league-overlay').style.display = 'none';
+}
+
+function resetLeagueStep2() {
+  document.getElementById('reset-step-1').style.display = 'none';
+  document.getElementById('reset-step-2').style.display = '';
+  setTimeout(() => document.getElementById('reset-confirm-input').focus(), 50);
+}
+
+function onResetInputChange() {
+  const val = document.getElementById('reset-confirm-input').value;
+  const btn = document.getElementById('reset-step-2-next');
+  const ok = val === 'RESET';
+  btn.disabled = !ok;
+  btn.style.background = ok ? '#c0392b' : '#ccc';
+  btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+}
+
+function resetLeagueStep3() {
+  if (document.getElementById('reset-confirm-input').value !== 'RESET') return;
+  document.getElementById('reset-step-2').style.display = 'none';
+  document.getElementById('reset-step-3').style.display = '';
+  document.getElementById('reset-pw-error').style.display = 'none';
+  document.getElementById('reset-password-input').value = '';
+  setTimeout(() => document.getElementById('reset-password-input').focus(), 50);
+}
+
+async function executeResetLeague() {
+  const pwInput = document.getElementById('reset-password-input');
+  const errEl   = document.getElementById('reset-pw-error');
+  const btn     = document.getElementById('reset-step-3-btn');
+  const password = pwInput.value;
+
+  errEl.style.display = 'none';
+  if (!password) { errEl.textContent = 'Password is required.'; errEl.style.display = ''; return; }
+
+  // Step 3a: re-authenticate with Firebase
+  if (!window._fbReauthenticate) {
+    errEl.textContent = 'Authentication unavailable. Please reload and try again.';
+    errEl.style.display = '';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying…';
+
+  try {
+    await window._fbReauthenticate(password);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Reset League Data';
+    const code = e && e.code ? e.code : '';
+    errEl.textContent = (code === 'auth/wrong-password' || code === 'auth/invalid-credential')
+      ? 'Incorrect password. Please try again.'
+      : 'Authentication failed: ' + (e.message || code);
+    errEl.style.display = '';
+    return;
+  }
+
+  // Step 3b: call the backend reset function
+  btn.textContent = 'Resetting…';
+  try {
+    const leagueId = localStorage.getItem('fc_league_id') || '';
+    const adminEmail = currentUser && currentUser.email ? currentUser.email : '';
+    const token = window._fbGetIdToken ? await window._fbGetIdToken(false) : null;
+    const headers = { 'content-type': 'application/json' };
+    if (token) headers['authorization'] = 'Bearer ' + token;
+
+    const res = await fetch('/api/reset-league?leagueId=' + encodeURIComponent(leagueId), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ confirm: 'RESET', adminEmail }),
+    });
+
+    if (!res.ok) {
+      const msg = await res.text().catch(() => res.statusText);
+      throw new Error(msg || 'Server error ' + res.status);
+    }
+
+    cancelResetLeague();
+    showToast('League data has been reset.');
+    // Reload live data
+    setTimeout(() => { try { buildLeaderboard(); buildSchedule(); buildPlayerRoster(); } catch(_){} }, 400);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Reset League Data';
+    errEl.textContent = 'Reset failed: ' + (e.message || 'Unknown error');
+    errEl.style.display = '';
   }
 }
 
