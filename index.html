@@ -5684,16 +5684,17 @@ async function executeResetLeague() {
   // Step 3b: call the backend reset function
   btn.textContent = 'Resetting…';
   try {
-    const leagueId = localStorage.getItem('fc_league_id') || '';
+    // Use active league from localStorage; fall back to 'kelleys-heroes' if not set
+    const leagueId = (typeof getActiveLeagueId === 'function' && getActiveLeagueId()) || localStorage.getItem('fc_league_id') || 'kelleys-heroes';
     const adminEmail = currentUser && currentUser.email ? currentUser.email : '';
     const token = window._fbGetIdToken ? await window._fbGetIdToken(false) : null;
     const headers = { 'content-type': 'application/json' };
     if (token) headers['authorization'] = 'Bearer ' + token;
 
-    const res = await fetch('/api/reset-league?leagueId=' + encodeURIComponent(leagueId), {
+    const res = await fetch('/api/reset-league', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ confirm: 'RESET', adminEmail }),
+      body: JSON.stringify({ confirm: 'RESET', adminEmail, leagueId }),
     });
 
     if (!res.ok) {

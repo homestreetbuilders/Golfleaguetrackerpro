@@ -114,14 +114,15 @@ export default async (req) => {
   const authErr = await requireAdmin(req)
   if (authErr) return authErr
 
-  const url      = new URL(req.url)
-  const leagueId = normalizeLeagueId(url.searchParams.get('leagueId'))
-  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
-
   const body = await req.json().catch(() => null)
   if (!body || body.confirm !== 'RESET') {
     return new Response('Confirmation token missing or invalid', { status: 400 })
   }
+
+  // Read leagueId from body first, fall back to query string
+  const url      = new URL(req.url)
+  const leagueId = normalizeLeagueId(body.leagueId || url.searchParams.get('leagueId'))
+  if (!leagueId) return new Response('Missing leagueId', { status: 400 })
 
   const projectId = process.env.FIREBASE_PROJECT_ID
   if (!projectId) {
