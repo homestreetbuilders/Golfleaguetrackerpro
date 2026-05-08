@@ -1,11 +1,5 @@
-// _auth.mjs — Shared auth helper for Netlify serverless functions.
-//
-// Roles are stored in GoTrue users as app_metadata.roles (array preferred).
-// The JWT echoes app_metadata — we derive role from what the JWT actually carries.
-//
-// Fallbacks supported:
-//   - ADMIN_EMAIL — env var forcing admin for exactly that lowercase email (emergency / ops bootstrap)
-//   - app_metadata.role as single string or roles as comma-separated string (legacy quirks)
+// _auth.mjs – Shared auth helper for Netlify serverless functions.
+// Supports Firebase Auth JWTs (role in payload.role) with fallbacks.
 
 function decodeJwtPayload(token) {
   try {
@@ -18,25 +12,6 @@ function decodeJwtPayload(token) {
   }
 }
 
-/** @param {unknown} meta */
-export function normalizedRolesFromAppMeta(meta) {
-  const out = new Set()
-  if (!meta || typeof meta !== 'object') return out
-  const m = /** @type {Record<string, unknown>} */ (meta)
-  if (typeof m.roles === 'string' && m.roles.trim()) {
-    for (const s of String(m.roles).split(/[\s,;]+/).map(r => r.trim().toLowerCase()).filter(Boolean)) out.add(s)
-  }
-  if (Array.isArray(m.roles)) {
-    for (const r of m.roles) {
-      if (typeof r === 'string' && r.trim()) out.add(r.trim().toLowerCase())
-    }
-  }
-  if (typeof m.role === 'string' && m.role.trim()) out.add(String(m.role).trim().toLowerCase())
-  return out
-}
-
-// Hardcoded permanent admin emails — league owner accounts that always get admin
-// access regardless of Firestore doc format or JWT custom claims state.
 const HARDCODED_ADMINS = ['ron@homestreetbuilders.com']
 
 function adminEmailFallback() {
@@ -69,28 +44,33 @@ export function getCallerRole(req) {
 
     const email = payload.email ? String(payload.email).trim().toLowerCase() : null
 
-    // Hardcoded admin — always admin regardless of JWT claims
+    // Hardcoded admin
     if (email && HARDCODED_ADMINS.includes(email)) return 'admin'
 
+    // ADMIN_EMAIL env fallback
     const adminEnv = adminEmailFallback()
     if (adminEnv && email && email === adminEnv) return 'admin'
 
-    const fromMeta = normalizedRolesFromAppMeta(payload.app_metadata)
-    // Netlify JWTs sometimes omit app_metadata.roles but include a numeric role id —
-    // that id is meaningless here; rely on ADMIN_EMAIL above or proper app_metadata.roles.
-    const topRole = typeof payload.role === 'string' ? payload.role.trim().toLowerCase() : ''
-    const names = [...fromMeta]
-    if (topRole) names.push(topRole)
+    // Firebase custom claim: payload.role (string)
+    if (payload.role && typeof payload.role === 'string') {
+      return payload.role.trim().toLowerCase()
+    }
 
-    if (names.some(r => r === 'admin')) return 'admin'
-    if (names.some(r => r === 'scorer')) return 'scorer'
+    // Legacy: payload.app_metadata
+    if (payload.app_metadata) {
+      const roles = payload.app_metadata.roles
+      if (Array.isArray(roles) && roles.includes('admin')) return 'admin'
+      if (Array.isArray(roles) && roles.includes('scorer')) return 'scorer'
+      if (typeof roles === 'string') return roles.trim().toLowerCase()
+      if (payload.app_metadata.role) return String(payload.app_metadata.role).trim().toLowerCase()
+    }
+
     return 'player'
   } catch (e) {
     return null
   }
 }
 
-// Returns a 403 Response if caller is not admin, otherwise null (allowed).
 export async function requireAdmin(req) {
   const role = getCallerRole(req)
   if (role !== 'admin') {
@@ -102,7 +82,6 @@ export async function requireAdmin(req) {
   return null
 }
 
-// Returns a 403 Response if caller is neither admin nor scorer, otherwise null.
 export async function requireAdminOrScorer(req) {
   const role = getCallerRole(req)
   if (role !== 'admin' && role !== 'scorer') {
