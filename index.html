@@ -283,31 +283,6 @@
     display: none;
   }
 
-  /* Demo login pills */
-  .demo-logins {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(212,175,55,0.1);
-  }
-
-  .demo-logins .demo-logins-real {
-    margin-top: 10px;
-    font-size: 11px;
-    color: rgba(212,175,55,0.85);
-    text-align: center;
-    letter-spacing: 0.06em;
-    line-height: 1.35;
-  }
-
-  .demo-logins-note {
-    font-size: 11px;
-    color: #D4AF37;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-align: center;
-    margin-bottom: 10px;
-  }
-
   #login-screen a {
     color: #D4AF37;
     text-decoration: none;
@@ -1372,16 +1347,6 @@
       <div class="error-msg" id="signup-error">Please fill all fields.</div>
     </div>
 
-    <!-- Local preview only — no Netlify JWT; cloud saves blocked by API -->
-    <div class="demo-logins">
-      <p class="demo-logins-note">Offline / preview personas (sample data • not real login)</p>
-      <div class="demo-pills">
-        <div class="demo-pill" id="demo-login-admin" title="No JWT — read-only versus live blobs">Demo Admin</div>
-        <div class="demo-pill" id="demo-login-scorer" title="No JWT — read-only versus live blobs">Demo Scorer</div>
-        <div class="demo-pill" id="demo-login-player" title="No JWT — read-only versus live blobs">Demo Player</div>
-      </div>
-      <p class="demo-logins-real">Production: Sign in with Email + Password (Firebase Auth).</p>
-    </div>
   </div>
 </div>
 
@@ -3143,43 +3108,12 @@ if (!_firebaseConfig) {
 // ═══════════════════════════════
 // DEMO DATA
 // ═══════════════════════════════
-const USERS = {
-  admin: { name: 'Ronald McCoy', email: 'admin@fc.com', password: 'admin123', role: 'admin' },
-  scorer: { name: 'Mike Johnson', email: 'scorer@fc.com', password: 'scorer123', role: 'scorer' },
-  player: { name: 'Dave Wilson', email: 'player@fc.com', password: 'player123', role: 'player' }
-};
-
-const PLAYERS_DATA = [
-  { name: 'Ronald McCoy', email: 'admin@fc.com', phone: '330-555-0101', hdcp: 8.2, rounds: 7, avg: 38.6, best: 35, points: 42 },
-  { name: 'Mike Johnson', email: 'scorer@fc.com', phone: '330-555-0102', hdcp: 12.1, rounds: 7, avg: 41.4, best: 38, points: 38 },
-  { name: 'Dave Wilson', email: 'player@fc.com', phone: '330-555-0103', hdcp: 12.4, rounds: 7, avg: 42.3, best: 38, points: 35 },
-  { name: 'Tom Harris', email: 'tom@fc.com', phone: '330-555-0104', hdcp: 15.8, rounds: 6, avg: 43.8, best: 40, points: 30 },
-  { name: 'Chris Lee', email: 'chris@fc.com', phone: '330-555-0105', hdcp: 18.2, rounds: 7, avg: 45.1, best: 41, points: 28 },
-];
-
-const SCHEDULE_DATA = [
-  { day: '14', month: 'Apr', title: 'Week 1 — Regular Match', course: 'Kelleys Heroes · 5:30 PM', type: 'match' },
-  { day: '21', month: 'Apr', title: 'Week 2 — Regular Match', course: 'Kelleys Heroes · 5:30 PM', type: 'match' },
-  { day: '28', month: 'Apr', title: 'Week 3 — Regular Match', course: 'Kelleys Heroes · 5:30 PM', type: 'match' },
-  { day: '12', month: 'May', title: 'Spring Scramble', course: 'Kelleys Heroes · 10:00 AM', type: 'scramble' },
-  { day: '3', month: 'Jun', title: 'Week 5 — Regular Match', course: 'Kelleys Heroes · 5:30 PM', type: 'match' },
-  { day: '17', month: 'Jun', title: 'Week 6 — Regular Match', course: 'Kelleys Heroes · 5:30 PM', type: 'match' },
-  { day: '24', month: 'Jun', title: 'Week 7 — Regular Match', course: 'Kelleys Heroes · 5:30 PM', type: 'match' },
-  { day: '15', month: 'Jul', title: 'Summer Scramble', course: 'Kelleys Heroes · 8:00 AM', type: 'scramble' },
-];
 
 const HOLE_HCP_INDEX = [5, 9, 1, 7, 3, 8, 2, 6, 4];
 
 const PARS = [4, 3, 5, 4, 3, 4, 4, 3, 4];
 const PAR_TOTAL = PARS.reduce((a,b) => a+b, 0);
 
-const PAYMENT_DATA = [
-  { name: 'Ronald McCoy', due: 120, paid: 120, status: 'Paid' },
-  { name: 'Mike Johnson', due: 120, paid: 80, status: 'Partial' },
-  { name: 'Dave Wilson', due: 120, paid: 80, status: 'Partial' },
-  { name: 'Tom Harris', due: 120, paid: 40, status: 'Partial' },
-  { name: 'Chris Lee', due: 120, paid: 0, status: 'Unpaid' },
-];
 
 // ═══════════════════════════════
 // STATE
@@ -3708,7 +3642,7 @@ function teamOptionsForSelect(selected) {
 
 // ── Schedule: player dropdown helper ──────────────────────────────
 function playerOptionsHtml(selectedEmail) {
-  const pool = Array.isArray(playersCache) && playersCache.length ? playersCache : PLAYERS_DATA;
+  const pool = Array.isArray(playersCache) && playersCache.length ? playersCache : [];
   const sorted = [...pool].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   const sel = String(selectedEmail || '').toLowerCase();
   return '<option value="">— Player —</option>' + sorted.map(p => {
@@ -3879,7 +3813,7 @@ function renderScrambleTeamsEditor(teams) {
   }
   box.innerHTML = schScrambleTeams.map((team, ti) => {
     const players = Array.isArray(team.players) ? team.players : [];
-    const pool = Array.isArray(playersCache) && playersCache.length ? playersCache : PLAYERS_DATA;
+    const pool = Array.isArray(playersCache) && playersCache.length ? playersCache : [];
     const tags = players.map((email, pi) => {
       const p = pool.find(x => String(x.email||'').toLowerCase() === String(email||'').toLowerCase());
       const name = p ? p.name : email;
@@ -4189,7 +4123,7 @@ function hydrateTeamFormPlayers() {
   const p1 = document.getElementById('mt-p1');
   const p2 = document.getElementById('mt-p2');
   if (!p1 && !p2) return;
-  const players = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const players = (playersCache && playersCache.length) ? playersCache : [];
   const sorted = [...players].sort((a,b) => String(a.name||'').localeCompare(String(b.name||'')));
   const opts = '<option value="">— Select player —</option>' +
     sorted.map(p => `<option value="${escapeHtml(p.email||'')}">${escapeHtml(p.name||p.email)}</option>`).join('');
@@ -5737,11 +5671,7 @@ function doLogin() {
     return;
   }
 
-  // Demo / offline fallback (no Firebase available)
-  const u = Object.values(USERS).find(u => u.email === email && u.password === pass);
-  if (!u) { errEl.style.display = 'block'; return; }
-  errEl.style.display = 'none';
-  loginSuccess(u);
+  errEl.style.display = 'block';
 }
 
 function doSignup() {
@@ -5768,27 +5698,10 @@ function doSignup() {
     return;
   }
 
-  // Demo / offline fallback
-  if (Object.values(USERS).find(u => u.email === email)) {
-    errEl.textContent = 'That email is already registered. Please sign in.';
-    errEl.style.display = 'block';
-    return;
-  }
   errEl.style.display = 'none';
   loginSuccess({ name, email, role: 'player', demo: true });
 }
 
-function demoLogin(key) {
-  const u = USERS && USERS[key] ? { ...USERS[key] } : null;
-  if (!u) return;
-  try {
-    localStorage.setItem('fc_demo_user', JSON.stringify({ ...u, demo: true, loggedInAt: new Date().toISOString() }));
-  } catch (e) {
-    // ignore
-  }
-  loginSuccess({ ...u, demo: true });
-  showToast('Preview mode — use Email + Password to get a JWT and save.');
-}
 
 function loginSuccess(user) {
   currentUser = user;
@@ -5873,14 +5786,6 @@ function doLogout() {
   if (window._fbSignOut) window._fbSignOut().catch(() => {});
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const a = document.getElementById('demo-login-admin');
-  const s = document.getElementById('demo-login-scorer');
-  const p = document.getElementById('demo-login-player');
-  if (a) a.addEventListener('click', () => demoLogin('admin'));
-  if (s) s.addEventListener('click', () => demoLogin('scorer'));
-  if (p) p.addEventListener('click', () => demoLogin('player'));
-});
 
 async function setRoleForUser(email, role) {
   if (!currentUser || currentUser.role !== 'admin') {
@@ -6803,7 +6708,7 @@ function computeTeamScore(event, teamId) {
   if (scoringType === 'stroke_net') {
     const team = (event.teams || []).find(t => t.id === teamId);
     const emails = team && Array.isArray(team.players) ? team.players : [];
-    const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+    const pool = (playersCache && playersCache.length) ? playersCache : [];
     const hcaps = emails.map(e => {
       const p = pool.find(x => String(x.email).toLowerCase() === String(e).toLowerCase());
       const h = p ? (p.handicap !== undefined ? p.handicap : (p.hdcp !== undefined ? p.hdcp : 0)) : 0;
@@ -6880,25 +6785,14 @@ async function loadPlayers(includeRoles) {
     }
   } catch (e) {
     if (!playersCache || !playersCache.length) {
-      // Only fall back to demo data when there is no active league (pure demo/preview mode).
-      // In a real league session a failed API call should never silently inject fake players.
-      if (!getActiveLeagueId()) {
-        playersCache = [...PLAYERS_DATA].map(p => ({
-          name: p.name,
-          email: p.email,
-          phone: p.phone,
-          handicap: p.hdcp
-        }));
-      } else {
-        playersCache = [];
-      }
+      playersCache = [];
     }
   }
   return playersCache;
 }
 
 function hydratePlayerSelectors() {
-  const names = playersCache && playersCache.length ? playersCache : PLAYERS_DATA;
+  const names = playersCache && playersCache.length ? playersCache : [];
 
   const scorePlayer = document.getElementById('score-player');
   if (scorePlayer) {
@@ -7245,20 +7139,7 @@ async function buildLeaderboard() {
       return true;
     });
   } catch (e) {
-    const sorted = [...PLAYERS_DATA].sort((a,b) => a.avg - b.avg);
-    tbody.innerHTML = sorted.map((p,i) => {
-      const rankClass = i < 3 ? `rank-${i+1}` : '';
-      return `<tr>
-        <td class="rank-num ${rankClass}">${i+1}</td>
-        <td style="font-weight:600;color:#1a1a1a">${p.name}</td>
-        <td style="color:#ccc">—</td>
-        <td>${p.rounds}</td>
-        <td style="color:var(--gold-dark);font-weight:700">${p.avg}</td>
-        <td>${p.best}</td>
-        <td>${p.hdcp}</td>
-        <td style="color:var(--green);font-weight:700">${p.points}</td>
-      </tr>`;
-    }).join('');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:20px">No leaderboard data available.</td></tr>';
     return;
   }
 
@@ -7280,7 +7161,7 @@ async function buildLeaderboard() {
     const name = s.player;
     const gross = typeof s.grossTotal === 'number' ? s.grossTotal : (Array.isArray(s.holes) ? s.holes.reduce((a,b)=>a+(parseInt(b)||0),0) : null);
     if (gross === null || isNaN(gross)) continue;
-    const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+    const pool = (playersCache && playersCache.length) ? playersCache : [];
     const player = pool.find(p => String(p.name).toLowerCase() === String(name).toLowerCase()) || { name, handicap: 0, hdcp: 0 };
     const isSub = player && player.playerType === 'Substitute';
     const h = (typeof s.handicapSnapshot === 'number')
@@ -7387,7 +7268,7 @@ function hydrateScorecardUI() {
     if (last) weekEl.value = String(last);
   }
   if (playerEl && playerEl.options.length === 0) {
-    const names = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+    const names = (playersCache && playersCache.length) ? playersCache : [];
     playerEl.innerHTML = '<option value="">Select player...</option>' +
       names.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
   }
@@ -7425,7 +7306,7 @@ async function loadSubForSelectedScorecard() {
     if (subHcapEl) subHcapEl.value = '';
     return;
   }
-  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const pool = (playersCache && playersCache.length) ? playersCache : [];
   const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
   const playerEmail = player ? player.email : '';
   if (!playerEmail) {
@@ -7461,7 +7342,7 @@ async function saveSubFromUI() {
     showToast('Select week, player, and sub name');
     return;
   }
-  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const pool = (playersCache && playersCache.length) ? playersCache : [];
   const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
   const playerEmail = player ? player.email : '';
   if (!playerEmail) {
@@ -7496,7 +7377,7 @@ async function clearSubFromUI() {
     showToast('Select week and player');
     return;
   }
-  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const pool = (playersCache && playersCache.length) ? playersCache : [];
   const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
   const playerEmail = player ? player.email : '';
   if (!playerEmail) {
@@ -7965,7 +7846,7 @@ async function generateScorecardPreview() {
     return;
   }
 
-  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const pool = (playersCache && playersCache.length) ? playersCache : [];
   const player = pool.find(p => String(p.name).toLowerCase() === String(playerName).toLowerCase());
   let displayName = playerName;
   let hi = player ? (player.hcpFront9 !== null && player.hcpFront9 !== undefined ? player.hcpFront9 : (player.handicap !== undefined ? player.handicap : (player.hdcp !== undefined ? player.hdcp : 0))) : 0;
@@ -8029,7 +7910,7 @@ async function printScorecard() {
 function resolvePlayerByEmail(email) {
   const em = String(email || '').trim().toLowerCase();
   if (!em) return null;
-  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const pool = (playersCache && playersCache.length) ? playersCache : [];
   return pool.find(p => String(p.email || '').trim().toLowerCase() === em) || null;
 }
 
@@ -8412,17 +8293,7 @@ async function buildSchedule() {
     </table></div>`;
 
   } catch (e) {
-    // Fallback to demo data
-    list.innerHTML = `<div style="overflow-x:auto"><table class="data-table" style="width:100%">
-      <thead><tr><th>Wk</th><th>Date</th><th>Type</th><th>Course / Side</th><th style="text-align:center">Matches</th></tr></thead>
-      <tbody>${SCHEDULE_DATA.map((m,i) => `<tr>
-        <td style="font-weight:700;color:#1A4A2E;text-align:center">${i+1}</td>
-        <td style="font-size:13px">${m.month} ${m.day}</td>
-        <td><span style="font-size:11px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:10px;background:rgba(26,74,46,0.1);color:#1A4A2E">${m.type==='scramble'?'Scramble':m.type==='tournament'?'Tournament':'Match'}</span></td>
-        <td style="font-size:13px;color:#444">${escapeHtml(m.course)}</td>
-        <td style="text-align:center;font-size:13px;color:#666">—</td>
-      </tr>`).join('')}</tbody>
-    </table></div>`;
+    list.innerHTML = '<p style="color:#888;text-align:center;padding:20px">No schedule data available.</p>';
   }
 }
 
@@ -8674,7 +8545,7 @@ async function saveScore(status) {
   const roundGir = scoreStatsPerHole.reduce((a, s) => a + (s && s.gir ? 1 : 0), 0);
   const roundScr = scoreStatsPerHole.reduce((a, s) => a + (s && s.scramblePar ? 1 : 0), 0);
 
-  const pool = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+  const pool = (playersCache && playersCache.length) ? playersCache : [];
   const p = pool.find(x => String(x.name).toLowerCase() === String(player).toLowerCase());
   // Fix #9: check `handicap` first (API field) then fall back to `hdcp` (fallback data)
   const handicapSnapshot = p ? Number(p.handicap !== undefined ? p.handicap : p.hdcp) : null;
@@ -8767,7 +8638,7 @@ function hydrateScoreEntryUI() {
     if (last) weekEl.value = String(last);
   }
   if (playerEl && playerEl.options.length <= 1) {
-    const names = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA;
+    const names = (playersCache && playersCache.length) ? playersCache : [];
     playerEl.innerHTML = '<option value="">Select player...</option>' +
       names.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
   }
@@ -9487,7 +9358,7 @@ async function saveMyProfile() {
 
 function buildPlayerRoster() {
   const tbody = document.getElementById('player-roster');
-  const rows = (playersCache && playersCache.length) ? playersCache : PLAYERS_DATA.map(p => ({ name: p.name, email: p.email, phone: p.phone, handicap: p.hdcp }));
+  const rows = (playersCache && playersCache.length) ? playersCache : [].map(p => ({ name: p.name, email: p.email, phone: p.phone, handicap: p.hdcp }));
   tbody.innerHTML = rows.map(p => {
     const fmtH = (v, isOv) => (v !== null && v !== undefined && Number.isFinite(Number(v))) ? Number(v).toFixed(1) + (isOv ? '<span style="color:var(--gold-dark);font-size:10px"> M</span>' : '') : '—';
     const f9  = fmtH(p.hcpFront9, p.hcpFront9Override);
